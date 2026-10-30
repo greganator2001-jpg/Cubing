@@ -8,12 +8,12 @@ const send = (ch, data) => { if (win && !win.isDestroyed()) win.webContents.send
 function createWindow() {
   win = new BrowserWindow({
     width: 1280, height: 900, minWidth: 420, minHeight: 600,
-    backgroundColor: '#f3f4f1', title: 'Last Layer Lab', icon: path.join(__dirname, 'app', 'icon.png'),
+    backgroundColor: '#f3f4f1', title: 'Last Layer Lab', icon: path.join(__dirname, '..', 'app', 'icon.png'),
     autoHideMenuBar: true,
-    webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true }
+    webPreferences: { preload: path.join(__dirname, '..', 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true }
   });
   Menu.setApplicationMenu(null);
-  win.loadFile(path.join(__dirname, 'app', 'index.html'));
+  win.loadFile(path.join(__dirname, '..', 'app', 'index.html'));
   win.webContents.setWindowOpenHandler(({ url }) => { if (/^https:/.test(url)) shell.openExternal(url); return { action: 'deny' }; });
   win.webContents.on('before-input-event', (e, input) => {
     if (input.type === 'keyDown' && (input.key === 'F11')) { win.setFullScreen(!win.isFullScreen()); e.preventDefault(); }

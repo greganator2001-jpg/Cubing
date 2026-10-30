@@ -3,20 +3,21 @@
   "productName": "Last Layer Lab",
   "version": "1.2.0",
   "description": "3x3 speedcubing algorithm trainer",
-  "main": "main.js",
+  "main": "bundle/main.js",
   "author": "greganator2001",
   "license": "MIT",
   "repository": "https://github.com/greganator2001-jpg/Cubing",
   "scripts": {
-    "start": "electron .",
-    "dist": "electron-builder --win nsis --x64",
-    "release": "electron-builder --win nsis --x64 --publish always"
+    "start": "npm run bundle && electron .",
+    "dist": "npm run bundle && electron-builder --win nsis --x64",
+    "release": "npm run bundle && electron-builder --win nsis --x64 --publish always",
+    "bundle": "esbuild main.js --bundle --platform=node --target=node20 --external:electron --outfile=bundle/main.js"
   },
   "build": {
     "appId": "com.greganator.lastlayerlab",
     "productName": "Last Layer Lab",
     "files": [
-      "main.js",
+      "bundle/**/*",
       "preload.js",
       "app/**/*"
     ],
@@ -42,13 +43,13 @@
         "repo": "Cubing",
         "releaseType": "release"
       }
-    ]
-  },
-  "dependencies": {
-    "electron-updater": "^6.3.9"
+    ],
+    "asar": false
   },
   "devDependencies": {
     "electron": "^33.4.11",
-    "electron-builder": "^25.1.8"
+    "electron-builder": "^25.1.8",
+    "esbuild": "^0.24.2",
+    "electron-updater": "^6.3.9"
   }
 }
