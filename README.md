@@ -1,6 +1,6 @@
 # Last Layer Lab
 
-3x3 speedcubing algorithm trainer for Windows: all 41 F2L cases, 2-look OLL and PLL, a 3D cube that animates each algorithm, a spacebar timer, self-tests and a scramble generator.
+Speedcubing algorithm trainer for Windows: all 41 F2L cases, 2-look OLL, PLL, and 4x4/5x5 parity, a 3D cube that animates each algorithm, a spacebar timer, self-tests and a scramble generator.
 
 ## Releasing an update
 1. Bump `version` in `package.json` and push.

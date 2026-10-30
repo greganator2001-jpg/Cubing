@@ -171,7 +171,7 @@ html,body{margin:0}
 
 <div class="wrap">
   <header>
-    <div class="brand"><h1>Last Layer Lab</h1><small>F2L · OLL · PLL</small><button class="ver" id="verBtn" title="Check for updates">v—</button></div>
+    <div class="brand"><h1>Last Layer Lab</h1><small>F2L · OLL · PLL · Parity</small><button class="ver" id="verBtn" title="Check for updates">v—</button></div>
     <nav role="tablist">
       <button role="tab" id="tab-drill" aria-selected="true" data-view="drill">Drill</button>
       <button role="tab" id="tab-test" aria-selected="false" data-view="test">Test</button>
@@ -198,7 +198,8 @@ html,body{margin:0}
           <span class="label" id="drillGroup">PLL</span>
           <h2 class="case-name" id="drillName">—</h2>
           <div><span class="label">Setup: apply to a solved cube, yellow on top, green in front</span>
-            <div class="setup" id="drillSetup">—</div></div>
+            <div class="setup" id="drillSetup">—</div>
+            <div class="empty" id="bigNote" hidden>2R means turn only the second layer in from the right. Rw and Uw turn the outer two layers together.</div></div>
         </div>
       </div>
       <div class="viewer">
@@ -391,6 +392,63 @@ function faceOnly(str){const toks=typeof str==='string'?parseAlg(str):str;const 
   M:[['R',1],['L',-1],['x',-1]],E:[['U',1],['D',-1],['y',-1]],S:[['F',-1],['B',1],['z',1]]};
   const out=[];for(const[f,n]of toks){if(X[f])for(const[g,m]of X[f])out.push([g,m*n]);else out.push([f,n]);}return out;}
 if(typeof module!=='undefined')module.exports={faceOnly,solvedCube,applyAlg,parseAlg,invertAlg,simplify,analyse,stickerAt,centerMap,key,noRot,MOVES};
+// ---- NxN cube engine (4x4, 5x5…) ----
+// Coordinates are doubled so every cubie sits on an integer: for size N they run -(N-1)…(N-1) in steps of 2.
+// A token is [face, lo, hi, amount]: turn layers lo..hi (1 = outer layer) of that face.
+const NX_FACE={R:['x',-1,1],L:['x',1,-1],U:['y',-1,1],D:['y',1,-1],F:['z',-1,1],B:['z',1,-1]};
+const NX_AX={x:0,y:1,z:2};
+function nxSolved(N){const s=[],m=N-1;
+  for(let x=-m;x<=m;x+=2)for(let y=-m;y<=m;y+=2)for(let z=-m;z<=m;z+=2){const p=[x,y,z];
+    for(const f in FACE_N){const n=FACE_N[f];const i=n.findIndex(c=>c!==0);
+      if(p[i]===n[i]*m)s.push({p:p.slice(),n:n.slice(),c:f,h:p.join(',')});}}
+  return s;}
+function nxParse(str,N){
+  const words=str.replace(/[()\[\]]/g,' ').replace(/’/g,"'").trim().split(/\s+/).filter(Boolean);
+  const re=/^(\d*)([RLUDFBMESxyzrludfb])(w?)(\d*)('?)$/;const out=[];
+  for(const wd of words){const m=wd.match(re);if(!m)throw new Error('Unrecognized move "'+wd+'"');
+    let amt=m[4]===''?1:parseInt(m[4],10);if(m[5])amt=-amt;
+    const pre=m[1]?parseInt(m[1],10):null,ch=m[2],w=!!m[3];
+    if('xyz'.includes(ch)){out.push([ch,1,N,amt]);continue;}
+    if('MES'.includes(ch)){if(N%2===0)throw new Error(ch+' slices need an odd-sized cube');
+      const f={M:'L',E:'D',S:'F'}[ch],k=(N+1)/2;out.push([f,k,k,amt]);continue;}
+    const F=ch.toUpperCase(),lower=ch!==F;
+    if(lower||w){const hi=pre||2;out.push([F,1,hi,amt]);}      // r, Rw, 3Rw: outer layers
+    else if(pre){out.push([F,pre,pre,amt]);}                   // 2R: that inner layer only
+    else out.push([F,1,1,amt]);}
+  for(const t of out)if(t[2]>N||t[1]<1)throw new Error('That layer is outside a '+N+'x'+N);
+  return out;}
+function nxInfo(tk,N){const[f,lo,hi,a]=tk;
+  if('xyz'.includes(f))return[f,-a,()=>true];
+  const[ax,dir,sgn]=NX_FACE[f],i=NX_AX[ax],m=N-1;
+  const vals=[];for(let k=lo;k<=hi;k++)vals.push(sgn*(m-2*(k-1)));
+  return[ax,dir*a,p=>vals.includes(p[i])];}
+function nxApply(state,toks,N){if(typeof toks==='string')toks=nxParse(toks,N);
+  for(const tk of toks){const[ax,q,pred]=nxInfo(tk,N);
+    for(const s of state)if(pred(s.p)){s.p=rot(s.p,ax,q);s.n=rot(s.n,ax,q);}}
+  return state;}
+function nxTokStr(tk,N){const[f,lo,hi,a]=tk;const q=((a%4)+4)%4;if(!q)return'';
+  const suf=q===1?'':q===2?'2':"'";
+  if('xyz'.includes(f))return f+suf;
+  if(N%2===1&&lo===hi&&lo===(N+1)/2&&'LDF'.includes(f))return{L:'M',D:'E',F:'S'}[f]+suf;
+  let base;if(lo===1&&hi===1)base=f;else if(lo===1)base=(hi===2?'':hi)+f+'w';else if(lo===hi)base=lo+f;else base=lo+'-'+hi+f+'w';
+  return base+suf;}
+function nxInvert(toks){return toks.slice().reverse().map(([f,lo,hi,a])=>[f,lo,hi,-a]);}
+function nxSimplify(toks){const out=[];for(const t of toks){const l=out[out.length-1];
+  if(l&&l[0]===t[0]&&l[1]===t[1]&&l[2]===t[2]){l[3]+=t[3];if(((l[3]%4)+4)%4===0)out.pop();}else out.push(t.slice());}
+  return out.filter(t=>((t[3]%4)+4)%4!==0);}
+// Rewrite without x/y/z so a setup keeps the cube's orientation.
+function nxNoRot(toks,N){const dir={};for(const f in FACE_N)dir[f]=FACE_N[f].slice();
+  const faceAt=v=>Object.keys(dir).find(f=>dir[f].join()===v.join());const out=[];
+  for(const[f,lo,hi,a]of toks){if('xyz'.includes(f)){const[ax,q]=nxInfo([f,lo,hi,a],N);for(const k in dir)dir[k]=rot(dir[k],ax,q);continue;}
+    out.push([faceAt(FACE_N[f]),lo,hi,a]);}
+  return out;}
+// Face colours of a big cube come from its pieces, not fixed centres: use the D-L-B corner.
+function nxFaceColors(st,N){const m=N-1,k=[-m,-m,-m].join(','),col={};
+  for(const s of st)if(s.p.join(',')===k)col[s.n.join(',')]=s.c;
+  const opp={U:'D',D:'U',R:'L',L:'R',F:'B',B:'F'};
+  col['0,1,0']=opp[col['0,-1,0']];col['1,0,0']=opp[col['-1,0,0']];col['0,0,1']=opp[col['0,0,-1']];return col;}
+function nxSolvedState(st,N){const col=nxFaceColors(st,N);return st.every(s=>s.c===col[s.n.join(',')]);}
+if(typeof module!=='undefined')module.exports={nxSolved,nxParse,nxApply,nxTokStr,nxInvert,nxSimplify,nxNoRot,nxSolvedState,nxFaceColors,nxInfo};
 
 </script>
 <script>
@@ -414,18 +472,22 @@ const DEFAULT_CASES=[
  ['PLL','Ra',"R U' R' U' R U R D R' U' R D' R' U2 R'"],['PLL','Rb',"R2 F R U R U' R' F' R U2 R' U2 R"],
  ['PLL','T',"R U R' U' R' F R2 U' R' U' R U R' F'"],['PLL','Ua',"M2 U M U2 M' U M2"],['PLL','Ub',"M2 U' M U2 M' U' M2"],
  ['PLL','V',"R' U R' U' y R' F' R2 U' R' U R' F R F"],['PLL','Y',"F R U' R' U' R U R' F' R U R' U' R' F R F'"],
- ['PLL','Z',"M' U M2 U M2 U M' U2 M2"]
+ ['PLL','Z',"M' U M2 U M2 U M' U2 M2"],
+ ['4x4 Parity','OLL parity',"2R2 B2 U2 2L U2 2R' U2 2R U2 F2 2R F2 2L' B2 2R2",4],
+ ['4x4 Parity','PLL parity',"2R2 U2 2R2 Uw2 2R2 Uw2",4],
+ ['4x4 Parity','Double parity',"2R2 B2 U2 2L U2 2R' U2 2R U2 F2 2R F2 2L' B2 2R2 U2 2R2 U2 2R2 Uw2 2R2 Uw2",4],
+ ['5x5 Parity','Flipped edge',"2R2 B2 U2 2L U2 2R' U2 2R U2 F2 2R F2 2L' B2 2R2",5]
 ];
-const modeOf=g=>g.startsWith('F2L')?'f2l':g==='PLL'?'pll':g.endsWith('Edges')?'eo':'oll';
-const SETS=[['F2L',g=>g.startsWith('F2L')],['2-Look OLL',g=>g.startsWith('2-Look')],['PLL',g=>g==='PLL'],['Custom',g=>g==='Custom']];
+const modeOf=g=>g.startsWith('F2L')?'f2l':(g==='PLL'||g.includes('Parity'))?'pll':g.endsWith('Edges')?'eo':'oll';
+const SETS=[['F2L',g=>g.startsWith('F2L')],['2-Look OLL',g=>g.startsWith('2-Look')],['PLL',g=>g==='PLL'],['4x4 Parity',g=>g==='4x4 Parity'],['5x5 Parity',g=>g==='5x5 Parity'],['Custom',g=>g==='Custom']];
 const store={get(k,d){try{const v=localStorage.getItem('lll:'+k);return v?JSON.parse(v):d}catch(e){return d}},
   set(k,v){try{localStorage.setItem('lll:'+k,JSON.stringify(v))}catch(e){}}};
 
 let overrides=store.get('algs',{}), status=store.get('status',{}), stats=store.get('stats',{}), custom=store.get('custom',[]);
 let setsOn=store.get('sets',{'F2L':true,'2-Look OLL':true,'PLL':true,'Custom':true});
 function allCases(){
-  const base=DEFAULT_CASES.map(([g,n,a])=>({id:g+'/'+n,group:g,name:n,alg:overrides[g+'/'+n]||a,def:a,mode:modeOf(g)}));
-  const cust=custom.map(c=>({id:'Custom/'+c.name,group:'Custom',name:c.name,alg:c.alg,def:c.alg,mode:analyse(c.alg).oriented?'pll':'oll',custom:true}));
+  const base=DEFAULT_CASES.map(([g,n,a,size])=>({id:g+'/'+n,group:g,name:n,alg:overrides[g+'/'+n]||a,def:a,mode:modeOf(g),size:size||3}));
+  const cust=custom.map(c=>({id:'Custom/'+c.name,group:'Custom',name:c.name,alg:c.alg,def:c.alg,mode:analyse(c.alg).oriented?'pll':'oll',custom:true,size:3}));
   return base.concat(cust);}
 const statusOf=c=>status[c.id]||'learning';
 const setOf=c=>SETS.find(([,f])=>f(c.group))[0];
@@ -433,7 +495,17 @@ const active=()=>allCases().filter(c=>statusOf(c)!=='skip'&&setsOn[setOf(c)]!==f
 const AUFS=['','U','U2',"U'"];
 const rnd=a=>a[Math.floor(Math.random()*a.length)];
 const cloneSt=st=>st.map(s=>({...s,p:s.p.slice(),n:s.n.slice()}));
-function caseState(c,auf){const st=applyAlg(solvedCube(),invertAlg(c.alg));if(auf)applyAlg(st,auf);return st;}
+// ---- engines: one for the 3x3, one per bigger size ----
+const E3={N:3,unit:1,solved:solvedCube,parse:parseAlg,apply:(st,t)=>applyAlg(st,t),inv:t=>t.slice().reverse().map(([f,n])=>[f,-n]),
+  simp:t=>{const x=simplify(t);return x?parseAlg(x):[]},tok:t=>simplify([t]),info:([f,n])=>{const[ax,q,pred]=MOVES[f];return[ax,q*n,pred]},
+  setup:t=>simplify(noRot(faceOnly(t)))};
+const ENG={3:E3};
+function engN(N){return ENG[N]||(ENG[N]={N,unit:.5,solved:()=>nxSolved(N),parse:s=>nxParse(s,N),apply:(st,t)=>nxApply(st,t,N),inv:nxInvert,
+  simp:nxSimplify,tok:t=>nxTokStr(t,N),info:t=>nxInfo(t,N),setup:t=>nxSimplify(nxNoRot(t,N)).map(x=>nxTokStr(x,N)).join(' ')});}
+const eng=c=>engN((c&&c.size)||3);
+function caseState(c,auf){const e=eng(c);const st=e.apply(e.solved(),e.inv(e.parse(c.alg)));if(auf)e.apply(st,e.parse(auf));return st;}
+function solveToks(c,auf){const e=eng(c);return e.simp([...(auf?e.inv(e.parse(auf)):[]),...e.parse(c.alg)]);}
+function setupStr(c,auf){const e=eng(c);return e.setup([...e.inv(e.parse(c.alg)),...(auf?e.parse(auf):[])]);}
 
 // ---- colouring by case type ----
 function stickerColor(s,mode){
@@ -448,17 +520,18 @@ function stickerColor(s,mode){
 // ---- 2D top-down diagram for last-layer cases ----
 function diagram(c,auf,st){
   st=st||caseState(c,auf);const m={};for(const s of st)m[key(s.p,s.n)]=s;
-  const col=(p,n)=>stickerColor(m[key(p,n)],c.mode);
-  const S=26,G=3,O=14,parts=[];
-  const rect=(x,y,w,h,f)=>parts.push(`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="3" fill="${f}"/>`);
-  const span=3*S+4*G, side=8;
+  const N=(c&&c.size)||3,big=N>3,mx=big?N-1:1,step=big?2:1,cs=[];for(let v=-mx;v<=mx;v+=step)cs.push(v);
+  const col=(p,n)=>{const s=m[key(p,n)];return s?stickerColor(s,c.mode):GRAY;};
+  const G=3,O=14,S=(3*26+G*(3-N))/N,rx=N>3?2:3,parts=[];
+  const rect=(x,y,w,h,f)=>parts.push(`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" rx="${rx}" fill="${f}"/>`);
+  const span=N*S+(N+1)*G, side=8;
   parts.push(`<rect x="${O-2}" y="${O-2}" width="${span+2}" height="${span+2}" rx="6" fill="var(--plastic)"/>`);
-  for(let r=0;r<3;r++)for(let q=0;q<3;q++)rect(O+G+q*(S+G)-1,O+G+r*(S+G)-1,S,S,col([q-1,1,r-1],[0,1,0]));
-  for(let i=0;i<3;i++){const off=O+G+i*(S+G)-1;
-    rect(off,O-side-4,S,side,col([i-1,1,-1],[0,0,-1]));
-    rect(off,O+span+2,S,side,col([i-1,1,1],[0,0,1]));
-    rect(O-side-4,off,side,S,col([-1,1,i-1],[-1,0,0]));
-    rect(O+span+2,off,side,S,col([1,1,i-1],[1,0,0]));}
+  for(let r=0;r<N;r++)for(let q=0;q<N;q++)rect(O+G+q*(S+G)-1,O+G+r*(S+G)-1,S,S,col([cs[q],mx,cs[r]],[0,1,0]));
+  for(let i=0;i<N;i++){const off=O+G+i*(S+G)-1;
+    rect(off,O-side-4,S,side,col([cs[i],mx,-mx],[0,0,-1]));
+    rect(off,O+span+2,S,side,col([cs[i],mx,mx],[0,0,1]));
+    rect(O-side-4,off,side,S,col([-mx,mx,cs[i]],[-1,0,0]));
+    rect(O+span+2,off,side,S,col([mx,mx,cs[i]],[1,0,0]));}
   const W=O*2+span;
   return `<svg viewBox="0 0 ${W} ${W}" role="img" aria-label="${c.group} ${c.name} case">${parts.join('')}</svg>`;}
 
@@ -480,7 +553,7 @@ class Cube3D{
     this.scene=new THREE.Scene();this.cam=new THREE.PerspectiveCamera(27,1,.1,100);this.cam.position.set(0,0,12.5);
     this.scene.add(new THREE.AmbientLight(0xffffff,.78));const d=new THREE.DirectionalLight(0xffffff,.4);d.position.set(2,6,9);this.scene.add(d);
     this.root=new THREE.Group();this.scene.add(this.root);
-    this.yaw=-Math.PI/4;this.pitch=.52;this.view();this.queue=[];this.anim=null;this.state=null;this.mode='pll';this.ms=420;this.dirty=true;
+    this.eng=E3;this.yaw=-Math.PI/4;this.pitch=.52;this.view();this.queue=[];this.anim=null;this.state=null;this.mode='pll';this.ms=420;this.dirty=true;
     if(interactive){
       let drag=null;
       el.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY,yaw:this.yaw,pitch:this.pitch};el.setPointerCapture(e.pointerId);});
@@ -492,33 +565,33 @@ class Cube3D{
       try{new ResizeObserver(fit).observe(el)}catch(e){window.addEventListener('resize',fit)}fit();
       const loop=t=>{this.tick(t);requestAnimationFrame(loop)};requestAnimationFrame(loop);}
   }
-  view(){this.root.rotation.set(this.pitch,this.yaw,0,'XYZ');this.dirty=true;}
-  build(state,mode){if(state)this.state=state;if(mode)this.mode=mode;const G=geos();
+  view(){this.root.rotation.set(this.pitch,this.yaw,0,'XYZ');this.root.scale.setScalar(3/this.eng.N);this.dirty=true;}
+  build(state,mode,e){if(state)this.state=state;if(mode)this.mode=mode;if(e&&e!==this.eng){this.eng=e;this.view();}const G=geos(),u=this.eng.unit;
     while(this.root.children.length)this.root.remove(this.root.children[0]);
     const by={};for(const s of this.state){const k=s.p.join(',');(by[k]=by[k]||[]).push(s);}
     for(const k in by){const p=k.split(',').map(Number);if(!p.some(v=>v))continue;
-      const g=new THREE.Group();g.position.set(p[0],p[1],p[2]);g.userData.p=p;g.add(new THREE.Mesh(G.box,G.body));
+      const g=new THREE.Group();g.position.set(p[0]*u,p[1]*u,p[2]*u);g.userData.p=p;g.add(new THREE.Mesh(G.box,G.body));
       for(const s of by[k]){const m=new THREE.Mesh(G.st,mat(stickerColor(s,this.mode)));const n=new THREE.Vector3(s.n[0],s.n[1],s.n[2]);
         m.position.copy(n).multiplyScalar(.487);m.quaternion.setFromUnitVectors(Z(),n);g.add(m);}
       this.root.add(g);}
     this.dirty=true;}
-  stop(){this.queue=[];if(this.anim){applyAlg(this.state,[this.anim.tk]);this.anim=null;this.build();}}
+  stop(){this.queue=[];if(this.anim){this.eng.apply(this.state,[this.anim.tk]);this.anim=null;this.build();}}
   play(tokens,onStep,onDone){this.queue=tokens.slice();this.onStep=onStep;this.onDone=onDone;if(!this.anim)this.next();}
   next(){if(!this.queue.length){this.anim=null;const d=this.onDone;this.onDone=null;d&&d();return;}
-    const tk=this.queue.shift();const[ax,q,pred]=MOVES[tk[0]];const pivot=new THREE.Group();this.root.add(pivot);
+    const tk=this.queue.shift();const[ax,qq,pred]=this.eng.info(tk);const pivot=new THREE.Group();this.root.add(pivot);
     for(const g of this.root.children.slice())if(g!==pivot&&g.userData.p&&pred(g.userData.p))pivot.add(g);
     const reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
-    this.anim={pivot,ax,target:q*tk[1]*Math.PI/2,t0:performance.now(),tk,ms:reduce?60:this.ms*(Math.abs(tk[1])===2?1.35:1)};}
+    const half=((qq%4)+4)%4===2;this.anim={pivot,ax,target:qq*Math.PI/2,t0:performance.now(),tk,ms:reduce?60:this.ms*(half?1.35:1)};}
   tick(now){const a=this.anim;
     if(a){const t=Math.min(1,(now-a.t0)/a.ms),e=t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;a.pivot.rotation[a.ax]=a.target*e;this.dirty=true;
-      if(t>=1){applyAlg(this.state,[a.tk]);this.anim=null;this.build();this.onStep&&this.onStep(a.tk);this.next();}}
+      if(t>=1){this.eng.apply(this.state,[a.tk]);this.anim=null;this.build();this.onStep&&this.onStep(a.tk);this.next();}}
     if(this.dirty){this.r.render(this.scene,this.cam);this.dirty=false;}}
 }
 let snapCube=null;const snapCache={};
 function snapshot(c,auf,st){const k=c.id+'|'+c.alg+'|'+auf;if(!st&&snapCache[k])return snapCache[k];
   if(!HAS3D)return null;
   try{if(!snapCube){snapCube=new Cube3D(document.createElement('div'),false);snapCube.r.setSize(240,240,false);snapCube.cam.aspect=1;snapCube.cam.updateProjectionMatrix();}
-    snapCube.build(st||caseState(c,auf),c.mode);snapCube.r.render(snapCube.scene,snapCube.cam);
+    snapCube.build(st||caseState(c,auf),c.mode,eng(c));snapCube.r.render(snapCube.scene,snapCube.cam);
     const url=snapCube.r.domElement.toDataURL('image/png');if(!st)snapCache[k]=url;return url;}catch(e){return null;}}
 function thumb(c,auf){if(c.mode==='f2l'){const u=snapshot(c,auf);if(u)return `<img src="${u}" alt="${c.name} case">`;}
   return diagram(c,auf);}
@@ -528,19 +601,19 @@ function makePlayer(elId,algElId,ids){
   const el=document.getElementById(elId),algEl=document.getElementById(algElId);
   let cube=null;if(HAS3D){try{cube=new Cube3D(el)}catch(e){cube=null}}
   if(!cube)el.innerHTML='<div class="no3d">3D view needs WebGL, which this browser has turned off.</div>';
-  const P={cube,start:null,mode:'pll',tokens:[],idx:0,shown:false,playing:false};
+  const P={cube,start:null,mode:'pll',eng:E3,tokens:[],idx:0,shown:false,playing:false};
   const speed=document.getElementById(ids.speed);
   const paint=()=>{if(!P.shown){algEl.className='alg-line concealed';algEl.textContent=P.hiddenText||'Algorithm hidden. Press Show alg or Play solution.';return;}
-    algEl.className='alg-line';algEl.innerHTML=P.tokens.length?P.tokens.map((t,i)=>`<span class="${i<P.idx?'done':i===P.idx&&P.playing?'now':''}">${tokStr(t)}</span>`).join(''):'<span>Already solved</span>';};
-  P.load=(state,mode,tokens,hiddenText)=>{P.start=cloneSt(state);P.mode=mode;P.tokens=tokens;P.idx=0;P.shown=false;P.playing=false;P.hiddenText=hiddenText;
-    if(cube){cube.stop();cube.build(cloneSt(state),mode);}paint();};
+    algEl.className='alg-line';algEl.innerHTML=P.tokens.length?P.tokens.map((t,i)=>`<span class="${i<P.idx?'done':i===P.idx&&P.playing?'now':''}">${P.eng.tok(t)}</span>`).join(''):'<span>Already solved</span>';};
+  P.load=(state,mode,tokens,hiddenText,e)=>{P.start=cloneSt(state);P.mode=mode;P.eng=e||E3;P.tokens=tokens;P.idx=0;P.shown=false;P.playing=false;P.hiddenText=hiddenText;
+    if(cube){cube.stop();cube.build(cloneSt(state),mode,P.eng);}paint();};
   P.reveal=()=>{P.shown=true;paint();};
   P.hide=()=>{P.shown=false;paint();};
-  P.reset=()=>{P.idx=0;P.playing=false;if(cube){cube.stop();cube.build(cloneSt(P.start),P.mode);}paint();};
+  P.reset=()=>{P.idx=0;P.playing=false;if(cube){cube.stop();cube.build(cloneSt(P.start),P.mode,P.eng);}paint();};
   P.run=(n)=>{if(!cube)return;P.shown=true;if(P.idx>=P.tokens.length)P.reset();P.playing=true;cube.ms=+speed.value;
     const todo=P.tokens.slice(P.idx,n?P.idx+n:undefined);paint();
     cube.play(todo,()=>{P.idx++;paint();},()=>{P.playing=false;paint();});};
-  P.playOther=(tokens)=>{if(!cube)return;cube.stop();cube.build(cloneSt(P.start),P.mode);P.idx=0;P.playing=false;cube.ms=+speed.value;cube.play(tokens,null,null);};
+  P.playOther=(tokens)=>{if(!cube)return;cube.stop();cube.build(cloneSt(P.start),P.mode,P.eng);P.idx=0;P.playing=false;cube.ms=+speed.value;cube.play(tokens,null,null);};
   document.getElementById(ids.reset).onclick=e=>{e.currentTarget.blur();P.reset();};
   document.getElementById(ids.step).onclick=e=>{e.currentTarget.blur();if(cube&&cube.anim)return;P.run(1);};
   document.getElementById(ids.play).onclick=e=>{e.currentTarget.blur();if(cube&&cube.anim)return;P.run(0);};
@@ -572,8 +645,8 @@ function loadCase(){
   $('drillGroup').textContent=current.group;
   const hide=$('optHide').checked;
   $('drillName').textContent=hide?'?':nameLabel(current);$('drillName').classList.toggle('hidden-name',hide);
-  $('drillSetup').textContent=simplify(noRot(faceOnly(invertAlg(current.alg)+' '+currentAuf)));
-  dp.load(st,current.mode,parseAlg(simplify(parseAlg((currentAuf?invertAlg(currentAuf):'')+' '+current.alg))),'Solution hidden. Press Show solution or Play solution.');
+  $('drillSetup').textContent=setupStr(current,currentAuf);$('bigNote').hidden=current.size===3;
+  dp.load(st,current.mode,solveToks(current,currentAuf),'Solution hidden. Press Show solution or Play solution.',eng(current));
   if(!$('optHideSolve').checked)dp.reveal();$('btnReveal').hidden=!$('optHideSolve').checked;}
 // ---- case picker ----
 let pinned=store.get('pinned',null),pickBuilt=false;
@@ -645,7 +718,8 @@ $('optWeak').onchange=e=>{e.target.blur();store.set('weak',$('optWeak').checked)
 const tp=makePlayer('test3d','testAlg',{reset:'tReset',step:'tStep',play:'tPlay',speed:'tSpeed'});
 let tMode='recall',tCase=null,tAuf='',tDone=false,tMine=null,tScore=store.get('tscore',{r:0,n:0,s:0}),tReveal=[];
 function renderTScore(){$('tRight').textContent=tScore.r;$('tTried').textContent=tScore.n;$('tStreak').textContent=tScore.s;}
-function solvesCase(st,mode){
+function solvesCase(st,mode,e){
+  if(e&&e.N>3)return AUFS.some(a=>nxSolvedState(e.apply(cloneSt(st),e.parse(a)),e.N));
   const cm=centerMap(st);
   if(mode==='f2l')return st.every(x=>x.p[1]===1||x.c===cm[x.n.join(',')]);
   const below=st.every(x=>x.p[1]===1||x.c===cm[x.n.join(',')]);if(!below)return false;
@@ -661,7 +735,7 @@ function newTest(){
   if(tMode==='recall'){
     if(!pool.length){$('tName').textContent='Nothing to test';return;}
     tCase=rnd(pool);tAuf=rnd(AUFS);$('tGroup').textContent=tCase.group;$('tName').textContent=nameLabel(tCase);
-    tp.load(caseState(tCase,tAuf),tCase.mode,parseAlg(simplify(parseAlg((tAuf?invertAlg(tAuf):'')+' '+tCase.alg))),'Answer hidden. Type your alg above, or reveal.');
+    tp.load(caseState(tCase,tAuf),tCase.mode,solveToks(tCase,tAuf),'Answer hidden. Type your alg above, or reveal.',eng(tCase));
     $('tPlay').textContent='Play solution';return;}
   const all=allCases().filter(c=>statusOf(c)!=='skip');
   const pick=g=>{const p=all.filter(c=>c.group===g);return p.length?rnd(p):null;};
@@ -693,11 +767,11 @@ function revealTest(){
   const html=tReveal.map(([lab,c,a])=>`<div><span class="label">${lab}</span> <b>${nameLabel(c)}</b> <span class="mono">${c.alg}</span></div>`).join('');
   $('scrHint').innerHTML=`<div class="reveal-list">${html}</div>`;}
 $('tForm').addEventListener('submit',e=>{e.preventDefault();if(!tCase)return;const txt=$('tInput').value.trim();if(!txt)return;
-  let toks;try{toks=parseAlg(txt)}catch(err){$('tVerdict').textContent=err.message;$('tVerdict').className='verdict bad';return;}
-  const ok=AUFS.some(pre=>solvesCase(applyAlg(applyAlg(caseState(tCase,tAuf),pre),toks),tCase.mode));
+  const E=eng(tCase);let toks;try{toks=E.parse(txt)}catch(err){$('tVerdict').textContent=err.message;$('tVerdict').className='verdict bad';return;}
+  const ok=AUFS.some(pre=>solvesCase(E.apply(E.apply(caseState(tCase,tAuf),E.parse(pre)),toks),tCase.mode,E));
   if(!tDone){tDone=true;tScore.n++;if(ok){tScore.r++;tScore.s++;}else tScore.s=0;store.set('tscore',tScore);renderTScore();}
   tMine=toks;$('tMine').hidden=false;
-  if(ok){const same=simplify(parseAlg(txt))===simplify(parseAlg(tCase.alg));
+  if(ok){const k=t=>E.simp(t).map(E.tok).join(' ');const same=k(toks)===k(E.parse(tCase.alg));
     $('tVerdict').textContent=same?'Correct.':'Correct. That works, and it differs from your saved alg.';$('tVerdict').className='verdict ok';}
   else{$('tVerdict').textContent="Not quite. That leaves the case unsolved. Press Play my alg to watch what it does.";$('tVerdict').className='verdict bad';}
   tp.reveal();});
@@ -745,9 +819,9 @@ function card(c){const h=stats[c.id]||[];const s=statusOf(c);
       <select data-status aria-label="Status"><option value="learning"${s==='learning'?' selected':''}>Learning</option><option value="learned"${s==='learned'?' selected':''}>Learned</option><option value="skip"${s==='skip'?' selected':''}>Skip</option></select>
       ${c.custom?'<button class="btn" data-remove>Remove</button>':(c.alg!==c.def?'<button class="btn" data-reset>Reset</button>':'')}</span></div></div>`;}
 function toast(msg){const t=$('toast');t.textContent=msg;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,1800);}
-function checkAlg(alg,c){try{parseAlg(alg)}catch(e){return e.message}
-  if(!parseAlg(alg).length)return'Enter some moves.';
-  if(c&&!c.custom)return solvesCase(applyAlg(caseState({alg:c.def},''),alg),c.mode)?null:"That doesn't solve "+c.name+". Check for a typo.";
+function checkAlg(alg,c){const E=eng(c);let toks;try{toks=E.parse(alg)}catch(e){return e.message}
+  if(!toks.length)return'Enter some moves.';
+  if(c&&!c.custom)return solvesCase(E.apply(caseState({alg:c.def,size:c.size},''),toks),c.mode,E)?null:"That doesn't solve "+c.name+". Check for a typo.";
   const a=analyse(alg);if(!a.upright)return'This alg leaves the cube rotated. Undo any x or z rotation at the end.';
   if(!a.f2l)return'This alg breaks the first two layers.';
   return null;}
