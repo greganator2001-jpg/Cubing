@@ -1,0 +1,54 @@
+{
+  "name": "last-layer-lab",
+  "productName": "Last Layer Lab",
+  "version": "1.0.0",
+  "description": "3x3 speedcubing algorithm trainer",
+  "main": "main.js",
+  "author": "greganator2001",
+  "license": "MIT",
+  "repository": "https://github.com/greganator2001-jpg/Cubing",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win nsis --x64",
+    "release": "electron-builder --win nsis --x64 --publish always"
+  },
+  "build": {
+    "appId": "com.greganator.lastlayerlab",
+    "productName": "Last Layer Lab",
+    "files": [
+      "main.js",
+      "preload.js",
+      "app/**/*"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.png",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Last Layer Lab",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "greganator2001-jpg",
+        "repo": "Cubing",
+        "releaseType": "release"
+      }
+    ]
+  },
+  "dependencies": {
+    "electron-updater": "^6.3.9"
+  },
+  "devDependencies": {
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8"
+  }
+}
