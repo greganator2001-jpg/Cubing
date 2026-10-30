@@ -1,0 +1,25 @@
+name: Release
+
+# Builds the Windows installer and publishes it as a GitHub release.
+# Installed copies of Last Layer Lab update from the latest release.
+# Run it from the Actions tab after bumping "version" in package.json.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build and publish installer
+        run: npx electron-builder --win nsis --x64 --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
