@@ -16,7 +16,7 @@
 @font-face{font-family:"JetBrains Mono";font-weight:400;font-style:normal;font-display:swap;src:url(vendor/fonts/jetbrains-mono-latin-400-normal.woff2) format("woff2")}
 @font-face{font-family:"JetBrains Mono";font-weight:500;font-style:normal;font-display:swap;src:url(vendor/fonts/jetbrains-mono-latin-500-normal.woff2) format("woff2")}
 
-/* Layout: tool shell — tab bar, then a two-column workspace (3D case + timer | session) that stacks on phones */
+/* Layout: header (name + tabs), one toolbar (cube + sections), then a workspace: case card (3D | info, timer under) beside a session column; stacks on phones */
 :root{
   --bg:#f3f4f1; --surface:#ffffff; --sunk:#e8eae4; --line:#d5d8cf;
   --fg:#1b1d19; --muted:#636a5c; --accent:#2f5bd3; --accent-fg:#ffffff;
@@ -39,7 +39,7 @@
 body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 40px}
 .wrap{max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
-header{display:flex;flex-wrap:wrap;align-items:center;gap:14px 24px;justify-content:space-between}
+header{display:flex;flex-wrap:wrap;align-items:center;gap:12px 24px;justify-content:space-between}
 .brand{display:flex;align-items:baseline;gap:10px}
 .brand h1{font-family:var(--f-display);font-weight:800;font-size:1.5rem;margin:0;letter-spacing:-.02em}
 .brand small{font-family:var(--f-mono);color:var(--muted);font-size:.75rem}
@@ -62,19 +62,30 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 .picker{position:relative;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .picker-btn{display:flex;align-items:center;gap:8px;max-width:100%}
 .picker-btn .caret{color:var(--muted);font-size:.75rem}
-.picker-panel{position:absolute;top:calc(100% + 6px);left:0;z-index:20;width:min(560px,calc(100vw - 32px));background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.18);display:flex;flex-direction:column;overflow:hidden}
-.picker-panel input{font:400 .95rem var(--f-body);border:0;border-bottom:1px solid var(--line);background:var(--surface);color:var(--fg);padding:12px 14px}
-.picker-list{max-height:min(60vh,520px);overflow:auto;padding:6px}
-.pick-group{font:600 .7rem var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:10px 8px 4px}
-.pick-row{display:flex;gap:12px;align-items:center;width:100%;text-align:left;border:0;background:none;color:var(--fg);padding:6px 8px;border-radius:8px;cursor:pointer;font:inherit}
-.pick-row:hover,.pick-row:focus-visible{background:var(--sunk)}
-.pick-row.sel{background:var(--sunk);box-shadow:inset 3px 0 0 var(--accent)}
-.pick-row svg,.pick-row img{width:52px;height:52px;flex:none}
-.pick-row .pn{font-weight:600}
-.pick-row .pa{font-family:var(--f-mono);font-size:.78rem;color:var(--muted);word-break:break-word}
-.pick-row .rand{width:52px;height:52px;flex:none;border-radius:8px;background:var(--sunk);display:grid;place-items:center;font-family:var(--f-display);font-weight:700;font-size:1.3rem;color:var(--accent)}
+.picker-panel{position:absolute;top:calc(100% + 6px);left:0;z-index:20;width:min(780px,calc(100vw - 32px));background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.18);display:flex;flex-direction:column;overflow:hidden}
+.pick-top{display:flex;gap:8px;align-items:center;padding:10px;border-bottom:1px solid var(--line)}
+.pick-top input{flex:1;min-width:0;font:400 .95rem var(--f-body);border:1px solid var(--line);border-radius:8px;background:var(--sunk);color:var(--fg);padding:9px 12px}
+.pick-top .btn.sel{border-color:var(--accent);color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.picker-list{max-height:min(64vh,600px);overflow:auto;padding:4px 12px 14px}
+.pick-group{font:600 .7rem var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:14px 2px 8px}
+.pick-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:8px}
+.pick-tile{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;border:1px solid var(--line);background:var(--surface);color:var(--fg);padding:10px 8px 9px;border-radius:12px;cursor:pointer;font:inherit;min-width:0}
+.pick-tile:hover,.pick-tile:focus-visible{border-color:var(--muted);background:var(--sunk)}
+.pick-tile svg,.pick-tile img{width:100px;height:100px}
+.pick-tile .pn{font:700 .95rem var(--f-display)}
+.pick-tile .pa{font:400 .7rem/1.35 var(--f-mono);color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word}
+.pick-tile.sel{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent);background:var(--sunk)}
+.pick-tile.sel::after{content:"Current";position:absolute;top:6px;right:6px;font:700 .62rem var(--f-body);letter-spacing:.06em;text-transform:uppercase;background:var(--accent);color:var(--accent-fg);padding:2px 6px;border-radius:99px}
+.pick-none{color:var(--muted);padding:20px 4px}
 .solve-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
-.case-head .mini svg{width:92px;height:92px}
+.case-head .mini svg{width:84px;height:84px}
+.drill-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:760px){.drill-grid{grid-template-columns:minmax(0,1fr)}}
+.info{display:flex;flex-direction:column;gap:14px;min-width:0}
+.block{display:flex;flex-direction:column;gap:6px}
+.top-row{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.linkbtn{border:0;background:none;color:var(--accent);font:600 .85rem var(--f-body);cursor:pointer;padding:4px 2px}
+.note{color:var(--muted);font-size:.8rem}
 .case-meta{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1}
 .case-name{font-family:var(--f-display);font-weight:700;font-size:1.9rem;letter-spacing:-.02em;margin:0;line-height:1.1}
 .case-name.hidden-name{color:var(--muted)}
@@ -82,13 +93,14 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 
 /* 3D viewer */
 .viewer{background:var(--stage);border-radius:12px;position:relative;overflow:hidden}
-.cube3d{height:300px;width:100%;cursor:grab;touch-action:none}
+.cube3d{height:320px;width:100%;cursor:grab;touch-action:none}
 .cube3d:active{cursor:grabbing}
 .cube3d canvas{display:block;width:100%!important;height:100%!important}
 .viewer .drag-hint{position:absolute;top:10px;left:12px;font-size:.75rem;color:var(--muted);pointer-events:none}
 .viewer-bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:10px 12px;border-top:1px solid var(--line);background:var(--surface)}
 .viewer-bar .speed{display:flex;align-items:center;gap:6px;font-size:.8rem;color:var(--muted);margin-left:auto}
-.viewer-bar input[type=range]{width:90px}
+.viewer-bar input[type=range]{width:72px}
+.mini:empty{display:none}
 .alg-line{font-family:var(--f-mono);font-size:1.05rem;display:flex;flex-wrap:wrap;gap:4px 8px;min-height:1.6em}
 .alg-line span{padding:0 3px;border-radius:4px}
 .alg-line span.done{color:var(--muted)}
@@ -96,8 +108,8 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 .alg-line.concealed{color:var(--muted);font-family:var(--f-body);font-size:.88rem}
 .no3d{padding:30px;text-align:center;color:var(--muted)}
 
-.timer{user-select:none;-webkit-user-select:none;touch-action:none;cursor:pointer;border-radius:12px;background:var(--sunk);text-align:center;padding:22px 10px 16px}
-.time{font-family:var(--f-display);font-weight:700;font-size:clamp(3rem,10vw,5.2rem);line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.04em}
+.timer{user-select:none;-webkit-user-select:none;touch-action:none;cursor:pointer;border-radius:12px;background:var(--sunk);text-align:center;padding:18px 10px 14px}
+.time{font-family:var(--f-display);font-weight:700;font-size:clamp(2.8rem,9vw,4.6rem);line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.04em}
 .timer.hold .time{color:var(--hold)} .timer.ready .time{color:var(--ready)}
 .timer .hint{color:var(--muted);font-size:.85rem;margin-top:10px;word-break:break-word}
 .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
@@ -115,8 +127,8 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 .cubes button{font:700 .95rem var(--f-display);border:0;background:none;color:var(--muted);padding:7px 14px;border-radius:7px;cursor:pointer;font-variant-numeric:tabular-nums}
 .cubes button[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg)}
 .head-mid{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.secbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px;background:var(--surface);border:1px solid var(--line);border-radius:12px}
-.secbar .label{margin-right:4px}
+.secbar{display:flex;align-items:center;gap:10px 14px;flex-wrap:wrap;padding:8px;background:var(--surface);border:1px solid var(--line);border-radius:14px}
+.secchips{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .chip{font:600 .86rem var(--f-body);border:1px solid var(--line);background:var(--surface);color:var(--fg);padding:6px 13px;border-radius:99px;cursor:pointer;display:inline-flex;gap:7px;align-items:baseline}
 .chip .n{font-weight:500;color:var(--muted);font-size:.78rem}
 .chip[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
@@ -125,6 +137,32 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 .chip.parity[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg)}
 .secdiv{display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:.78rem;padding:0 4px}
 .secdiv::before{content:"";width:1px;height:20px;background:var(--line)}
+
+/* Timer tab */
+.tm-scr{font-family:var(--f-mono);font-size:1.15rem;line-height:1.55;background:var(--sunk);border-radius:10px;padding:14px 16px;word-break:break-word;min-height:3.2em}
+.tm-scr.long{font-size:.92rem}
+.tm-grid{display:grid;grid-template-columns:minmax(0,1fr) 230px;gap:16px;align-items:stretch}
+@media (max-width:760px){.tm-grid{grid-template-columns:minmax(0,1fr)}}
+.tm-timer{user-select:none;-webkit-user-select:none;touch-action:none;cursor:pointer;border-radius:12px;background:var(--sunk);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:28px 10px;min-height:230px}
+.tm-time{font-family:var(--f-display);font-weight:700;font-size:clamp(3.4rem,12vw,6.6rem);line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.04em}
+.tm-timer.hold .tm-time{color:var(--hold)} .tm-timer.ready .tm-time{color:var(--ready)}
+.tm-timer.insp .tm-time{color:var(--accent)} .tm-timer.warn .tm-time{color:var(--warn)}
+.tm-timer .hint{color:var(--muted);font-size:.85rem;text-align:center}
+.tm-prev{background:var(--stage);border-radius:12px;overflow:hidden;position:relative}
+.tm-prev .cube3d{height:230px}
+.tm-prev .label{position:absolute;top:10px;left:12px}
+.tm-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 8px}
+.tm-list{list-style:none;margin:0;padding:0;max-height:380px;overflow:auto}
+.tm-list li{display:grid;grid-template-columns:2.4em 1fr auto;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--line);font-size:.9rem}
+.tm-list li:last-child{border-bottom:0}
+.tm-list .i{color:var(--muted);font-size:.78rem;font-variant-numeric:tabular-nums}
+.tm-list .t{font-family:var(--f-display);font-weight:600;font-variant-numeric:tabular-nums}
+.tm-list .acts{display:flex;gap:2px}
+.tm-list .acts button{border:1px solid transparent;background:none;color:var(--muted);font:600 .72rem var(--f-body);padding:3px 6px;border-radius:6px;cursor:pointer}
+.tm-list .acts button:hover{border-color:var(--line);color:var(--fg)}
+.tm-list .acts button[aria-pressed="true"]{background:var(--warn);color:#fff}
+body.timing header,body.timing .secbar,body.timing #view-timer .side,body.timing #tmTop,body.timing #tmScr,body.timing .tm-prev,body.timing #tmOpts{opacity:.06;pointer-events:none}
+@media (prefers-reduced-motion:no-preference){header,.secbar,#view-timer .side,#tmTop,#tmScr,.tm-prev,#tmOpts{transition:opacity .2s}}
 
 /* Quiz */
 .quiz{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px;display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center}
@@ -155,12 +193,13 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0}
 .card.off{opacity:.55}
 .card-top{display:flex;gap:12px;align-items:center}
-.card-top svg,.card-top img{width:80px;height:80px;flex:none}
+.card-top svg,.card-top img{width:96px;height:96px;flex:none}
 .card-top .nm{font-family:var(--f-display);font-weight:700;font-size:1.1rem}
 .card-top .st{font-family:var(--f-mono);font-size:.78rem;color:var(--muted);font-variant-numeric:tabular-nums}
 .card textarea{font:400 .82rem/1.4 var(--f-mono);width:100%;resize:vertical;min-height:2.8em;border:1px solid var(--line);border-radius:7px;background:var(--sunk);color:var(--fg);padding:6px 8px}
 .card select{font:500 .82rem var(--f-body);border:1px solid var(--line);border-radius:7px;background:var(--surface);color:var(--fg);padding:5px 6px}
 .card-foot{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.card-foot .st{font-size:.8rem;color:var(--ready);font-weight:600}
 .pill{font:600 .7rem var(--f-body);letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:99px;border:1px solid currentColor}
 .pill.learning{color:var(--warn)} .pill.learned{color:var(--ready)} .pill.skip{color:var(--muted)}
 .err{color:var(--hold);font-size:.8rem}
@@ -172,7 +211,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 @media (prefers-reduced-motion:no-preference){.timer .time{transition:color .08s}}
 html,body{margin:0}
 .brand-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.ver{font-family:var(--f-mono);font-size:.72rem;color:var(--muted);background:none;border:0;cursor:pointer;padding:4px 6px;border-radius:6px}
+.ver{align-self:center;font-family:var(--f-mono);font-size:.72rem;color:var(--muted);background:none;border:0;cursor:pointer;padding:4px 6px;border-radius:6px}
 .ver:hover{background:var(--sunk);color:var(--fg)}
 .updbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--accent);border-radius:12px;padding:10px 14px}
 .updbar .msg{flex:1;min-width:0}
@@ -182,61 +221,71 @@ html,body{margin:0}
 
 <div class="wrap">
   <header>
-    <div class="brand"><h1>Last Layer Lab</h1><small>F2L · OLL · PLL · Parity</small><button class="ver" id="verBtn" title="Check for updates">v—</button></div>
-    <div class="cubes" role="group" aria-label="Cube" id="cubeSel">
-      <button data-cube="3" aria-pressed="true">3x3</button><button data-cube="4" aria-pressed="false">4x4</button><button data-cube="5" aria-pressed="false">5x5</button><button data-cube="7" aria-pressed="false">7x7</button><button data-cube="9" aria-pressed="false">9x9</button>
-    </div>
+    <div class="brand"><h1>Last Layer Lab</h1><button class="ver" id="verBtn" title="Check for updates">v—</button></div>
     <nav role="tablist">
       <button role="tab" id="tab-drill" aria-selected="true" data-view="drill">Drill</button>
+      <button role="tab" id="tab-timer" aria-selected="false" data-view="timer">Timer</button>
       <button role="tab" id="tab-test" aria-selected="false" data-view="test">Test</button>
       <button role="tab" id="tab-quiz" aria-selected="false" data-view="quiz">Recognize</button>
       <button role="tab" id="tab-cases" aria-selected="false" data-view="cases">Cases</button>
     </nav>
   </header>
   <div class="updbar" id="updBar" hidden><span class="msg" id="updMsg"></span><button class="btn primary" id="updGo" hidden>Restart and update</button><button class="btn" id="updClose">Dismiss</button><div class="bar" id="updProg" hidden><i id="updFill"></i></div></div>
-  <div class="secbar" id="secbar" role="group" aria-label="What you're practicing"></div>
+  <div class="secbar" id="secbar">
+    <div class="cubes" role="group" aria-label="Cube" id="cubeSel">
+      <button data-cube="3" aria-pressed="true">3x3</button><button data-cube="4" aria-pressed="false">4x4</button><button data-cube="5" aria-pressed="false">5x5</button><button data-cube="7" aria-pressed="false">7x7</button><button data-cube="9" aria-pressed="false">9x9</button>
+    </div>
+    <div class="secchips" id="secChips" role="group" aria-label="What you're practicing"></div>
+  </div>
 
   <!-- DRILL -->
   <section id="view-drill" class="split">
     <div class="stage">
-      <div class="picker">
-        <button class="btn picker-btn" id="pickBtn" aria-expanded="false" aria-haspopup="listbox"><span id="pickLabel">Random case</span><span class="caret">▼</span></button>
-        <span class="empty" id="pickNote">Pick a case to practice it on repeat.</span>
-        <div class="picker-panel" id="pickPanel" hidden>
-          <input id="pickSearch" placeholder="Search by name or moves" autocomplete="off" aria-label="Search cases">
-          <div class="picker-list" id="pickList" role="listbox"></div>
+      <div class="top-row">
+        <div class="picker">
+          <button class="btn picker-btn" id="pickBtn" aria-expanded="false" aria-haspopup="listbox"><span id="pickLabel">Random case</span><span class="caret">▼</span></button>
+          <button class="linkbtn" id="pickClear" hidden>Back to random</button>
+          <div class="picker-panel" id="pickPanel" hidden>
+            <div class="pick-top"><input id="pickSearch" placeholder="Search by name or moves" autocomplete="off" aria-label="Search cases"><button class="btn" id="pickRandom">Random mix</button></div>
+            <div class="picker-list" id="pickList" role="listbox"></div>
+          </div>
         </div>
-      </div>
-      <div class="case-head">
-        <div class="mini" id="drillMini"></div>
-        <div class="case-meta">
-          <span class="label" id="drillGroup">PLL</span>
-          <h2 class="case-name" id="drillName">—</h2>
-          <div><span class="label">Setup: apply to a solved cube, yellow on top, green in front</span>
-            <div class="setup" id="drillSetup">—</div>
-            <div class="empty" id="bigNote" hidden>A number before a move turns only that layer, counted in from that face: 2R is the second layer from the right, 3L the third from the left. Rw and Uw turn the outer two layers together.</div></div>
-        </div>
-      </div>
-      <div class="viewer">
-        <div class="cube3d" id="drill3d"></div>
-        <span class="drag-hint">Drag to turn the cube</span>
-        <div class="viewer-bar">
-          <button class="btn" id="dReset">Reset</button>
-          <button class="btn" id="dStep">Step</button>
-          <button class="btn primary" id="dPlay">Play solution</button>
-          <label class="speed" for="dSpeed">Speed <input type="range" id="dSpeed" min="120" max="900" value="420" style="direction:rtl"></label>
-        </div>
-      </div>
-      <div class="solve-head"><span class="label">Solution</span><label class="toggle"><input type="checkbox" id="optHideSolve"> Hide solution</label></div>
-      <div class="alg-line concealed" id="drillAlg">Algorithm hidden. Press Show alg or Play solution.</div>
-      <div class="timer" id="timer"><div class="time" id="time">0.00</div>
-        <div class="hint" id="timerHint">Hold space (or press and hold here), release to start. Any key stops.</div></div>
-      <div class="controls">
-        <button class="btn" id="btnReveal" hidden>Show solution</button>
         <button class="btn" id="btnSkip">Next case</button>
-        <span style="flex:1"></span>
+      </div>
+      <div class="drill-grid">
+        <div class="viewer">
+          <div class="cube3d" id="drill3d"></div>
+          <span class="drag-hint">Drag to turn</span>
+          <div class="viewer-bar">
+            <button class="btn" id="dReset">Reset</button>
+            <button class="btn" id="dStep">Step</button>
+            <button class="btn primary" id="dPlay">Play</button>
+            <label class="speed" for="dSpeed">Speed <input type="range" id="dSpeed" min="120" max="900" value="420" style="direction:rtl"></label>
+          </div>
+        </div>
+        <div class="info">
+          <div class="case-head">
+            <div class="mini" id="drillMini"></div>
+            <div class="case-meta">
+              <span class="label" id="drillGroup">PLL</span>
+              <h2 class="case-name" id="drillName">—</h2>
+            </div>
+          </div>
+          <div class="block"><span class="label">Setup · yellow top, green front</span>
+            <div class="setup" id="drillSetup">—</div>
+            <div class="note" id="bigNote" hidden>2R = only the 2nd layer from the right · Rw = outer two layers</div></div>
+          <div class="block">
+            <div class="solve-head"><span class="label">Solution</span><label class="toggle"><input type="checkbox" id="optHideSolve"> Hide</label></div>
+            <div class="alg-line concealed" id="drillAlg">Solution hidden.</div>
+            <button class="btn" id="btnReveal" hidden style="align-self:flex-start">Show solution</button>
+          </div>
+        </div>
+      </div>
+      <div class="timer" id="timer"><div class="time" id="time">0.00</div>
+        <div class="hint" id="timerHint">Hold space (or press here), release to start. Any key stops.</div></div>
+      <div class="controls">
         <label class="toggle"><input type="checkbox" id="optHide"> Hide case name</label>
-        <label class="toggle"><input type="checkbox" id="optWeak" checked> Favor slow cases</label>
+        <label class="toggle"><input type="checkbox" id="optWeak" checked> Show slow cases more often</label>
       </div>
     </div>
     <aside class="side">
@@ -255,41 +304,79 @@ html,body{margin:0}
     </aside>
   </section>
 
+  <!-- TIMER -->
+  <section id="view-timer" class="split" hidden>
+    <div class="stage">
+      <div class="top-row" id="tmTop"><span class="label" id="tmTitle">3x3 scramble</span><button class="btn" id="tmNew">New scramble</button></div>
+      <div class="tm-scr" id="tmScr">—</div>
+      <div class="tm-grid">
+        <div class="tm-timer" id="tmTimer"><div class="tm-time" id="tmTime">0.00</div><div class="hint" id="tmHint">Hold space (or press here), release to start. Any key stops.</div></div>
+        <div class="tm-prev"><div class="cube3d" id="tm3d"></div><span class="label">Scrambled</span></div>
+      </div>
+      <div class="controls" id="tmOpts">
+        <label class="toggle"><input type="checkbox" id="tmInsp"> 15-second inspection</label>
+        <span class="note">Scramble with yellow on top and green in front.</span>
+      </div>
+    </div>
+    <aside class="side">
+      <div class="panel">
+        <span class="label" id="tmSessLabel">3x3 session</span>
+        <div class="tm-stats">
+          <div class="stat"><div class="label">Solves</div><div class="v" id="tmN">0</div></div>
+          <div class="stat"><div class="label">Best</div><div class="v" id="tmBest">—</div></div>
+          <div class="stat"><div class="label">Mean</div><div class="v" id="tmMean">—</div></div>
+          <div class="stat"><div class="label">Ao5</div><div class="v" id="tmAo5">—</div></div>
+          <div class="stat"><div class="label">Ao12</div><div class="v" id="tmAo12">—</div></div>
+          <div class="stat"><div class="label">Ao50</div><div class="v" id="tmAo50">—</div></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="top-row"><span class="label">Times</span><span><button class="linkbtn" id="tmClear">Clear session</button><button class="linkbtn" id="tmClearYes" hidden>Yes, clear all</button></span></div>
+        <ul class="tm-list" id="tmList"></ul>
+      </div>
+    </aside>
+  </section>
+
   <!-- TEST -->
   <section id="view-test" class="split" hidden>
     <div class="stage">
-      <div class="seg" role="group" aria-label="Test type">
-        <button class="btn" data-test="recall" aria-pressed="true">Recall the alg</button>
-        <button class="btn" data-test="ll" aria-pressed="false">Last layer scramble</button>
-        <button class="btn" data-test="f2l" aria-pressed="false">F2L pair scramble</button>
-      </div>
-      <div id="testRecall" class="case-meta" style="gap:10px">
-        <span class="label" id="tGroup">—</span>
-        <h2 class="case-name" id="tName">—</h2>
-        <span class="empty">Type the algorithm you'd use for this case. Any extra U turns at the start or end are fine. It's checked on a virtual cube, so any working alg counts.</span>
-        <form class="answer" id="tForm"><input id="tInput" placeholder="R U R' U' …" autocomplete="off" spellcheck="false" aria-label="Your algorithm"><button class="btn primary" type="submit">Check</button></form>
-        <div class="verdict" id="tVerdict"></div>
-      </div>
-      <div id="testScr" hidden style="display:flex;flex-direction:column;gap:10px">
-        <span class="label" id="scrLabel">Scramble · yellow on top, green in front</span>
-        <div class="scramble" id="scrText">—</div>
-        <span class="empty" id="scrHint"></span>
-      </div>
-      <div class="viewer">
-        <div class="cube3d" id="test3d"></div>
-        <span class="drag-hint">Drag to turn the cube</span>
-        <div class="viewer-bar">
-          <button class="btn" id="tReset">Reset</button>
-          <button class="btn" id="tStep">Step</button>
-          <button class="btn primary" id="tPlay">Play solution</button>
-          <button class="btn" id="tMine" hidden>Play my alg</button>
-          <label class="speed" for="tSpeed">Speed <input type="range" id="tSpeed" min="120" max="900" value="420" style="direction:rtl"></label>
+      <div class="top-row">
+        <div class="seg" role="group" aria-label="Test type">
+          <button class="btn" data-test="recall" aria-pressed="true">Recall the alg</button>
+          <button class="btn" data-test="ll" aria-pressed="false">Last layer scramble</button>
+          <button class="btn" data-test="f2l" aria-pressed="false">F2L pair scramble</button>
         </div>
-      </div>
-      <div class="alg-line concealed" id="testAlg">Solution hidden.</div>
-      <div class="controls">
-        <button class="btn" id="tReveal">Reveal answer</button>
         <button class="btn primary" id="tNext">New test</button>
+      </div>
+      <div class="drill-grid">
+        <div class="viewer">
+          <div class="cube3d" id="test3d"></div>
+          <span class="drag-hint">Drag to turn</span>
+          <div class="viewer-bar">
+            <button class="btn" id="tReset">Reset</button>
+            <button class="btn" id="tStep">Step</button>
+            <button class="btn primary" id="tPlay">Play</button>
+            <button class="btn" id="tMine" hidden>Play mine</button>
+            <label class="speed" for="tSpeed">Speed <input type="range" id="tSpeed" min="120" max="900" value="420" style="direction:rtl"></label>
+          </div>
+        </div>
+        <div class="info">
+          <div id="testRecall" class="info">
+            <div class="case-meta"><span class="label" id="tGroup">—</span><h2 class="case-name" id="tName">—</h2></div>
+            <div class="block"><span class="label">Your alg</span>
+              <form class="answer" id="tForm"><input id="tInput" placeholder="R U R' U' …" autocomplete="off" spellcheck="false" aria-label="Your algorithm"><button class="btn primary" type="submit">Check</button></form>
+              <div class="note">Checked on a virtual cube, so any alg that works counts. Extra U turns are fine.</div></div>
+            <div class="verdict" id="tVerdict"></div>
+          </div>
+          <div id="testScr" class="info" hidden>
+            <div class="block"><span class="label" id="scrLabel">Scramble · yellow top, green front</span>
+              <div class="scramble" id="scrText">—</div></div>
+            <div class="empty" id="scrHint"></div>
+          </div>
+          <div class="block"><span class="label">Answer</span>
+            <div class="alg-line concealed" id="testAlg">Hidden.</div>
+            <button class="btn" id="tReveal" style="align-self:flex-start">Reveal answer</button></div>
+        </div>
       </div>
     </div>
     <aside class="side">
@@ -302,8 +389,8 @@ html,body{margin:0}
         </div>
       </div>
       <div class="panel" id="scrHelp">
-        <span class="label">How the scrambles work</span>
-        <p class="empty" style="margin:0">Last layer scrambles chain a random edge case, corner case and PLL from the 3x3 sections you have on, so you recognize and solve each step in order. F2L scrambles hide one pair under a messy top layer. Reveal shows the cases the generator used; if your algs differ, the middle steps can too.</p>
+        <span class="label">About the scrambles</span>
+        <p class="empty" style="margin:0">Last layer scrambles chain an edge case, a corner case and a PLL from your sections. F2L scrambles hide one pair under a messy top. Reveal shows which cases were used.</p>
       </div>
     </aside>
   </section>
@@ -320,7 +407,7 @@ html,body{margin:0}
   <!-- CASES -->
   <section id="view-cases" hidden>
     <div class="group" style="gap:18px">
-      <p class="empty" style="margin:0">Cases set to Skip are left out of drills, tests and quizzes. Edit any algorithm to the one you use; it's checked on a virtual cube before saving. F2L cases are for the front-right slot.</p>
+      <p class="empty" style="margin:0">Edit any alg to the one you use (it's checked on a virtual cube before saving). Skipped cases are left out of practice. F2L cases use the front-right slot.</p>
       <div id="groups" style="display:flex;flex-direction:column;gap:28px"></div>
       <div class="group">
         <div class="group-head"><h2>Add your own</h2><span class="count">Any last-layer alg: full OLL, COLL, ZBLL…</span></div>
@@ -647,10 +734,11 @@ class Cube3D{
 let snapCube=null;const snapCache={};
 function snapshot(c,auf,st){const k=c.id+'|'+c.alg+'|'+auf;if(!st&&snapCache[k])return snapCache[k];
   if(!HAS3D)return null;
-  try{if(!snapCube){snapCube=new Cube3D(document.createElement('div'),false);snapCube.r.setSize(240,240,false);snapCube.cam.aspect=1;snapCube.cam.updateProjectionMatrix();}
+  try{if(!snapCube){snapCube=new Cube3D(document.createElement('div'),false);snapCube.r.setSize(240,240,false);snapCube.cam.aspect=1;snapCube.cam.position.set(0,0,9.4);snapCube.cam.updateProjectionMatrix();}
     snapCube.build(st||caseState(c,auf),c.mode,eng(c));snapCube.r.render(snapCube.scene,snapCube.cam);
     const url=snapCube.r.domElement.toDataURL('image/png');if(!st)snapCache[k]=url;return url;}catch(e){return null;}}
-function thumb(c,auf){if(c.mode==='f2l'||c.mode==='centers'){const u=snapshot(c,auf);if(u)return `<img src="${u}" alt="${c.name} case">`;}
+function thumb(c,auf){if(c.stage)c={...c,size:3,stage:false}; // after reduction the case looks the same, and a 3x3 picture reads far better
+  if(c.mode==='f2l'||c.mode==='centers'){const u=snapshot(c,auf);if(u)return `<img src="${u}" alt="${c.name} case">`;}
   return diagram(c,auf);}
 
 // ---- playback controller shared by drill and test ----
@@ -660,7 +748,7 @@ function makePlayer(elId,algElId,ids){
   if(!cube)el.innerHTML='<div class="no3d">3D view needs WebGL, which this browser has turned off.</div>';
   const P={cube,start:null,mode:'pll',eng:E3,tokens:[],idx:0,shown:false,playing:false};
   const speed=document.getElementById(ids.speed);
-  const paint=()=>{if(!P.shown){algEl.className='alg-line concealed';algEl.textContent=P.hiddenText||'Algorithm hidden. Press Show alg or Play solution.';return;}
+  const paint=()=>{if(!P.shown){algEl.className='alg-line concealed';algEl.textContent=P.hiddenText||'Hidden.';return;}
     algEl.className='alg-line';algEl.innerHTML=P.tokens.length?P.tokens.map((t,i)=>`<span class="${i<P.idx?'done':i===P.idx&&P.playing?'now':''}">${P.eng.tok(t)}</span>`).join(''):'<span>Already solved</span>';};
   P.load=(state,mode,tokens,hiddenText,e)=>{P.start=cloneSt(state);P.mode=mode;P.eng=e||E3;P.tokens=tokens;P.idx=0;P.shown=false;P.playing=false;P.hiddenText=hiddenText;
     if(cube){cube.stop();cube.build(cloneSt(state),mode,P.eng);}paint();};
@@ -703,26 +791,31 @@ function loadCase(){
   const hide=$('optHide').checked;
   $('drillName').textContent=hide?'?':nameLabel(current);$('drillName').classList.toggle('hidden-name',hide);
   $('drillSetup').textContent=setupStr(current,currentAuf);$('bigNote').hidden=current.size===3||!!current.stage;
-  dp.load(st,current.mode,solveToks(current,currentAuf),'Solution hidden. Press Show solution or Play solution.',eng(current));
+  dp.load(st,current.mode,solveToks(current,currentAuf),'Solution hidden.',eng(current));
   if(!$('optHideSolve').checked)dp.reveal();$('btnReveal').hidden=!$('optHideSolve').checked;}
 // ---- case picker ----
 const pinKey=()=>cubeN===3?'pinned':'pinned'+cubeN;
 let pinned=store.get(pinKey(),null),pickBuilt=false;
 function updatePickLabel(){const c=pinned&&allCases().find(x=>x.id===pinned);
   $('pickLabel').textContent=c?`${c.group.startsWith('F2L')?'F2L':c.group.replace(' · Edges','').replace(' · Corners','')}: ${c.name}`:'Random case';
-  $('pickNote').textContent=c?'Staying on this case. Choose Random case to go back to a mix.':'Pick a case to practice it on repeat.';}
+  $('pickClear').hidden=!c;}
 function buildPicker(){const q=$('pickSearch').value.trim().toLowerCase();const cs=allCases();
   const match=c=>!q||(c.group+' '+nameLabel(c)).toLowerCase().includes(q)||c.alg.toLowerCase().includes(q);
-  let html=`<button class="pick-row${pinned?'':' sel'}" data-pick="" role="option"><span class="rand">?</span><span><span class="pn">Random case</span><br><span class="pa">Mix from your practice sets</span></span></button>`;
+  let html='';
+  $('pickRandom').classList.toggle('sel',!pinned);
   for(const g of [...new Set(cs.map(c=>c.group))]){const rows=cs.filter(c=>c.group===g&&match(c));if(!rows.length)continue;
-    html+=`<div class="pick-group">${g}</div>`+rows.map(c=>`<button class="pick-row${pinned===c.id?' sel':''}" data-pick="${c.id}" role="option">${thumb(c,'')}<span><span class="pn">${nameLabel(c)}</span><br><span class="pa">${c.alg}</span></span></button>`).join('');}
+    html+=`<div class="pick-group">${g}</div><div class="pick-grid">`+rows.map(c=>`<button class="pick-tile${pinned===c.id?' sel':''}" data-pick="${c.id}" role="option" aria-selected="${pinned===c.id}" title="${c.alg}">${thumb(c,'')}<span class="pn">${nameLabel(c)}</span><span class="pa">${c.alg}</span></button>`).join('')+'</div>';}
+  if(!html)html='<p class="pick-none">No cases match that search.</p>';
   $('pickList').innerHTML=html;}
 function openPicker(open){$('pickPanel').hidden=!open;$('pickBtn').setAttribute('aria-expanded',open);
   if(open){buildPicker();$('pickSearch').value='';$('pickSearch').focus();const sel=$('pickList').querySelector('.sel');if(sel)sel.scrollIntoView({block:'center'});}}
 $('pickBtn').onclick=e=>{e.stopPropagation();openPicker($('pickPanel').hidden);};
 $('pickSearch').addEventListener('input',buildPicker);
+const choose=id=>{pinned=id||null;store.set(pinKey(),pinned);openPicker(false);$('pickBtn').blur();loadCase();};
+$('pickRandom').onclick=()=>choose(null);
+$('pickClear').onclick=e=>{e.currentTarget.blur();choose(null);};
 $('pickList').addEventListener('click',e=>{const r=e.target.closest('[data-pick]');if(!r)return;
-  pinned=r.dataset.pick||null;store.set(pinKey(),pinned);openPicker(false);$('pickBtn').blur();loadCase();});
+  choose(r.dataset.pick);});
 document.addEventListener('click',e=>{if(!$('pickPanel').hidden&&!e.target.closest('.picker'))openPicker(false);});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('pickPanel').hidden){openPicker(false);$('pickBtn').focus();}});
 function renderSession(){
@@ -735,14 +828,14 @@ function renderSession(){
 function renderSecs(){const cs=allCases();const secs=sectionsFor(cubeN);
   const chip=k=>{const n=cs.filter(c=>secOf(c)===k&&statusOf(c)!=='skip').length;
     return `<button class="chip${k==='parity'||k==='centers'?' parity':''}" data-sec="${k}" aria-pressed="${isOn(cubeN,k)}">${SEC_LABEL[k]}<span class="n">${n}</span></button>`;};
-  let html=`<span class="label">${cubeN}x${cubeN} · Practicing</span>`;
-  if(cubeN>3)html+=chip(sectionsFor(cubeN)[0])+`<span class="secdiv">3x3 stage, after reduction</span>`+['f2l','oll','pll'].map(chip).join('');
+  let html='';
+  if(cubeN>3)html+=chip(sectionsFor(cubeN)[0])+`<span class="secdiv">3x3 stage</span>`+['f2l','oll','pll'].map(chip).join('');
   else html+=secs.map(chip).join('');
-  $('secbar').innerHTML=html;
+  $('secChips').innerHTML=html;
   document.querySelectorAll('[data-test="ll"],[data-test="f2l"]').forEach(b=>b.hidden=cubeN>3);$('scrHelp').hidden=cubeN>3;}
-$('secbar').addEventListener('click',e=>{const b=e.target.closest('[data-sec]');if(!b)return;
+$('secChips').addEventListener('click',e=>{const b=e.target.closest('[data-sec]');if(!b)return;
   (secOn[cubeN]=secOn[cubeN]||{})[b.dataset.sec]=!isOn(cubeN,b.dataset.sec);store.set('secs',secOn);renderSecs();loadCase();refreshView();});
-function refreshView(){const v=view();if(v==='quiz')loadQuiz();if(v==='cases')renderCases();if(v==='test'){testStarted=true;newTest();}}
+function refreshView(){const v=view();if(v==='timer'){newScramble();tmRender();}if(v==='quiz')loadQuiz();if(v==='cases')renderCases();if(v==='test'){testStarted=true;newTest();}}
 function setCube(N){cubeN=N;store.set('cube',N);document.querySelectorAll('#cubeSel button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.cube===N));
   pinned=store.get(pinKey(),null);if(N>3&&tMode!=='recall'){tMode='recall';document.querySelectorAll('[data-test]').forEach(x=>x.setAttribute('aria-pressed',x.dataset.test==='recall'));}
   renderSecs();loadCase();refreshView();}
@@ -804,8 +897,8 @@ function newTest(){
   if(tMode==='recall'){
     if(!pool.length){$('tName').textContent='Nothing to test';return;}
     tCase=rnd(pool);tAuf=aufFor(tCase);$('tGroup').textContent=tCase.group;$('tName').textContent=nameLabel(tCase);
-    tp.load(caseState(tCase,tAuf),tCase.mode,solveToks(tCase,tAuf),'Answer hidden. Type your alg above, or reveal.',eng(tCase));
-    $('tPlay').textContent='Play solution';return;}
+    tp.load(caseState(tCase,tAuf),tCase.mode,solveToks(tCase,tAuf),'Hidden. Type your alg, or reveal it.',eng(tCase));
+    $('tPlay').textContent='Play';return;}
   const all=allCases().filter(c=>statusOf(c)!=='skip');
   const pick=g=>{const p=all.filter(c=>c.group===g);return p.length?rnd(p):null;};
   // a random last layer = chained edge case, corner case, PLL (+ random AUFs)
@@ -827,8 +920,8 @@ function newTest(){
   $('scrText').textContent=simplify(noRot(faceOnly(invertAlg(solution))));
   const st=applyAlg(solvedCube(),invertAlg(solution));
   tReveal=reveal;
-  tp.load(st,'full',tMode==='f2l'?parseAlg(simplify(parseAlg(reveal[0][2]+' '+reveal[0][1].alg))):solTok,'Solution hidden. Solve it on your cube, then reveal or play.');
-  $('tPlay').textContent='Play solution';}
+  tp.load(st,'full',tMode==='f2l'?parseAlg(simplify(parseAlg(reveal[0][2]+' '+reveal[0][1].alg))):solTok,'Hidden. Solve it on your cube, then reveal or play.');
+  $('tPlay').textContent='Play';}
 function revealTest(){
   tp.reveal();
   if(tMode==='recall'){if(!tDone){tDone=true;tScore.n++;tScore.s=0;store.set('tscore',tScore);renderTScore();
@@ -883,7 +976,7 @@ function card(c){const h=stats[statKey(c)]||[];const s=statusOf(c);
       <div class="st">${h.length} solves<br>best ${fmt(best)} · avg ${fmt(a)}</div></div></div>
     <textarea id="alg-${c.id.replace(/\W/g,'_')}" data-alg spellcheck="false" aria-label="Algorithm for ${c.name}">${c.alg}</textarea>
     <span class="err" data-err></span>
-    <div class="card-foot"><span class="pill ${s}">${s}</span>
+    <div class="card-foot"><span class="st">${s==='learned'?'✓ Learned':s==='skip'?'Skipped':''}</span>
       <span style="display:flex;gap:6px">
       <select data-status aria-label="Status"><option value="learning"${s==='learning'?' selected':''}>Learning</option><option value="learned"${s==='learned'?' selected':''}>Learned</option><option value="skip"${s==='skip'?' selected':''}>Skip</option></select>
       ${c.custom?'<button class="btn" data-remove>Remove</button>':(c.alg!==c.def?'<button class="btn" data-reset>Reset</button>':'')}</span></div></div>`;}
@@ -911,11 +1004,78 @@ $('addForm').addEventListener('submit',e=>{e.preventDefault();const name=$('addN
   const err=checkAlg(alg,null);if(err){$('addErr').textContent=err;return;}
   custom.push({name,alg});store.set('custom',custom);$('addErr').textContent='';$('addName').value='';$('addAlg').value='';renderCases();renderSecs();toast('Added '+name);});
 
+// ---- speed timer ----
+const SCR_LEN={3:21,4:40,5:60,7:100,9:120};
+function genScramble(N){
+  const faces=['R','L','U','D','F','B'],axis={R:0,L:0,U:1,D:1,F:2,B:2};
+  const depths=N===3?[1]:Array.from({length:Math.floor(N/2)},(_,i)=>i+1); // 4x4/5x5: R, Rw · 7x7: up to 3Rw · 9x9: up to 4Rw
+  const out=[];let ax=-1,used=new Set();
+  while(out.length<SCR_LEN[N]){const f=rnd(faces),d=rnd(depths),k=f+d;
+    if(axis[f]===ax){if(used.has(k))continue;}else{ax=axis[f];used=new Set();}
+    used.add(k);out.push((d===1?f:(d===2?'':d)+f+'w')+rnd(['',"'",'2']));}
+  return out.join(' ');}
+let solves=store.get('solves',{}),tmScr='',tmCube=null;
+const tmList=()=>solves[cubeN]||(solves[cubeN]=[]);
+const tval=s=>s.pen==='DNF'?Infinity:s.t+(s.pen==='+2'?2000:0);
+function fmtT(ms){if(ms==null)return'—';if(ms===Infinity)return'DNF';const c=Math.floor(ms/10),cs=String(c%100).padStart(2,'0'),sec=Math.floor(c/100);
+  return sec>=60?Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0')+'.'+cs:sec+'.'+cs;}
+function aoN(list,n){if(list.length<n)return null;const v=list.slice(-n).map(tval).sort((a,b)=>a-b);const trim=n<=12?1:Math.ceil(n*.05);
+  const k=v.slice(trim,n-trim);return k.includes(Infinity)?Infinity:k.reduce((a,b)=>a+b,0)/k.length;}
+function tmRender(){const L=tmList(),fin=L.map(tval).filter(v=>v!==Infinity);
+  $('tmSessLabel').textContent=cubeN+'x'+cubeN+' session';$('tmTitle').textContent=cubeN+'x'+cubeN+' scramble';
+  $('tmN').textContent=L.length;$('tmBest').textContent=fin.length?fmtT(Math.min(...fin)):'—';
+  $('tmMean').textContent=fin.length?fmtT(fin.reduce((a,b)=>a+b,0)/fin.length):'—';
+  $('tmAo5').textContent=fmtT(aoN(L,5));$('tmAo12').textContent=fmtT(aoN(L,12));$('tmAo50').textContent=fmtT(aoN(L,50));
+  $('tmList').innerHTML=L.length?L.map((s,i)=>`<li title="${s.scr}"><span class="i">${i+1}</span><span class="t">${s.pen==='DNF'?'DNF <span class="i">('+fmtT(s.t)+')</span>':fmtT(tval(s))+(s.pen==='+2'?'+':'')}</span><span class="acts"><button data-pen="+2" data-i="${i}" aria-pressed="${s.pen==='+2'}">+2</button><button data-pen="DNF" data-i="${i}" aria-pressed="${s.pen==='DNF'}">DNF</button><button data-del="${i}" aria-label="Delete solve">✕</button></span></li>`).reverse().join('')
+    :'<li class="empty" style="display:block">No solves yet for this cube.</li>';}
+$('tmList').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const L=tmList();
+  if(b.dataset.del!==undefined)L.splice(+b.dataset.del,1);else{const s=L[+b.dataset.i];s.pen=s.pen===b.dataset.pen?'':b.dataset.pen;}
+  store.set('solves',solves);tmRender();});
+$('tmClear').onclick=()=>{$('tmClear').hidden=true;$('tmClearYes').hidden=false;setTimeout(()=>{$('tmClear').hidden=false;$('tmClearYes').hidden=true;},4000);};
+$('tmClearYes').onclick=()=>{solves[cubeN]=[];store.set('solves',solves);$('tmClear').hidden=false;$('tmClearYes').hidden=true;tmRender();};
+function newScramble(){tmScr=genScramble(cubeN);$('tmScr').textContent=tmScr;$('tmScr').classList.toggle('long',cubeN>=7);
+  if(HAS3D){try{if(!tmCube)tmCube=new Cube3D($('tm3d'));const e=engN(cubeN);tmCube.stop();tmCube.build(e.apply(e.solved(),e.parse(tmScr)),'full',e);}catch(err){}}}
+$('tmNew').onclick=e=>{e.currentTarget.blur();if(tm.state==='idle'||tm.state==='stopped')newScramble();};
+$('tmInsp').checked=store.get('insp',false);$('tmInsp').onchange=e=>{e.target.blur();store.set('insp',e.target.checked);};
+const tm={state:'idle',t0:0,insp0:0,raf:0,hold:0};
+const tmEl=$('tmTimer'),tmTimeEl=$('tmTime');
+function tmSet(st){tm.state=st;for(const c of['hold','ready','insp','warn'])tmEl.classList.remove(c);
+  if(st==='hold'||st==='ready')tmEl.classList.add(st);document.body.classList.toggle('timing',st==='running');}
+function tmLoop(){const now=performance.now();
+  if(tm.state==='running'){tmTimeEl.textContent=fmtT(now-tm.t0);}
+  else if(tm.inspecting&&(tm.state==='insp'||tm.state==='hold'||tm.state==='ready')){const el=(now-tm.insp0)/1000;
+    tmTimeEl.textContent=el<15?String(Math.ceil(15-el)):el<17?'+2':'DNF';
+    if(tm.state==='insp'){tmEl.classList.toggle('insp',el<8);tmEl.classList.toggle('warn',el>=8);}}
+  else return;tm.raf=requestAnimationFrame(tmLoop);}
+function tmPress(){
+  if(tm.state==='running'){cancelAnimationFrame(tm.raf);const t=performance.now()-tm.t0;tmSet('stopped');
+    const s={t,pen:tm.pen,scr:tmScr,at:Date.now()};tmList().push(s);store.set('solves',solves);tmTimeEl.textContent=s.pen==='DNF'?'DNF':fmtT(tval(s))+(s.pen==='+2'?'+':'');
+    $('tmHint').textContent='Saved. New scramble below.';tmRender();newScramble();return;}
+  if((tm.state==='idle'||tm.state==='stopped')&&$('tmInsp').checked){tm.inspecting=true;tm.insp0=performance.now();tm.armed=false;tmSet('insp');
+    $('tmHint').textContent='Inspecting. Hold space when ready, release to start.';cancelAnimationFrame(tm.raf);tmLoop();return;}
+  if(tm.state==='insp'&&!tm.armed)return; // ignore the key-repeat of the press that started inspection
+  if(tm.state==='idle'||tm.state==='stopped'||tm.state==='insp'){tmSet('hold');if(!tm.inspecting)tmTimeEl.textContent='0.00';tm.hold=setTimeout(()=>{if(tm.state==='hold')tmSet('ready');},300);}}
+function tmRelease(){
+  if(tm.state==='insp'){tm.armed=true;return;}
+  if(tm.state==='hold'){clearTimeout(tm.hold);tmSet(tm.inspecting?'insp':'idle');return;}
+  if(tm.state==='ready'){const el=tm.inspecting?performance.now()-tm.insp0:0;tm.pen=el>17000?'DNF':el>15000?'+2':'';tm.inspecting=false;
+    tmSet('running');tm.t0=performance.now();$('tmHint').textContent='Any key stops.';cancelAnimationFrame(tm.raf);tmLoop();return;}
+  if(tm.state==='stopped')tmSet('idle');}
+document.addEventListener('keydown',e=>{if(view()!=='timer'||typing()||e.repeat)return;
+  if(tm.state==='running'){e.preventDefault();tmPress();return;}
+  if(e.key==='Escape'&&tm.inspecting){tm.inspecting=false;cancelAnimationFrame(tm.raf);tmSet('idle');tmTimeEl.textContent='0.00';$('tmHint').textContent='Inspection cancelled.';return;}
+  if(e.code==='Space'){e.preventDefault();tmPress();}});
+document.addEventListener('keyup',e=>{if(view()!=='timer'||typing())return;if(e.code==='Space'||tm.state==='stopped'){e.preventDefault();tmRelease();}});
+tmEl.addEventListener('pointerdown',e=>{e.preventDefault();tmPress();});
+tmEl.addEventListener('pointerup',e=>{e.preventDefault();tmRelease();});
+
 // ---- tabs ----
 let testStarted=false;
 document.querySelector('nav').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
   document.querySelectorAll('nav button').forEach(x=>x.setAttribute('aria-selected',x===b));
-  ['drill','test','quiz','cases'].forEach(v=>$('view-'+v).hidden=v!==b.dataset.view);
+  ['drill','timer','test','quiz','cases'].forEach(v=>$('view-'+v).hidden=v!==b.dataset.view);
+  $('secChips').hidden=b.dataset.view==='timer';
+  if(b.dataset.view==='timer'){if(!tmScr)newScramble();tmRender();}
   if(b.dataset.view==='cases')renderCases();if(b.dataset.view==='quiz')loadQuiz();
   if(b.dataset.view==='test'&&!testStarted){testStarted=true;newTest();}b.blur();});
 
