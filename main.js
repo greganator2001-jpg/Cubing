@@ -1,4 +1,5 @@
-const { app, BrowserWindow, ipcMain, shell, Menu } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, Menu, dialog } = require('electron');
+const fs = require('fs');
 const path = require('path');
 const { autoUpdater } = require('electron-updater');
 
@@ -33,6 +34,11 @@ autoUpdater.on('error', err => send('update', { state: 'error', message: String(
 function check() { if (app.isPackaged) autoUpdater.checkForUpdates().catch(() => {}); else send('update', { state: 'dev' }); }
 
 ipcMain.handle('app:version', () => app.getVersion());
+ipcMain.handle('file:save', async (_e, { name, text }) => {
+  const r = await dialog.showSaveDialog(win, { defaultPath: path.join(app.getPath('documents'), String(name || 'export.json').replace(/[\\/:*?"<>|]/g, '_')) });
+  if (r.canceled || !r.filePath) return { canceled: true };
+  try { await fs.promises.writeFile(r.filePath, String(text), 'utf8'); return { ok: true, path: r.filePath }; } catch (err) { return { ok: false }; }
+});
 ipcMain.handle('update:check', () => { check(); return true; });
 ipcMain.handle('update:install', () => { setImmediate(() => autoUpdater.quitAndInstall(false, true)); return true; });
 

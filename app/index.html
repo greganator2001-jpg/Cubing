@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'">
 <title>Last Layer Lab</title>
 <script src="vendor/three.min.js"></script>
 <style>
@@ -86,6 +86,11 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 .top-row{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
 .linkbtn{border:0;background:none;color:var(--accent);font:600 .85rem var(--f-body);cursor:pointer;padding:4px 2px}
 .note{color:var(--muted);font-size:.8rem}
+.review{margin-left:6px;padding:1px 7px;border-radius:99px;background:var(--sunk);color:var(--accent);letter-spacing:.04em}
+.review:empty{display:none}
+.alts{display:flex;flex-direction:column;gap:3px;margin-top:4px}
+.alt{font-size:.9rem;color:var(--muted)}
+.notes{font:400 .88rem/1.4 var(--f-body);width:100%;resize:vertical;border:1px solid var(--line);border-radius:8px;background:var(--sunk);color:var(--fg);padding:7px 9px}
 .case-meta{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1}
 .case-name{font-family:var(--f-display);font-weight:700;font-size:1.9rem;letter-spacing:-.02em;margin:0;line-height:1.1}
 .case-name.hidden-name{color:var(--muted)}
@@ -123,12 +128,16 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 .log li:last-child{border-bottom:0}
 .log .t{font-family:var(--f-display);font-weight:600;font-variant-numeric:tabular-nums}
 .log button{border:0;background:none;color:var(--muted);cursor:pointer;font-size:.8rem;padding:0 4px}
-.cubes{display:flex;gap:4px;background:var(--sunk);padding:4px;border-radius:10px}
+.cubes{display:flex;flex-wrap:wrap;gap:4px;background:var(--sunk);padding:4px;border-radius:10px;max-width:100%}
+@media (max-width:560px){.cubes button{padding:6px 9px;font-size:.88rem}.look{margin-left:0}}
 .cubes button{font:700 .95rem var(--f-display);border:0;background:none;color:var(--muted);padding:7px 14px;border-radius:7px;cursor:pointer;font-variant-numeric:tabular-nums}
 .cubes button[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg)}
 .head-mid{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .secbar{display:flex;align-items:center;gap:10px 14px;flex-wrap:wrap;padding:8px;background:var(--surface);border:1px solid var(--line);border-radius:14px}
-.secchips{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.secchips{display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:1}
+.look{display:flex;gap:2px;background:var(--sunk);padding:3px;border-radius:9px;margin-left:auto}
+.look button{font:600 .78rem var(--f-body);border:0;background:none;color:var(--muted);padding:5px 10px;border-radius:6px;cursor:pointer}
+.look button[aria-pressed="true"]{background:var(--surface);color:var(--fg);box-shadow:0 1px 2px rgba(0,0,0,.12)}
 .chip{font:600 .86rem var(--f-body);border:1px solid var(--line);background:var(--surface);color:var(--fg);padding:6px 13px;border-radius:99px;cursor:pointer;display:inline-flex;gap:7px;align-items:baseline}
 .chip .n{font-weight:500;color:var(--muted);font-size:.78rem}
 .chip[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
@@ -148,6 +157,15 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 .tm-timer.hold .tm-time{color:var(--hold)} .tm-timer.ready .tm-time{color:var(--ready)}
 .tm-timer.insp .tm-time{color:var(--accent)} .tm-timer.warn .tm-time{color:var(--warn)}
 .tm-timer .hint{color:var(--muted);font-size:.85rem;text-align:center}
+.tm-phase{font:700 .95rem var(--f-display);color:var(--accent);min-height:1.2em}
+.tm-list .sp{grid-column:2/-1;font-size:.72rem;color:var(--muted);margin-top:-3px}
+.splitbars{display:flex;flex-direction:column;gap:6px}
+.sbar{display:grid;grid-template-columns:6.5em 1fr 3.4em;gap:8px;align-items:center;font-size:.82rem}
+.sbar .trk{height:8px;background:var(--sunk);border-radius:4px;overflow:hidden}.sbar .trk i{display:block;height:100%;background:var(--accent);border-radius:4px}
+.sbar .v{font:600 .82rem var(--f-display);text-align:right;font-variant-numeric:tabular-nums}
+.toggle select{font:500 .82rem var(--f-body);border:1px solid var(--line);border-radius:7px;background:var(--surface);color:var(--fg);padding:4px 6px}
+.toast.pb{background:var(--accent);color:var(--accent-fg);font-weight:700;font-size:1rem;padding:10px 18px}
+#confetti{position:fixed;inset:0;pointer-events:none;z-index:30}
 .tm-prev{background:var(--stage);border-radius:12px;overflow:hidden;position:relative}
 .tm-prev .cube3d{height:230px}
 .tm-prev .label{position:absolute;top:10px;left:12px}
@@ -163,6 +181,45 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 .tm-list .acts button[aria-pressed="true"]{background:var(--warn);color:#fff}
 body.timing header,body.timing .secbar,body.timing #view-timer .side,body.timing #tmTop,body.timing #tmScr,body.timing .tm-prev,body.timing #tmOpts{opacity:.06;pointer-events:none}
 @media (prefers-reduced-motion:no-preference){header,.secbar,#view-timer .side,#tmTop,#tmScr,.tm-prev,#tmOpts{transition:opacity .2s}}
+
+/* Progress */
+.prog{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+@media (max-width:820px){.prog{grid-template-columns:minmax(0,1fr)}}
+.pcard{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.pcard.wide{grid-column:1/-1}
+.ph{font:700 1.1rem var(--f-display);margin:0}
+.chart{width:100%;overflow-x:auto}
+.chart svg{display:block;width:100%;height:auto;min-width:320px}
+.chart .ax{stroke:var(--line);stroke-width:1}
+.chart .tk{fill:var(--muted);font:11px var(--f-body)}
+.chart .dot{fill:var(--muted);opacity:.55}
+.chart .pbdot{fill:var(--ready)}
+.chart .a5{fill:none;stroke:var(--accent);stroke-width:2}
+.chart .a12{fill:none;stroke:var(--warn);stroke-width:2}
+.chart .bar{fill:var(--sunk)}
+.chart .bar.on{fill:color-mix(in srgb,var(--accent) 35%,var(--sunk))}
+.chart .ml{fill:none;stroke:var(--accent);stroke-width:2}
+.chart .mlp{fill:var(--accent)}
+.legend{display:flex;gap:12px;align-items:center;font-size:.78rem;color:var(--muted)}
+.legend i{display:inline-block;width:14px;height:3px;border-radius:2px;margin-right:-6px}
+.lg-dot{background:var(--muted);height:8px!important;width:8px!important;border-radius:50%!important}.lg-a5{background:var(--accent)}.lg-a12{background:var(--warn)}
+.pbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
+.pb{background:var(--sunk);border-radius:10px;padding:10px 12px}
+.pb .v{font:700 1.2rem var(--f-display);font-variant-numeric:tabular-nums}
+.pb .d{font-size:.72rem;color:var(--muted)}
+.rv{display:grid;grid-template-columns:7em repeat(4,1fr);gap:6px 10px;font-size:.85rem;align-items:center}
+.rv .h{font:600 .68rem var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.rv .n{font:600 .95rem var(--f-display);font-variant-numeric:tabular-nums}
+.cases-t{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:6px 18px;max-height:420px;overflow:auto}
+.crow{display:grid;grid-template-columns:7.5em 1fr 3.6em;gap:8px;align-items:center;font-size:.84rem;border:0;background:none;color:var(--fg);padding:3px 2px;cursor:pointer;text-align:left;border-radius:6px;font-family:inherit}
+.crow:hover{background:var(--sunk)}
+.crow .trk{height:8px;background:var(--sunk);border-radius:4px;overflow:hidden}.crow .trk i{display:block;height:100%;background:var(--accent)}
+.crow .v{font:600 .82rem var(--f-display);text-align:right;font-variant-numeric:tabular-nums}
+.data-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.filebtn{display:inline-flex;align-items:center}
+#dataOut{display:flex;gap:8px;align-items:flex-start}#dataOut textarea{flex:1;min-width:0;font:400 .75rem var(--f-mono);border:1px solid var(--line);border-radius:8px;background:var(--sunk);color:var(--fg);padding:8px}
+#csPick{display:flex;flex-direction:column;gap:6px;background:var(--sunk);border-radius:10px;padding:12px}
+#csPick label{display:flex;gap:8px;align-items:center;font-size:.88rem}
 
 /* Quiz */
 .quiz{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px;display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center}
@@ -200,6 +257,14 @@ body.timing header,body.timing .secbar,body.timing #view-timer .side,body.timing
 .card select{font:500 .82rem var(--f-body);border:1px solid var(--line);border-radius:7px;background:var(--surface);color:var(--fg);padding:5px 6px}
 .card-foot{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .card-foot .st{font-size:.8rem;color:var(--ready);font-weight:600}
+.card-top .due{color:var(--accent)}
+.more summary{cursor:pointer;font-size:.82rem;color:var(--muted);font-weight:600}
+.more[open]{display:flex;flex-direction:column;gap:6px}
+.alt-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:.82rem}
+.alt-row .mono{flex:1;min-width:0;word-break:break-word}
+.alt-add{display:flex;gap:6px}
+.alt-add input{flex:1;min-width:0;font:400 .8rem var(--f-mono);border:1px solid var(--line);border-radius:7px;background:var(--sunk);color:var(--fg);padding:6px 8px}
+.card textarea[data-note]{font-family:var(--f-body)}
 .pill{font:600 .7rem var(--f-body);letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:99px;border:1px solid currentColor}
 .pill.learning{color:var(--warn)} .pill.learned{color:var(--ready)} .pill.skip{color:var(--muted)}
 .err{color:var(--hold);font-size:.8rem}
@@ -225,6 +290,7 @@ html,body{margin:0}
     <nav role="tablist">
       <button role="tab" id="tab-drill" aria-selected="true" data-view="drill">Drill</button>
       <button role="tab" id="tab-timer" aria-selected="false" data-view="timer">Timer</button>
+      <button role="tab" id="tab-progress" aria-selected="false" data-view="progress">Progress</button>
       <button role="tab" id="tab-test" aria-selected="false" data-view="test">Test</button>
       <button role="tab" id="tab-quiz" aria-selected="false" data-view="quiz">Recognize</button>
       <button role="tab" id="tab-cases" aria-selected="false" data-view="cases">Cases</button>
@@ -233,9 +299,10 @@ html,body{margin:0}
   <div class="updbar" id="updBar" hidden><span class="msg" id="updMsg"></span><button class="btn primary" id="updGo" hidden>Restart and update</button><button class="btn" id="updClose">Dismiss</button><div class="bar" id="updProg" hidden><i id="updFill"></i></div></div>
   <div class="secbar" id="secbar">
     <div class="cubes" role="group" aria-label="Cube" id="cubeSel">
-      <button data-cube="3" aria-pressed="true">3x3</button><button data-cube="4" aria-pressed="false">4x4</button><button data-cube="5" aria-pressed="false">5x5</button><button data-cube="7" aria-pressed="false">7x7</button><button data-cube="9" aria-pressed="false">9x9</button>
+      <button data-cube="2" aria-pressed="false">2x2</button><button data-cube="3" aria-pressed="true">3x3</button><button data-cube="4" aria-pressed="false">4x4</button><button data-cube="5" aria-pressed="false">5x5</button><button data-cube="6" aria-pressed="false">6x6</button><button data-cube="7" aria-pressed="false">7x7</button><button data-cube="9" aria-pressed="false">9x9</button>
     </div>
     <div class="secchips" id="secChips" role="group" aria-label="What you're practicing"></div>
+    <div class="look" role="group" aria-label="Cube look"><button data-look="stickered" aria-pressed="true">Stickered</button><button data-look="stickerless" aria-pressed="false">Stickerless</button></div>
   </div>
 
   <!-- DRILL -->
@@ -267,7 +334,7 @@ html,body{margin:0}
           <div class="case-head">
             <div class="mini" id="drillMini"></div>
             <div class="case-meta">
-              <span class="label" id="drillGroup">PLL</span>
+              <span class="label"><span id="drillGroup">PLL</span> <span class="review" id="drillReview"></span></span>
               <h2 class="case-name" id="drillName">—</h2>
             </div>
           </div>
@@ -278,14 +345,18 @@ html,body{margin:0}
             <div class="solve-head"><span class="label">Solution</span><label class="toggle"><input type="checkbox" id="optHideSolve"> Hide</label></div>
             <div class="alg-line concealed" id="drillAlg">Solution hidden.</div>
             <button class="btn" id="btnReveal" hidden style="align-self:flex-start">Show solution</button>
+            <div class="alts" id="drillAlts" hidden></div>
           </div>
+          <div class="block"><label class="label" for="drillNote">Notes</label>
+            <textarea class="notes" id="drillNote" rows="2" placeholder="Fingertricks, recognition tips…"></textarea></div>
         </div>
       </div>
       <div class="timer" id="timer"><div class="time" id="time">0.00</div>
         <div class="hint" id="timerHint">Hold space (or press here), release to start. Any key stops.</div></div>
       <div class="controls">
         <label class="toggle"><input type="checkbox" id="optHide"> Hide case name</label>
-        <label class="toggle"><input type="checkbox" id="optWeak" checked> Show slow cases more often</label>
+        <label class="toggle"><input type="checkbox" id="optSmart" checked> Smart review</label>
+        <label class="toggle"><input type="checkbox" id="optLefty"> Left-hand (mirror)</label>
       </div>
     </div>
     <aside class="side">
@@ -307,14 +378,16 @@ html,body{margin:0}
   <!-- TIMER -->
   <section id="view-timer" class="split" hidden>
     <div class="stage">
-      <div class="top-row" id="tmTop"><span class="label" id="tmTitle">3x3 scramble</span><button class="btn" id="tmNew">New scramble</button></div>
+      <div class="top-row" id="tmTop"><span class="label"><span id="tmTitle">3x3 scramble</span> <span class="review" id="tmKind"></span></span><button class="btn" id="tmNew">New scramble</button></div>
       <div class="tm-scr" id="tmScr">—</div>
       <div class="tm-grid">
-        <div class="tm-timer" id="tmTimer"><div class="tm-time" id="tmTime">0.00</div><div class="hint" id="tmHint">Hold space (or press here), release to start. Any key stops.</div></div>
+        <div class="tm-timer" id="tmTimer"><div class="tm-time" id="tmTime">0.00</div><div class="tm-phase" id="tmPhase"></div><div class="hint" id="tmHint">Hold space (or press here), release to start. Any key stops.</div></div>
         <div class="tm-prev"><div class="cube3d" id="tm3d"></div><span class="label">Scrambled</span></div>
       </div>
       <div class="controls" id="tmOpts">
         <label class="toggle"><input type="checkbox" id="tmInsp"> 15-second inspection</label>
+        <label class="toggle">Calls at 8s/12s <select id="tmCalls"><option value="off">Off</option><option value="beep">Beep</option><option value="voice">Voice</option></select></label>
+        <label class="toggle">Splits <select id="tmSplits"><option value="off">Off</option><option value="cfop">Cross · F2L · OLL · PLL</option><option value="red">Centers · Edges · 3x3</option><option value="roux">Roux: FB · SB · CMLL · LSE</option></select></label>
         <span class="note">Scramble with yellow on top and green in front.</span>
       </div>
     </div>
@@ -330,11 +403,52 @@ html,body{margin:0}
           <div class="stat"><div class="label">Ao50</div><div class="v" id="tmAo50">—</div></div>
         </div>
       </div>
+      <div class="panel" id="tmSplitPanel" hidden>
+        <span class="label">Split averages (last 12)</span>
+        <div class="splitbars" id="tmSplitAvg"></div>
+      </div>
       <div class="panel">
         <div class="top-row"><span class="label">Times</span><span><button class="linkbtn" id="tmClear">Clear session</button><button class="linkbtn" id="tmClearYes" hidden>Yes, clear all</button></span></div>
         <ul class="tm-list" id="tmList"></ul>
       </div>
     </aside>
+  </section>
+
+  <!-- PROGRESS -->
+  <section id="view-progress" hidden>
+    <div class="prog">
+      <div class="pcard wide">
+        <div class="top-row"><h2 class="ph" id="pgTimerTitle">Timer · 3x3</h2><span class="legend"><i class="lg-dot"></i>Singles <i class="lg-a5"></i>Ao5 <i class="lg-a12"></i>Ao12</span></div>
+        <div class="chart" id="pgTimerChart"></div>
+        <div class="pbs" id="pgPBs"></div>
+      </div>
+      <div class="pcard">
+        <h2 class="ph">Drill practice by day</h2>
+        <div class="chart" id="pgDays"></div>
+        <p class="note" id="pgDaysNote"></p>
+      </div>
+      <div class="pcard">
+        <h2 class="ph">Review status</h2>
+        <div id="pgReview"></div>
+      </div>
+      <div class="pcard wide">
+        <div class="top-row"><h2 class="ph">Case times</h2><span class="note">Slowest first · average of your last 5 · click a case to drill it</span></div>
+        <div class="cases-t" id="pgCases"></div>
+      </div>
+      <div class="pcard wide">
+        <h2 class="ph">Back up and import</h2>
+        <div class="data-row">
+          <button class="btn" id="bkSave">Back up everything</button>
+          <label class="btn filebtn">Restore a backup…<input type="file" id="bkLoad" accept=".json,application/json" hidden></label>
+          <span class="secdiv"></span>
+          <button class="btn" id="csSave">Export timer times for csTimer</button>
+          <label class="btn filebtn">Import from csTimer…<input type="file" id="csLoad" accept=".txt,.json,text/plain,application/json" hidden></label>
+        </div>
+        <div id="dataMsg" class="note"></div>
+        <div id="csPick" hidden></div>
+        <div id="dataOut" hidden><textarea id="dataText" rows="6" readonly></textarea><button class="btn" id="dataCopy">Copy</button></div>
+      </div>
+    </div>
   </section>
 
   <!-- TEST -->
@@ -421,6 +535,7 @@ html,body{margin:0}
   </section>
 </div>
 <div class="toast" id="toast" hidden></div>
+<script type="text/plain" id="scrWorkerSrc">(()=>{var ze=(Q,O)=>()=>(O||Q((O={exports:{}}).exports,O),O.exports);var qe=ze((We,Ie)=>{(function(){var Q,O,A,ce,L,te,re,ne,$,ie,oe,X,se,ve,ue,le,ae,he,me,W,Z,J,x,T,Y,ee,G,De,Oe,ge,we,pe,Fe;[me,he,ve,L,ae,Q]=[0,1,2,3,4,5],[G,x,Y,Z,$,oe,re,se]=[0,1,2,3,4,5,6,7],[ee,J,T,W,X,ne,ie,te,le,ue,O,A]=[0,1,2,3,4,5,6,7,8,9,10,11],[Oe,we,Fe]=function(){var H,z,I,g,S,f;return f=function(h){return h-1},S=function(h){return f(9)+h},I=function(h){return S(9)+h},z=function(h){return I(9)+h},g=function(h){return z(9)+h},H=function(h){return g(9)+h},[[4,13,22,31,40,49],[[f(9),S(1),I(3)],[f(7),I(1),g(3)],[f(1),g(1),H(3)],[f(3),H(1),S(3)],[z(3),I(9),S(7)],[z(1),g(9),I(7)],[z(7),H(9),g(7)],[z(9),S(9),H(7)]],[[f(6),S(2)],[f(8),I(2)],[f(4),g(2)],[f(2),H(2)],[z(6),S(8)],[z(2),I(8)],[z(4),g(8)],[z(8),H(8)],[I(6),S(4)],[I(4),g(6)],[H(6),g(4)],[H(4),S(6)]]]}(),De=["U","R","F","D","L","B"],ge=[["U","R","F"],["U","F","L"],["U","L","B"],["U","B","R"],["D","F","R"],["D","L","F"],["D","B","L"],["D","R","B"]],pe=[["U","R"],["U","F"],["U","L"],["U","B"],["D","R"],["D","F"],["D","L"],["D","B"],["F","R"],["F","L"],["B","L"],["B","R"]],ce=function(){var H,z,I;class g{constructor(f){var h;f!=null?this.init(f):this.identity(),this.newCenter=function(){var n,o;for(o=[],h=n=0;n<=5;h=++n)o.push(0);return o}(),this.newCp=function(){var n,o;for(o=[],h=n=0;n<=7;h=++n)o.push(0);return o}(),this.newEp=function(){var n,o;for(o=[],h=n=0;n<=11;h=++n)o.push(0);return o}(),this.newCo=function(){var n,o;for(o=[],h=n=0;n<=7;h=++n)o.push(0);return o}(),this.newEo=function(){var n,o;for(o=[],h=n=0;n<=11;h=++n)o.push(0);return o}()}init(f){return this.center=f.center.slice(0),this.co=f.co.slice(0),this.ep=f.ep.slice(0),this.cp=f.cp.slice(0),this.eo=f.eo.slice(0)}identity(){var f;return this.center=[0,1,2,3,4,5],this.cp=[0,1,2,3,4,5,6,7],this.co=function(){var h,n;for(n=[],f=h=0;h<=7;f=++h)n.push(0);return n}(),this.ep=[0,1,2,3,4,5,6,7,8,9,10,11],this.eo=function(){var h,n;for(n=[],f=h=0;h<=11;f=++h)n.push(0);return n}()}toJSON(){return{center:this.center,cp:this.cp,co:this.co,ep:this.ep,eo:this.eo}}asString(){var f,h,n,o,R,m,B,M,U,D,d;for(d=[],n=o=0;o<=5;n=++o)d[9*n+4]=De[this.center[n]];for(n=R=0;R<=7;n=++R)for(f=this.cp[n],U=this.co[n],B=m=0;m<=2;B=++m)d[we[n][(B+U)%3]]=ge[f][B];for(n=M=0;M<=11;n=++M)for(h=this.ep[n],U=this.eo[n],B=D=0;D<=1;B=++D)d[Fe[n][(B+U)%2]]=pe[h][B];return d.join("")}static fromString(f){var h,n,o,R,m,B,M,U,D,d,k,q,j,V;for(o=new g,R=B=0;B<=5;R=++B)for(m=M=0;M<=5;m=++M)f[9*R+4]===De[m]&&(o.center[R]=m);for(R=U=0;U<=7;R=++U){for(d=D=0;D<=2&&!((V=f[we[R][d]])==="U"||V==="D");d=++D);for(h=f[we[R][(d+1)%3]],n=f[we[R][(d+2)%3]],m=k=0;k<=7;m=++k)h===ge[m][1]&&n===ge[m][2]&&(o.cp[R]=m,o.co[R]=d%3)}for(R=q=0;q<=11;R=++q)for(m=j=0;j<=11;m=++j){if(f[Fe[R][0]]===pe[m][0]&&f[Fe[R][1]]===pe[m][1]){o.ep[R]=m,o.eo[R]=0;break}if(f[Fe[R][0]]===pe[m][1]&&f[Fe[R][1]]===pe[m][0]){o.ep[R]=m,o.eo[R]=1;break}}return o}clone(){return new g(this.toJSON())}static random(){return new g().randomize()}isSolved(){var f,h,n,o,R,m,B;for(n=this.clone(),n.move(n.upright()),h=R=0;R<=5;h=++R)if(n.center[h]!==h)return!1;for(f=m=0;m<=7;f=++m)if(n.cp[f]!==f||n.co[f]!==0)return!1;for(o=B=0;B<=11;o=++B)if(n.ep[o]!==o||n.eo[o]!==0)return!1;return!0}centerMultiply(f){var h,n,o;for(o=n=0;n<=5;o=++n)h=f.center[o],this.newCenter[o]=this.center[h];return[this.center,this.newCenter]=[this.newCenter,this.center],this}cornerMultiply(f){var h,n,o;for(o=n=0;n<=7;o=++n)h=f.cp[o],this.newCp[o]=this.cp[h],this.newCo[o]=(this.co[h]+f.co[o])%3;return[this.cp,this.newCp]=[this.newCp,this.cp],[this.co,this.newCo]=[this.newCo,this.co],this}edgeMultiply(f){var h,n,o;for(o=n=0;n<=11;o=++n)h=f.ep[o],this.newEp[o]=this.ep[h],this.newEo[o]=(this.eo[h]+f.eo[o])%2;return[this.ep,this.newEp]=[this.newEp,this.ep],[this.eo,this.newEo]=[this.newEo,this.eo],this}multiply(f){return this.centerMultiply(f),this.cornerMultiply(f),this.edgeMultiply(f),this}move(f){var h,n,o,R,m,B,M,U,D;for(M=I(f),n=0,R=M.length;n<R;n++)for(m=M[n],h=m/3|0,B=m%3,D=o=0,U=B;0<=U?o<=U:o>=U;D=0<=U?++o:--o)this.multiply(g.moves[h]);return this}upright(){var f,h,n,o,R,m;for(f=this.clone(),m=[],h=o=0;o<=5&&f.center[h]!==ve;h=++o);switch(h){case L:m.push("x");break;case me:m.push("x'");break;case Q:m.push("x2");break;case he:m.push("y");break;case ae:m.push("y'")}for(m.length&&f.move(m[0]),n=R=0;R<=5&&f.center[n]!==me;n=++R);switch(n){case ae:m.push("z");break;case he:m.push("z'");break;case L:m.push("z2")}return m.join(" ")}static inverse(f){var h,n,o,R,m,B,M;if(B=function(){var U,D,d,k;for(d=I(f),k=[],U=0,D=d.length;U<D;U++)R=d[U],h=R/3|0,m=R%3,k.push(h*3+-(m-1)+1);return k}(),B.reverse(),typeof f=="string"){for(M="",n=0,o=B.length;n<o;n++)R=B[n],h=R/3|0,m=R%3,M+=H[h],m===1?M+="2":m===2&&(M+="'"),M+=" ";return M.substring(0,M.length-1)}else return f.length!=null?B:B[0]}}return g.prototype.randomize=function(){var S,f,h,n,o,R,m,B,M;return R=function(U,D){return U+Math.floor(Math.random()*(D-U+1))},M=function(U){var D,d,k;for(D=U.length;D!==0;)d=R(0,D-1),D-=1,k=U[D],[U[D],U[d]]=[U[d],U[D]]},n=function(U){var D,d,k,q,j,V,fe,Le;for(j=0,fe=function(){var Re,Ue,Be;for(Be=[],Le=Re=0,Ue=U.length-1;0<=Ue?Re<=Ue:Re>=Ue;Le=0<=Ue?++Re:--Re)Be.push(!1);return Be}();;){for(D=-1,k=q=0,V=U.length-1;0<=V?q<=V:q>=V;k=0<=V?++q:--q)if(!fe[k]){D=k;break}if(D===-1)break;for(d=0;!fe[D];)fe[D]=!0,d++,D=U[D];j+=d+1}return j},S=function(U,D){var d;return d=n(D)+n(U),d%2===0},h=function(U,D){for(M(D),M(U);!S(U,D);)M(D),M(U)},m=function(U,D){var d,k,q,j;for(q=0,d=k=0,j=U.length-1;0<=j?k<=j:k>=j;d=0<=j?++k:--k)q+=U[d]=R(0,D-1)},o=function(U,D){return U.reduce(function(d,k){return d+k})%D===0},f=function(U,D){for(m(U,3);!o(U,3);)m(U,3);for(m(D,2);!o(D,2);)m(D,2)},B=function(){return h(this.cp,this.ep),f(this.co,this.eo),this},B}(),g.moves=[{center:[0,1,2,3,4,5],cp:[Z,G,x,Y,$,oe,re,se],co:[0,0,0,0,0,0,0,0],ep:[W,ee,J,T,X,ne,ie,te,le,ue,O,A],eo:[0,0,0,0,0,0,0,0,0,0,0,0]},{center:[0,1,2,3,4,5],cp:[$,x,Y,G,se,oe,re,Z],co:[2,0,0,1,1,0,0,2],ep:[le,J,T,W,A,ne,ie,te,X,ue,O,ee],eo:[0,0,0,0,0,0,0,0,0,0,0,0]},{center:[0,1,2,3,4,5],cp:[x,oe,Y,Z,G,$,re,se],co:[1,2,0,0,2,1,0,0],ep:[ee,ue,T,W,X,le,ie,te,J,ne,O,A],eo:[0,1,0,0,0,1,0,0,1,1,0,0]},{center:[0,1,2,3,4,5],cp:[G,x,Y,Z,oe,re,se,$],co:[0,0,0,0,0,0,0,0],ep:[ee,J,T,W,ne,ie,te,X,le,ue,O,A],eo:[0,0,0,0,0,0,0,0,0,0,0,0]},{center:[0,1,2,3,4,5],cp:[G,Y,re,Z,$,x,oe,se],co:[0,1,2,0,0,2,1,0],ep:[ee,J,O,W,X,ne,ue,te,le,T,ie,A],eo:[0,0,0,0,0,0,0,0,0,0,0,0]},{center:[0,1,2,3,4,5],cp:[G,x,Z,se,$,oe,Y,re],co:[0,0,1,2,0,0,2,1],ep:[ee,J,T,A,X,ne,ie,O,le,ue,W,te],eo:[0,0,0,1,0,0,0,1,0,0,1,1]},{center:[me,ve,ae,L,Q,he],cp:[G,x,Y,Z,$,oe,re,se],co:[0,0,0,0,0,0,0,0],ep:[ee,J,T,W,X,ne,ie,te,ue,O,A,le],eo:[0,0,0,0,0,0,0,0,1,1,1,1]},{center:[Q,he,me,ve,ae,L],cp:[G,x,Y,Z,$,oe,re,se],co:[0,0,0,0,0,0,0,0],ep:[ee,W,T,te,X,J,ie,ne,le,ue,O,A],eo:[0,1,0,1,0,1,0,1,0,0,0,0]},{center:[ae,me,ve,he,L,Q],cp:[G,x,Y,Z,$,oe,re,se],co:[0,0,0,0,0,0,0,0],ep:[T,J,ie,W,ee,ne,X,te,le,ue,O,A],eo:[1,0,1,0,1,0,1,0,0,0,0,0]}],z={U:0,R:1,F:2,D:3,L:4,B:5,E:6,M:7,S:8,x:9,y:10,z:11,u:12,r:13,f:14,d:15,l:16,b:17},H={0:"U",1:"R",2:"F",3:"D",4:"L",5:"B",6:"E",7:"M",8:"S",9:"x",10:"y",11:"z",12:"u",13:"r",14:"f",15:"d",16:"l",17:"b"},I=function(S){var f,h,n,o,R,m,B;if(typeof S=="string"){for(m=S.split(/\s+/),B=[],f=0,h=m.length;f<h;f++)if(o=m[f],o.length!==0){if(o.length>2)throw new Error(`Invalid move: ${o}`);if(n=z[o[0]],n===void 0)throw new Error(`Invalid move: ${o}`);if(o.length===1)R=0;else if(o[1]==="2")R=1;else if(o[1]==="'")R=2;else throw new Error(`Invalid move: ${o}`);B.push(n*3+R)}return B}else return S.length!=null?S:[S]},g.moves.push(new g().move("R M' L'").toJSON()),g.moves.push(new g().move("U E' D'").toJSON()),g.moves.push(new g().move("F S B'").toJSON()),g.moves.push(new g().move("U E'").toJSON()),g.moves.push(new g().move("R M'").toJSON()),g.moves.push(new g().move("F S").toJSON()),g.moves.push(new g().move("D E").toJSON()),g.moves.push(new g().move("L M").toJSON()),g.moves.push(new g().move("B S'").toJSON()),g}.call(this),typeof Ie<"u"&&Ie!==null?Ie.exports=ce:this.Cube=ce}).call(We)});var Ve=ze(Ye=>{(function(){var Q,O,A,ce,L,te,re,ne,$,ie,oe,X,se,ve,ue,le,ae,he,me,W,Z,J,x,T,Y,ee,G,De,Oe,ge,we,pe,Fe,H,z,I,g,S,f,h,n,o,R,m,B,M,U,D,d,k,q,j,V,fe,Le,Re,Ue,Be,Qe=[].indexOf;L=this.Cube||qe(),[we,ge,ue,te,me,Q]=[0,1,2,3,4,5],[f,z,g,Fe,ie,X,ne,ve]=[0,1,2,3,4,5,6,7],[S,H,I,pe,se,$,oe,re,ae,le,O,A]=[0,1,2,3,4,5,6,7,8,9,10,11],ce=function(t,r){var u,l,e;if(t<r)return 0;for(r>t/2&&(r=t-r),e=1,u=t,l=1;u!==t-r;)e*=u,e/=l,u--,l++;return e},M=function(t){var r,u,l,e;for(r=1,u=l=2,e=t;2<=e?l<=e:l>=e;u=2<=e?++l:--l)r*=u;return r},D=function(t,r){return t>r?t:r},Re=function(t,r,u){var l,e,i,c,v;for(v=t[r],l=e=i=r,c=u-1;i<=c?e<=c:e>=c;l=i<=c?++e:--e)t[l]=t[l+1];return t[u]=v},Ue=function(t,r,u){var l,e,i,c,v;for(v=t[u],l=e=i=u,c=r+1;i<=c?e<=c:e>=c;l=i<=c?++e:--e)t[l]=t[l-1];return t[r]=v},V=function(t,r,u,l=!1){var e,i,c,v,w,b;return v=u-r,c=M(v+1),t==="corners"?(i=7,b="cp"):(i=11,b="ep"),w=function(){var N,F,s;for(s=[],e=N=0,F=v;0<=F?N<=F:N>=F;e=0<=F?++N:--N)s.push(0);return s}(),function(N){var F,s,a,p,y,P,C,E,_,de,ye,be,_e,Me,ke,Je,Se,je,Ae,Te,$e,Ne,xe,Ce,K,Pe,Ee;if(N!=null){for(e=P=0,ye=v;0<=ye?P<=ye:P>=ye;e=0<=ye?++P:--P)w[e]=e+r;for(s=N%c,F=N/c|0,_=this[b],e=C=0,be=i;0<=be?C<=be:C>=be;e=0<=be?++C:--C)_[e]=-1;for(p=E=1,Me=v;1<=Me?E<=Me:E>=Me;p=1<=Me?++E:--E)for(y=s%(p+1),s=s/(p+1)|0;y>0;)Ue(w,0,p),y--;if(K=v,l)for(p=de=0,ke=i;0<=ke?de<=ke:de>=ke;p=0<=ke?++de:--de)a=ce(i-p,K+1),F-a>=0&&(_[p]=w[v-K],F-=a,K--);else for(p=Ne=Je=i;Je<=0?Ne<=0:Ne>=0;p=Je<=0?++Ne:--Ne)a=ce(p,K+1),F-a>=0&&(_[p]=w[K],F-=a,K--);return this}else{for(_=this[b],e=xe=0,Se=v;0<=Se?xe<=Se:xe>=Se;e=0<=Se?++xe:--xe)w[e]=-1;if(F=s=K=0,l)for(p=Ce=je=i;je<=0?Ce<=0:Ce>=0;p=je<=0?++Ce:--Ce)r<=(Ae=_[p])&&Ae<=u&&(F+=ce(i-p,K+1),w[v-K]=_[p],K++);else for(p=Pe=0,Te=i;0<=Te?Pe<=Te:Pe>=Te;p=0<=Te?++Pe:--Pe)r<=($e=_[p])&&$e<=u&&(F+=ce(p,K+1),w[K]=_[p],K++);for(p=Ee=_e=v;_e<=0?Ee<=0:Ee>=0;p=_e<=0?++Ee:--Ee){for(y=0;w[p]!==r+p;)Re(w,0,p),y++;s=(p+1)*s+y}return F*c+s}}},he={twist:function(t){var r,u,l,e,i,c;if(t!=null){for(i=0,r=u=6;u>=0;r=--u)e=t%3,t=t/3|0,this.co[r]=e,i+=e;return this.co[7]=(3-i%3)%3,this}else{for(c=0,r=l=0;l<=6;r=++l)c=3*c+this.co[r];return c}},flip:function(t){var r,u,l,e,i,c;if(t!=null){for(i=0,r=u=10;u>=0;r=--u)e=t%2,t=t/2|0,this.eo[r]=e,i+=e;return this.eo[11]=(2-i%2)%2,this}else{for(c=0,r=l=0;l<=10;r=++l)c=2*c+this.eo[r];return c}},cornerParity:function(){var t,r,u,l,e,i,c,v,w;for(w=0,t=u=e=ve,i=f+1;e<=i?u<=i:u>=i;t=e<=i?++u:--u)for(r=l=c=t-1,v=f;c<=v?l<=v:l>=v;r=c<=v?++l:--l)this.cp[r]>this.cp[t]&&w++;return w%2},edgeParity:function(){var t,r,u,l,e,i,c,v,w;for(w=0,t=u=e=A,i=S+1;e<=i?u<=i:u>=i;t=e<=i?++u:--u)for(r=l=c=t-1,v=S;c<=v?l<=v:l>=v;r=c<=v?++l:--l)this.ep[r]>this.ep[t]&&w++;return w%2},URFtoDLF:V("corners",f,X),URtoUL:V("edges",S,I),UBtoDF:V("edges",pe,$),URtoDF:V("edges",S,$),FRtoBR:V("edges",ae,A,!0)};for(U in he)Be=he[U],L.prototype[U]=Be;o=function(t,r,u){var l,e,i,c,v,w,b,N,F,s,a,p;for(l=t==="corners"?"cornerMultiply":"edgeMultiply",e=new L,p=[],i=b=0,a=u-1;0<=a?b<=a:b>=a;i=0<=a?++b:--b){for(e[r](i),c=[],v=F=0;F<=5;v=++F){for(N=L.moves[v],w=s=0;s<=2;w=++s)e[l](N),c.push(e[r]());e[l](N)}p.push(c)}return p},d=function(){var t,r;return t=new L,r=new L,function(u,l){var e,i;for(t.URtoUL(u),r.UBtoDF(l),e=i=0;i<=7;e=++i)if(t.ep[e]!==-1){if(r.ep[e]!==-1)return-1;r.ep[e]=t.ep[e]}return r.URtoDF()}}(),Y=2187,W=2048,J=2,Z=11880,x=495,T=24,G=20160,De=20160,Oe=1320,ee=1320,L.moveTables={parity:[[1,0,1,1,0,1,1,0,1,1,0,1,1,0,1,1,0,1],[0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0]],twist:null,flip:null,FRtoBR:null,URFtoDLF:null,URtoDF:null,URtoUL:null,UBtoDF:null,mergeURtoDF:null},k={twist:["corners",Y],flip:["edges",W],FRtoBR:["edges",Z],URFtoDLF:["corners",G],URtoDF:["edges",De],URtoUL:["edges",Oe],UBtoDF:["edges",ee],mergeURtoDF:[]},L.computeMoveTables=function(...t){var r,u,l,e,i,c;for(t.length===0&&(t=function(){var v;v=[];for(l in k)v.push(l);return v}()),u=0,r=t.length;u<r;u++)c=t[u],this.moveTables[c]===null&&(c==="mergeURtoDF"?this.moveTables.mergeURtoDF=function(){var v,w,b,N;for(N=[],w=b=0;b<=335;w=++b)N.push(function(){var F,s;for(s=[],v=F=0;F<=335;v=++F)s.push(d(w,v));return s}());return N}():([e,i]=k[c],this.moveTables[c]=o(e,c,i)));return this},h=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17],q=function(){var t,r,u,l,e,i,c,v;for(v=[],r=u=0;u<=5;r=++u){for(l=[],t=e=0;e<=5;t=++e)if(t!==r&&t!==r-3)for(c=i=0;i<=2;c=++i)l.push(t*3+c);v.push(l)}return v}(),n=[0,1,2,4,7,9,10,11,13,16],j=function(){var t,r,u,l,e,i,c,v,w,b;for(b=[],r=l=0;l<=5;r=++l){for(e=[],t=i=0;i<=5;t=++i)if(t!==r&&t!==r-3)for(w=t===0||t===3?[0,1,2]:[1],c=0,u=w.length;c<u;c++)v=w[c],e.push(t*3+v);b.push(e)}return b}(),fe=function(t,r,u){var l,e,i;return l=r%8,i=r>>3,e=l<<2,u!=null?(t[i]&=~(15<<e),t[i]|=u<<e,u):(t[i]&15<<e)>>>e},R=function(t,r,u,l){var e,i,c,v,w,b,N,F,s,a,p,y,P;for(y=function(){var C,E,_;for(_=[],P=C=0,E=Math.ceil(r/8)-1;0<=E?C<=E:C>=E;P=0<=E?++C:--C)_.push(4294967295);return _}(),t===1?F=h:F=n,i=0,fe(y,0,i),c=1;c!==r;){for(v=b=0,p=r-1;0<=p?b<=p:b>=p;v=0<=p?++b:--b)if(fe(y,v)===i)for(e=u(v),a=0,w=F.length;a<w;a++)N=F[a],s=l(e,N),fe(y,s)===15&&(fe(y,s,i+1),c++);i++}return y},L.pruningTables={sliceTwist:null,sliceFlip:null,sliceURFtoDLFParity:null,sliceURtoDFParity:null},Le={sliceTwist:[1,x*Y,function(t){return[t%x,t/x|0]},function(t,r){var u,l,e,i;return[e,i]=t,u=L.moveTables.FRtoBR[e*24][r]/24|0,l=L.moveTables.twist[i][r],l*x+u}],sliceFlip:[1,x*W,function(t){return[t%x,t/x|0]},function(t,r){var u,l,e,i;return[i,u]=t,e=L.moveTables.FRtoBR[i*24][r]/24|0,l=L.moveTables.flip[u][r],l*x+e}],sliceURFtoDLFParity:[2,T*G*J,function(t){return[t%2,(t/2|0)%T,(t/2|0)/T|0]},function(t,r){var u,l,e,i,c,v;return[c,v,u]=t,l=L.moveTables.parity[c][r],e=L.moveTables.FRtoBR[v][r],i=L.moveTables.URFtoDLF[u][r],(i*T+e)*2+l}],sliceURtoDFParity:[2,T*De*J,function(t){return[t%2,(t/2|0)%T,(t/2|0)/T|0]},function(t,r){var u,l,e,i,c,v;return[c,v,u]=t,l=L.moveTables.parity[c][r],e=L.moveTables.FRtoBR[v][r],i=L.moveTables.URtoDF[u][r],(i*T+e)*2+l}]},L.computePruningTables=function(...t){var r,u,l,e,i;for(t.length===0&&(t=function(){var c;c=[];for(l in Le)c.push(l);return c}()),u=0,r=t.length;u<r;u++)i=t[u],this.pruningTables[i]===null&&(e=Le[i],this.pruningTables[i]=R(...e));return this},L.initSolver=function(){return L.computeMoveTables(),L.computePruningTables()},L.prototype.solveUpright=function(t=22){var r,u,l,e,i,c,v,w,b,N;return l=function(){var F,s,a,p,y,P,C;for(s=["U","R","F","D","L","B"],P=["","2","'"],C=[],F=a=0;a<=5;F=++a)for(y=p=0;p<=2;y=++p)C.push(s[F]+P[y]);return C}(),r=class{constructor(s){this.parent=null,this.lastMove=null,this.depth=0,s&&this.init(s)}init(s){return this.flip=s.flip(),this.twist=s.twist(),this.slice=s.FRtoBR()/T|0,this.parity=s.cornerParity(),this.URFtoDLF=s.URFtoDLF(),this.FRtoBR=s.FRtoBR(),this.URtoUL=s.URtoUL(),this.UBtoDF=s.UBtoDF(),this}solution(){return this.parent?this.parent.solution()+l[this.lastMove]+" ":""}move(s,a,p){return L.moveTables[s][a][p]}pruning(s,a){return fe(L.pruningTables[s],a)}moves1(){return this.lastMove!==null?q[this.lastMove/3|0]:h}minDist1(){var s,a;return s=this.pruning("sliceFlip",x*this.flip+this.slice),a=this.pruning("sliceTwist",x*this.twist+this.slice),D(s,a)}next1(s){var a;return a=u.pop(),a.parent=this,a.lastMove=s,a.depth=this.depth+1,a.flip=this.move("flip",this.flip,s),a.twist=this.move("twist",this.twist,s),a.slice=this.move("FRtoBR",this.slice*24,s)/24|0,a}moves2(){return this.lastMove!==null?j[this.lastMove/3|0]:n}minDist2(){var s,a,p,y;return p=(T*this.URtoDF+this.FRtoBR)*J+this.parity,s=this.pruning("sliceURtoDFParity",p),y=(T*this.URFtoDLF+this.FRtoBR)*J+this.parity,a=this.pruning("sliceURFtoDLFParity",y),D(s,a)}init2(s=!0){if(this.parent!==null&&(this.parent.init2(!1),this.URFtoDLF=this.move("URFtoDLF",this.parent.URFtoDLF,this.lastMove),this.FRtoBR=this.move("FRtoBR",this.parent.FRtoBR,this.lastMove),this.parity=this.move("parity",this.parent.parity,this.lastMove),this.URtoUL=this.move("URtoUL",this.parent.URtoUL,this.lastMove),this.UBtoDF=this.move("UBtoDF",this.parent.UBtoDF,this.lastMove),s))return this.URtoDF=this.move("mergeURtoDF",this.URtoUL,this.UBtoDF)}next2(s){var a;return a=u.pop(),a.parent=this,a.lastMove=s,a.depth=this.depth+1,a.URFtoDLF=this.move("URFtoDLF",this.URFtoDLF,s),a.FRtoBR=this.move("FRtoBR",this.FRtoBR,s),a.parity=this.move("parity",this.parity,s),a.URtoDF=this.move("URtoDF",this.URtoDF,s),a}},w=null,i=function(F){var s,a,p,y;for(s=0,y=[],s=a=1,p=t;(1<=p?a<=p:a>=p)&&(e(F,s),w===null);s=1<=p?++a:--a)y.push(s++);return y},e=function(F,s){var a,p,y,P,C,E,_;if(s===0){if(F.minDist1()===0&&(F.lastMove===null||(C=F.lastMove,Qe.call(n,C)<0)))return v(F)}else if(s>0&&F.minDist1()<=s){for(E=F.moves1(),_=[],p=0,a=E.length;p<a&&(y=E[p],P=F.next1(y),e(P,s-1),u.push(P),w===null);p++)_.push(void 0);return _}},v=function(F){var s,a,p,y;for(F.init2(),y=[],s=a=1,p=t-F.depth;(1<=p?a<=p:a>=p)&&(c(F,s),w===null);s=1<=p?++a:--a)y.push(s++);return y},c=function(F,s){var a,p,y,P,C,E;if(s===0){if(F.minDist2()===0)return w=F.solution()}else if(s>0&&F.minDist2()<=s){for(C=F.moves2(),E=[],p=0,a=C.length;p<a&&(y=C[p],P=F.next2(y),c(P,s-1),u.push(P),w===null);p++)E.push(void 0);return E}},u=function(){var F,s,a;for(a=[],N=F=0,s=t+1;0<=s?F<=s:F>=s;N=0<=s?++F:--F)a.push(new r);return a}(),b=u.pop().init(this),i(b),u.push(b),w.length>0&&(w=w.substring(0,w.length-1)),w},B={U:0,R:1,F:2,D:3,L:4,B:5},m={0:"U",1:"R",2:"F",3:"D",4:"L",5:"B"},L.prototype.solve=function(t=22){var r,u,l,e,i,c,v,w,b;for(r=this.clone(),w=r.upright(),r.move(w),c=new L().move(w).center,b=r.solveUpright(t),v=[],i=b.split(" "),l=0,u=i.length;l<u;l++)e=i[l],v.push(m[c[B[e[0]]]]),e.length>1&&(v[v.length-1]+=e[1]);return v.join(" ")},L.scramble=function(){return L.inverse(L.random().solve())}}).call(Ye)});var He=ze((tt,Ge)=>{Ge.exports=qe();Ve()});var Ke=He();Ve();Ke.initSolver();self.postMessage({type:"ready"});self.onmessage=Q=>{Q.data&&Q.data.type==="scramble"&&self.postMessage({type:"scramble",id:Q.data.id,scramble:Ke.scramble()})};})();</script>
 
 <script>
 // ---- Cube model: sticker list with 3D position + normal ----
@@ -555,6 +670,63 @@ const GRAY='#70756d';
 const F2L_DATA=[["F2L · Both in top, white up","F2L 1","R U2 R' U' R U R'"],["F2L · Both in top, white up","F2L 2","F' U2 F U F' U' F"],["F2L · Both in top, white up","F2L 3","U R U2 R' U R U' R'"],["F2L · Both in top, white up","F2L 4","U' F' U2 F U' F' U F"],["F2L · Both in top, white up","F2L 5","U2 R U R' U R U' R'"],["F2L · Both in top, white up","F2L 6","U2 F' U' F U' F' U F"],["F2L · Both in top, white up","F2L 7","F U R U' R' F' R U' R'"],["F2L · Both in top, white up","F2L 8","U R U' R' U' R U' R' U R U' R'"],["F2L · Both in top, white on side","F2L 9","F' U' F"],["F2L · Both in top, white on side","F2L 10","R U R'"],["F2L · Both in top, white on side","F2L 11","U R U' R'"],["F2L · Both in top, white on side","F2L 12","U' F' U F"],["F2L · Both in top, white on side","F2L 13","R U' R' U2 F' U' F"],["F2L · Both in top, white on side","F2L 14","U' R U R' U2 R U' R'"],["F2L · Both in top, white on side","F2L 15","U F' U' F U2 F' U F"],["F2L · Both in top, white on side","F2L 16","U' R U2 R' U2 R U' R'"],["F2L · Both in top, white on side","F2L 17","U' R U' R' U F' U' F"],["F2L · Both in top, white on side","F2L 18","U' R U R' U R U R'"],["F2L · Both in top, white on side","F2L 19","U' R U2 R' U F' U' F"],["F2L · Both in top, white on side","F2L 20","U F' U F U' F' U' F"],["F2L · Both in top, white on side","F2L 21","U' R U' R' U R U R'"],["F2L · Both in top, white on side","F2L 22","U' F' U2 F U F' U2 F"],["F2L · Both in top, white on side","F2L 23","R U' R' U R U' R' U2 R U' R'"],["F2L · Both in top, white on side","F2L 24","R' D' R U' R' D R U R U' R'"],["F2L · Corner in slot","F2L 25","R U' R' U R U' R'"],["F2L · Corner in slot","F2L 26","F' U F U' F' U F"],["F2L · Corner in slot","F2L 27","R U R' U' R U R'"],["F2L · Corner in slot","F2L 28","U F' U2 F U2 F' U' F"],["F2L · Corner in slot","F2L 29","U' R' F R F' R U R'"],["F2L · Corner in slot","F2L 30","U R U' R' F R' F' R"],["F2L · Edge in slot","F2L 31","U' R' F R F' R U' R'"],["F2L · Edge in slot","F2L 32","U' R U' R' U2 R U' R'"],["F2L · Edge in slot","F2L 33","U R U R' U2 R U R'"],["F2L · Edge in slot","F2L 34","U2 R U' R' U' F' U' F"],["F2L · Edge in slot","F2L 35","U F' U' F U' R U R'"],["F2L · Edge in slot","F2L 36","U R U' R' U R U' R' U R U' R'"],["F2L · Both in slot","F2L 37","R2 U2 F R2 F' U2 R' U R'"],["F2L · Both in slot","F2L 38","R F U R U' R' F' U' R'"],["F2L · Both in slot","F2L 39","R U' R' U' R U R' U2 R U' R'"],["F2L · Both in slot","F2L 40","R U' R' U R U2 R' U R U' R'"],["F2L · Both in slot","F2L 41","R U R' U' R U' R' U2 F' U' F"]];
 const DEFAULT_CASES=[
  ...F2L_DATA,
+ ["OLL \u00b7 Dot", "OLL 1", "R U2 R2 F R F' U2 R' F R F'"],
+ ["OLL \u00b7 Dot", "OLL 2", "F R U R' U' F' f R U R' U' f'"],
+ ["OLL \u00b7 Dot", "OLL 3", "f R U R' U' f' U' F R U R' U' F'"],
+ ["OLL \u00b7 Dot", "OLL 4", "f R U R' U' f' U F R U R' U' F'"],
+ ["OLL \u00b7 Dot", "OLL 17", "R U R' U R' F R F' U2 R' F R F'"],
+ ["OLL \u00b7 Dot", "OLL 18", "r U R' U R U2 r2 U' R U' R' U2 r"],
+ ["OLL \u00b7 Dot", "OLL 19", "r' R U R U R' U' M' R' F R F'"],
+ ["OLL \u00b7 Dot", "OLL 20", "r U R' U' M2 U R U' R' U' M'"],
+ ["OLL \u00b7 Square", "OLL 5", "r' U2 R U R' U r"],
+ ["OLL \u00b7 Square", "OLL 6", "r U2 R' U' R U' r'"],
+ ["OLL \u00b7 Small lightning", "OLL 7", "r U R' U R U2 r'"],
+ ["OLL \u00b7 Small lightning", "OLL 8", "l' U' L U' L' U2 l"],
+ ["OLL \u00b7 Small lightning", "OLL 11", "r U R' U R' F R F' R U2 r'"],
+ ["OLL \u00b7 Small lightning", "OLL 12", "M' R' U' R U' R' U2 R U' R r'"],
+ ["OLL \u00b7 Fish", "OLL 9", "R U R' U' R' F R2 U R' U' F'"],
+ ["OLL \u00b7 Fish", "OLL 10", "R U R' U R' F R F' R U2 R'"],
+ ["OLL \u00b7 Fish", "OLL 35", "R U2 R2 F R F' R U2 R'"],
+ ["OLL \u00b7 Fish", "OLL 37", "F R' F' R U R U' R'"],
+ ["OLL \u00b7 Knight move", "OLL 13", "F U R U' R2 F' R U R U' R'"],
+ ["OLL \u00b7 Knight move", "OLL 14", "R' F R U R' F' R F U' F'"],
+ ["OLL \u00b7 Knight move", "OLL 15", "l' U' l L' U' L U l' U l"],
+ ["OLL \u00b7 Knight move", "OLL 16", "r U r' R U R' U' r U' r'"],
+ ["OLL \u00b7 Awkward", "OLL 29", "R U R' U' R U' R' F' U' F R U R'"],
+ ["OLL \u00b7 Awkward", "OLL 30", "F R' F R2 U' R' U' R U R' F2"],
+ ["OLL \u00b7 Awkward", "OLL 41", "R U R' U R U2 R' F R U R' U' F'"],
+ ["OLL \u00b7 Awkward", "OLL 42", "R' U' R U' R' U2 R F R U R' U' F'"],
+ ["OLL \u00b7 P shape", "OLL 31", "R' U' F U R U' R' F' R"],
+ ["OLL \u00b7 P shape", "OLL 32", "L U F' U' L' U L F L'"],
+ ["OLL \u00b7 P shape", "OLL 43", "F' U' L' U L F"],
+ ["OLL \u00b7 P shape", "OLL 44", "F U R U' R' F'"],
+ ["OLL \u00b7 T shape", "OLL 33", "R U R' U' R' F R F'"],
+ ["OLL \u00b7 T shape", "OLL 45", "F R U R' U' F'"],
+ ["OLL \u00b7 C shape", "OLL 34", "R U R2 U' R' F R U R U' F'"],
+ ["OLL \u00b7 C shape", "OLL 46", "R' U' R' F R F' U R"],
+ ["OLL \u00b7 W shape", "OLL 36", "L' U' L U' L' U L U L F' L' F"],
+ ["OLL \u00b7 W shape", "OLL 38", "R U R' U R U' R' U' R' F R F'"],
+ ["OLL \u00b7 Big lightning", "OLL 39", "L F' L' U' L U F U' L'"],
+ ["OLL \u00b7 Big lightning", "OLL 40", "R' F R U R' U' F' U R"],
+ ["OLL \u00b7 I shape", "OLL 51", "F U R U' R' U R U' R' F'"],
+ ["OLL \u00b7 I shape", "OLL 52", "R U R' U R U' B U' B' R'"],
+ ["OLL \u00b7 I shape", "OLL 55", "R' F R U R U' R2 F' R2 U' R' U R U R'"],
+ ["OLL \u00b7 I shape", "OLL 56", "r' U' r U' R' U R U' R' U R r' U r"],
+ ["OLL \u00b7 Small L", "OLL 47", "R' U' R' F R F' R' F R F' U R"],
+ ["OLL \u00b7 Small L", "OLL 48", "F R U R' U' R U R' U' F'"],
+ ["OLL \u00b7 Small L", "OLL 49", "r U' r2 U r2 U r2 U' r"],
+ ["OLL \u00b7 Small L", "OLL 50", "r' U r2 U' r2 U' r2 U r'"],
+ ["OLL \u00b7 Small L", "OLL 53", "l' U2 L U L' U' L U L' U l"],
+ ["OLL \u00b7 Small L", "OLL 54", "r U2 R' U' R U R' U' R U' r'"],
+ ["OLL \u00b7 Corners oriented", "OLL 28", "r U R' U' r' R U R U' R'"],
+ ["OLL \u00b7 Corners oriented", "OLL 57", "R U R' U' M' U R U' r'"],
+ ["OLL \u00b7 Edges oriented (OCLL)", "OLL 21", "R U2 R' U' R U R' U' R U' R'"],
+ ["OLL \u00b7 Edges oriented (OCLL)", "OLL 22", "R U2 R2 U' R2 U' R2 U2 R"],
+ ["OLL \u00b7 Edges oriented (OCLL)", "OLL 23", "R2 D' R U2 R' D R U2 R"],
+ ["OLL \u00b7 Edges oriented (OCLL)", "OLL 24", "r U R' U' r' F R F'"],
+ ["OLL \u00b7 Edges oriented (OCLL)", "OLL 25", "F' r U R' U' r' F R"],
+ ["OLL \u00b7 Edges oriented (OCLL)", "OLL 26", "R U2 R' U' R U' R'"],
+ ["OLL \u00b7 Edges oriented (OCLL)", "OLL 27", "R U R' U R U2 R'"],
  ['2-Look OLL · Edges','Line',"F R U R' U' F'"],['2-Look OLL · Edges','L shape',"f R U R' U' f'"],
  ['2-Look OLL · Edges','Dot',"F R U R' U' F' f R U R' U' f'"],
  ['2-Look OLL · Corners','Sune',"R U R' U R U2 R'"],['2-Look OLL · Corners','Antisune',"R U2 R' U' R U' R'"],
@@ -592,31 +764,110 @@ const DEFAULT_CASES=[
  ['9x9 Centers','Right oblique 2-4',"2R U 4R U' 2R' U 4R' U'",9],
  ['9x9 Centers','Left oblique 2-4',"2R U 4L' U' 2R' U 4L U'",9],
  ['9x9 Centers','Right oblique 3-4',"3R U 4R U' 3R' U 4R' U'",9],
- ['9x9 Centers','Left oblique 3-4',"3R U 4L' U' 3R' U 4L U'",9]
+ ['9x9 Centers','Left oblique 3-4',"3R U 4L' U' 3R' U 4L U'",9],
+ ["2x2 CLL \u00b7 Oriented", "Oriented 1", "R2 F2 R' U' R F2 R' U R'", 2],
+ ["2x2 CLL \u00b7 Oriented", "Oriented 2", "R U' R' U' F2 U' R U R' U F2", 2],
+ ["2x2 CLL \u00b7 Sune", "Sune 1", "R' U2 R U R' U R", 2],
+ ["2x2 CLL \u00b7 Sune", "Sune 2", "R F' U' F R' U' R", 2],
+ ["2x2 CLL \u00b7 Sune", "Sune 3", "F R' F' R U2 R U2 R'", 2],
+ ["2x2 CLL \u00b7 Sune", "Sune 4", "R' F2 R U2 R U' R' F", 2],
+ ["2x2 CLL \u00b7 Sune", "Sune 5", "F2 R U R2 F R2 U' R' F2", 2],
+ ["2x2 CLL \u00b7 Sune", "Sune 6", "R' F R2 F' R U2 R' U' R2", 2],
+ ["2x2 CLL \u00b7 Antisune", "Antisune 1", "R U2 R' U' R U' R'", 2],
+ ["2x2 CLL \u00b7 Antisune", "Antisune 2", "R' F R F' R U R'", 2],
+ ["2x2 CLL \u00b7 Antisune", "Antisune 3", "R U2 R' U2 R' F R F'", 2],
+ ["2x2 CLL \u00b7 Antisune", "Antisune 4", "F' U F R' U2 R' U2 R", 2],
+ ["2x2 CLL \u00b7 Antisune", "Antisune 5", "R2 F R U2 F' U2 R' F' R2", 2],
+ ["2x2 CLL \u00b7 Antisune", "Antisune 6", "R F' U2 F R' U2 R U R2", 2],
+ ["2x2 CLL \u00b7 Pi", "Pi 1", "R U' R2 U R2 U R2 U' R", 2],
+ ["2x2 CLL \u00b7 Pi", "Pi 2", "F2 U2 R' U' R2 U' F2 U' R'", 2],
+ ["2x2 CLL \u00b7 Pi", "Pi 3", "R2 U R2 F' U2 F R2 U' R2", 2],
+ ["2x2 CLL \u00b7 Pi", "Pi 4", "R U2 R' F2 U2 R U' R' U' F2", 2],
+ ["2x2 CLL \u00b7 Pi", "Pi 5", "F2 U R U R' U2 F2 R U2 R'", 2],
+ ["2x2 CLL \u00b7 Pi", "Pi 6", "R' U R' F' R2 U2 F' R U R'", 2],
+ ["2x2 CLL \u00b7 U", "U 1", "F R U R' U' F'", 2],
+ ["2x2 CLL \u00b7 U", "U 2", "R' U F' R U' R' F2 U2 R", 2],
+ ["2x2 CLL \u00b7 U", "U 3", "F2 U R' U' F2 U' R' U2 R", 2],
+ ["2x2 CLL \u00b7 U", "U 4", "R2 F2 R' U2 R F2 R' U2 R'", 2],
+ ["2x2 CLL \u00b7 U", "U 5", "R2 U' R U R2 U F R2 F'", 2],
+ ["2x2 CLL \u00b7 U", "U 6", "R' F2 U' R U' R' U F2 U R", 2],
+ ["2x2 CLL \u00b7 T", "T 1", "R U R' U' F' U' F", 2],
+ ["2x2 CLL \u00b7 T", "T 2", "F' U' F U R U R'", 2],
+ ["2x2 CLL \u00b7 T", "T 3", "R' U R' F U' R U F2 R2", 2],
+ ["2x2 CLL \u00b7 T", "T 4", "R U2 R F2 R' U2 R F2 R2", 2],
+ ["2x2 CLL \u00b7 T", "T 5", "R' U' R U' F2 U R' U' F2", 2],
+ ["2x2 CLL \u00b7 T", "T 6", "R U' R' F2 U R U2 R' U F'", 2],
+ ["2x2 CLL \u00b7 L", "L 1", "R U' R' U' F' U F", 2],
+ ["2x2 CLL \u00b7 L", "L 2", "F' U F U R U' R'", 2],
+ ["2x2 CLL \u00b7 L", "L 3", "R2 U' R U2 R' U2 R U' R2", 2],
+ ["2x2 CLL \u00b7 L", "L 4", "R' U2 R' U' F R2 F' U R2", 2],
+ ["2x2 CLL \u00b7 L", "L 5", "R U2 R U F' U2 F U' R2", 2],
+ ["2x2 CLL \u00b7 L", "L 6", "R U2 R' F R U2 R2 F R", 2],
+ ["2x2 CLL \u00b7 H", "H 1", "R2 U2 R U2 R2", 2],
+ ["2x2 CLL \u00b7 H", "H 2", "R2 F R2 F2 U2 F R2", 2],
+ ["2x2 CLL \u00b7 H", "H 3", "R U F2 U R2 U R U2 F2", 2],
+ ["2x2 CLL \u00b7 H", "H 4", "R' U R F' R2 U2 F' R' U R'", 2],
+ ["6x6 Centers", "Outer X-center", "2R U 2L' U' 2R' U 2L U'", 6],
+ ["6x6 Centers", "Inner X-center", "3R U 3L' U' 3R' U 3L U'", 6],
+ ["6x6 Centers", "Right oblique", "2R U 3R U' 2R' U 3R' U'", 6],
+ ["6x6 Centers", "Left oblique", "2R U 3L' U' 2R' U 3L U'", 6],
+ ["6x6 Parity", "OLL parity (outer edges)", "2R2 B2 U2 2L U2 2R' U2 2R U2 F2 2R F2 2L' B2 2R2", 6],
+ ["6x6 Parity", "OLL parity (inner edges)", "3R2 B2 U2 3L U2 3R' U2 3R U2 F2 3R F2 3L' B2 3R2", 6],
+ ["6x6 Parity", "PLL parity (outer edges)", "2R2 U2 2R2 3Uw2 2R2 3Uw2", 6],
+ ["6x6 Parity", "PLL parity (inner edges)", "3R2 U2 3R2 3Uw2 3R2 3Uw2", 6]
 ];
-const modeOf=g=>g.includes('Centers')?'centers':g.startsWith('F2L')?'f2l':(g==='PLL'||g.includes('Parity'))?'pll':g.endsWith('Edges')?'eo':'oll';
+const modeOf=g=>g.includes('Centers')?'centers':g.startsWith('F2L')?'f2l':(g==='PLL'||g.includes('Parity')||g.startsWith('2x2 CLL'))?'pll':g.endsWith('Edges')?'eo':'oll';
 const store={get(k,d){try{const v=localStorage.getItem('lll:'+k);return v?JSON.parse(v):d}catch(e){return d}},
   set(k,v){try{localStorage.setItem('lll:'+k,JSON.stringify(v))}catch(e){}}};
 
 let overrides=store.get('algs',{}), status=store.get('status',{}), stats=store.get('stats',{}), custom=store.get('custom',[]);
 // ---- which cube, and which sections of it ----
-const CUBES=[3,4,5,7,9];
+const CUBES=[2,3,4,5,6,7,9];
 let cubeN=CUBES.includes(store.get('cube',3))?store.get('cube',3):3;
-const SEC_LABEL={centers:'Centers',parity:'Parity',f2l:'F2L',oll:'OLL',pll:'PLL',custom:'Custom'};
-const secOf=c=>c.group.includes('Centers')?'centers':c.group.includes('Parity')?'parity':c.group.startsWith('F2L')?'f2l':c.group.startsWith('2-Look')?'oll':c.group==='PLL'?'pll':'custom';
-const SEC_DEFAULT={3:{f2l:true,oll:true,pll:true,custom:true},4:{parity:true,f2l:false,oll:false,pll:false},5:{parity:true,f2l:false,oll:false,pll:false},7:{centers:true,f2l:false,oll:false,pll:false},9:{centers:true,f2l:false,oll:false,pll:false}};
+const SEC_LABEL={centers:'Centers',parity:'Parity',cll:'CLL',f2l:'F2L',oll:'2-Look OLL',ollf:'OLL',pll:'PLL',custom:'Custom'};
+const STAGE=['f2l','oll','ollf','pll'];
+const secOf=c=>c.group.includes('Centers')?'centers':c.group.includes('Parity')?'parity':c.group.startsWith('2x2 CLL')?'cll':c.group.startsWith('OLL ·')?'ollf':c.group.startsWith('F2L')?'f2l':c.group.startsWith('2-Look')?'oll':c.group==='PLL'?'pll':'custom';
+const SEC_DEFAULT={2:{cll:true},3:{f2l:true,oll:true,ollf:false,pll:true,custom:true},4:{parity:true},5:{parity:true},6:{centers:true,parity:true},7:{centers:true},9:{centers:true}};
 let secOn=store.get('secs',{});
 const isOn=(N,k)=>{const v=(secOn[N]||{})[k];return v===undefined?!!SEC_DEFAULT[N][k]:v;};
-const sectionsFor=N=>N===3?['f2l','oll','pll'].concat(custom.length?['custom']:[]):[N>5?'centers':'parity','f2l','oll','pll'];
-function allCases(N=cubeN){
-  const base=DEFAULT_CASES.filter(x=>!x[3]).map(([g,n,a])=>({id:g+'/'+n,group:g,name:n,alg:overrides[g+'/'+n]||a,def:a,mode:modeOf(g),size:N,stage:N>3}));
-  if(N>3){const par=DEFAULT_CASES.filter(x=>x[3]===N).map(([g,n,a])=>({id:g+'/'+n,group:g,name:n,alg:overrides[g+'/'+n]||a,def:a,mode:modeOf(g),size:N}));
-    return par.concat(base);}
-  const cust=custom.map(c=>({id:'Custom/'+c.name,group:'Custom',name:c.name,alg:c.alg,def:c.alg,mode:analyse(c.alg).oriented?'pll':'oll',custom:true,size:3}));
-  return base.concat(cust);}
+const sectionsFor=N=>N===2?['cll']:N===3?STAGE.concat(custom.length?['custom']:[]):(N===6?['centers','parity']:N>6?['centers']:['parity']).concat(STAGE);
+// ---- left-hand mode: every alg mirrored left-to-right (swap R/L, reverse turns except x and M) ----
+let lefty=store.get('lefty',false);
+const MSW={R:'L',L:'R',r:'l',l:'r'};
+function mirror3(str){return simplify(parseAlg(str).map(([f,n])=>[MSW[f]||f,(f==='x'||f==='M')?n:-n]));}
+function mirrorNx(str,N){return nxParse(str,N).map(([f,lo,hi,a])=>nxTokStr([MSW[f]||f,lo,hi,f==='x'?a:-a],N)).filter(Boolean).join(' ');}
+const mirrorAlg=(alg,c)=>(c.size===3||c.stage)?mirror3(alg):mirrorNx(alg,c.size);
+function allCases(N=cubeN,raw=false){
+  const mk=([g,n,a,size])=>({id:g+'/'+n,group:g,name:n,alg:overrides[g+'/'+n]||a,def:a,mode:modeOf(g),size:size||N,stage:!size&&N>3});
+  let list;
+  if(N===2)list=DEFAULT_CASES.filter(x=>x[3]===2).map(mk);
+  else{const base=DEFAULT_CASES.filter(x=>!x[3]).map(mk);
+    if(N>3)list=DEFAULT_CASES.filter(x=>x[3]===N).map(mk).concat(base);
+    else list=base.concat(custom.map(c=>({id:'Custom/'+c.name,group:'Custom',name:c.name,alg:c.alg,def:c.alg,mode:analyse(c.alg).oriented?'pll':'oll',custom:true,size:3})));}
+  if(!raw&&lefty)list=list.map(c=>({...c,alg:mirrorAlg(c.alg,c),lefty:true}));
+  return list;}
 const statusOf=c=>status[c.id]||'learning';
-const statKey=c=>c.size===3?c.id:c.size+'x/'+c.id;
+const statKey=c=>(c.size===3?c.id:c.size+'x/'+c.id)+(c.lefty?'|L':'');
 const setOf=secOf;
+// ---- smart review: Leitner boxes per case (per cube, per hand) ----
+let srs=store.get('srs',{});
+const SRS_IV=[60e3,10*60e3,3600e3,86400e3,3*86400e3,7*86400e3,21*86400e3]; // box 0..6
+const srsOf=c=>srs[statKey(c)];
+function grade(c,q){const k=statKey(c),now=Date.now();const r=srs[k]||{box:0,due:0,n:0};
+  if(q==='again'){r.box=0;r.due=now+SRS_IV[0];}
+  else if(q==='hard'){r.box=Math.max(1,r.box);r.due=now+SRS_IV[r.box]/2;}
+  else{r.box=Math.min(6,r.box+1);r.due=now+SRS_IV[r.box];}
+  r.n++;r.last=now;srs[k]=r;store.set('srs',srs);
+  const st=statusOf(c);
+  if(r.box>=4&&st==='learning'){status[c.id]='learned';store.set('status',status);toast(c.name+' is now marked Learned');}
+  else if(q==='again'&&st==='learned'&&r.n>3){status[c.id]='learning';store.set('status',status);}
+  return r;}
+function dueLabel(c){const r=srsOf(c);if(!r)return'New';const d=r.due-Date.now();if(d<=0)return'Due now';
+  const m=d/60e3;return'Review in '+(m<60?Math.ceil(m)+' min':m<1440?Math.round(m/60)+' h':Math.round(m/1440)+' d');}
+function gradeTime(c,ms,revealed){if(revealed)return'again';
+  const sec=secOf(c);const avgs=allCases().filter(x=>secOf(x)===sec).map(x=>mean((stats[statKey(x)]||[]).slice(-5))).filter(v=>v!=null).sort((a,b)=>a-b);
+  if(avgs.length<3)return'good';const base=avgs[Math.floor(avgs.length/2)];
+  return ms<=base*1.1?'good':ms<=base*1.5?'hard':'again';}
 const active=()=>allCases().filter(c=>statusOf(c)!=='skip'&&isOn(cubeN,secOf(c)));
 const AUFS=['','U','U2',"U'"];
 const rnd=a=>a[Math.floor(Math.random()*a.length)];
@@ -651,7 +902,7 @@ function setupStr(c,auf){const e=eng(c);return e.setup([...e.inv(e.parse(c.alg))
 
 // ---- colouring by case type ----
 function stickerColor(s,mode,N=3){
-  let h=s.h.split(',').map(Number);if(N>3)h=h.map(v=>Math.abs(v)===N-1?Math.sign(v):0);
+  let h=s.h.split(',').map(Number);if(N!==3)h=h.map(v=>Math.abs(v)===N-1?Math.sign(v):0);
   const nz=h.filter(v=>v!==0).length;
   if(mode==='centers')return nz===1?COLORS[s.c]:GRAY;
   if(nz===1||mode==='pll'||mode==='full')return COLORS[s.c];
@@ -664,12 +915,12 @@ function stickerColor(s,mode,N=3){
 // ---- 2D top-down diagram for last-layer cases ----
 function diagram(c,auf,st){
   st=st||caseState(c,auf);const m={};for(const s of st)m[key(s.p,s.n)]=s;
-  const N=(c&&c.size)||3,big=N>3,mx=big?N-1:1,step=big?2:1,cs=[];for(let v=-mx;v<=mx;v+=step)cs.push(v);
+  const N=(c&&c.size)||3,big=N!==3,mx=big?N-1:1,step=big?2:1,cs=[];for(let v=-mx;v<=mx;v+=step)cs.push(v);
   const col=(p,n)=>{const s=m[key(p,n)];return s?stickerColor(s,c.mode,N):GRAY;};
   const G=3,O=14,S=(3*26+G*(3-N))/N,rx=N>3?2:3,parts=[];
   const rect=(x,y,w,h,f)=>parts.push(`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" rx="${rx}" fill="${f}"/>`);
   const span=N*S+(N+1)*G, side=8;
-  parts.push(`<rect x="${O-2}" y="${O-2}" width="${span+2}" height="${span+2}" rx="6" fill="var(--plastic)"/>`);
+  if(look!=='stickerless')parts.push(`<rect x="${O-2}" y="${O-2}" width="${span+2}" height="${span+2}" rx="6" fill="var(--plastic)"/>`);
   for(let r=0;r<N;r++)for(let q=0;q<N;q++)rect(O+G+q*(S+G)-1,O+G+r*(S+G)-1,S,S,col([cs[q],mx,cs[r]],[0,1,0]));
   for(let i=0;i<N;i++){const off=O+G+i*(S+G)-1;
     rect(off,O-side-4,S,side,col([cs[i],mx,-mx],[0,0,-1]));
@@ -682,10 +933,11 @@ function diagram(c,auf,st){
 // ---- 3D cube ----
 const HAS3D=(()=>{try{return typeof THREE!=='undefined'&&!!document.createElement('canvas').getContext('webgl')}catch(e){return false}})();
 let GEO=null;const MAT={};
-function geos(){if(GEO)return GEO;const r=.13,w=.86,s=new THREE.Shape(),a=-w/2,b=w/2;
+let look=store.get('look','stickered');const GEOS={};
+function geos(){if(GEOS[look])return GEOS[look];const less=look==='stickerless';const r=less?.07:.13,w=less?.955:.86,s=new THREE.Shape(),a=-w/2,b=w/2;
   s.moveTo(a+r,a);s.lineTo(b-r,a);s.quadraticCurveTo(b,a,b,a+r);s.lineTo(b,b-r);s.quadraticCurveTo(b,b,b-r,b);
   s.lineTo(a+r,b);s.quadraticCurveTo(a,b,a,b-r);s.lineTo(a,a+r);s.quadraticCurveTo(a,a,a+r,a);
-  GEO={box:new THREE.BoxGeometry(.97,.97,.97),st:new THREE.ShapeGeometry(s),body:new THREE.MeshLambertMaterial({color:0x121212})};return GEO;}
+  return GEOS[look]={box:new THREE.BoxGeometry(.97,.97,.97),st:new THREE.ShapeGeometry(s),body:new THREE.MeshLambertMaterial({color:less?0x2b2d2a:0x121212})};}
 const mat=hex=>MAT[hex]||(MAT[hex]=new THREE.MeshLambertMaterial({color:hex}));
 const Z=()=>new THREE.Vector3(0,0,1);
 class Cube3D{
@@ -709,8 +961,8 @@ class Cube3D{
       try{new ResizeObserver(fit).observe(el)}catch(e){window.addEventListener('resize',fit)}fit();
       const loop=t=>{this.tick(t);requestAnimationFrame(loop)};requestAnimationFrame(loop);}
   }
-  view(){this.root.rotation.set(this.pitch,this.yaw,0,'XYZ');this.root.scale.setScalar(3/this.eng.N);this.dirty=true;}
-  build(state,mode,e){if(state)this.state=state;if(mode)this.mode=mode;if(e&&e!==this.eng){this.eng=e;this.view();}const G=geos(),u=this.eng.unit;
+  view(){this.root.rotation.set(this.pitch,this.yaw,0,'XYZ');this.root.scale.setScalar(Math.min(1.2,3/this.eng.N));this.dirty=true;}
+  build(state,mode,e){if(state)this.state=state;if(mode)this.mode=mode;if(!this.state)return;if(e&&e!==this.eng){this.eng=e;this.view();}const G=geos(),u=this.eng.unit;
     while(this.root.children.length)this.root.remove(this.root.children[0]);
     const by={};for(const s of this.state){const k=s.p.join(',');(by[k]=by[k]||[]).push(s);}
     for(const k in by){const p=k.split(',').map(Number);if(!p.some(v=>v))continue;
@@ -760,39 +1012,52 @@ function makePlayer(elId,algElId,ids){
     cube.play(todo,()=>{P.idx++;paint();},()=>{P.playing=false;paint();});};
   P.playOther=(tokens)=>{if(!cube)return;cube.stop();cube.build(cloneSt(P.start),P.mode,P.eng);P.idx=0;P.playing=false;cube.ms=+speed.value;cube.play(tokens,null,null);};
   document.getElementById(ids.reset).onclick=e=>{e.currentTarget.blur();P.reset();};
-  document.getElementById(ids.step).onclick=e=>{e.currentTarget.blur();if(cube&&cube.anim)return;P.run(1);};
-  document.getElementById(ids.play).onclick=e=>{e.currentTarget.blur();if(cube&&cube.anim)return;P.run(0);};
+  document.getElementById(ids.step).onclick=e=>{e.currentTarget.blur();if(cube&&cube.anim)return;if(P.onPeek)P.onPeek();P.run(1);};
+  document.getElementById(ids.play).onclick=e=>{e.currentTarget.blur();if(cube&&cube.anim)return;if(P.onPeek)P.onPeek();P.run(0);};
   speed.addEventListener('input',()=>{if(cube)cube.ms=+speed.value});
   return P;}
 
 // ---- drill ----
 const $=id=>document.getElementById(id);
 const dp=makePlayer('drill3d','drillAlg',{reset:'dReset',step:'dStep',play:'dPlay',speed:'dSpeed'});
-let current=null,currentAuf='',session=store.get('session',[]);
+dp.onPeek=()=>{if($('optHideSolve').checked)dRevealed=true;};
+let current=null,currentAuf='',session=store.get('session',[]),dlog=store.get('dlog',[]);
 function fmt(ms){if(ms==null)return'—';return (ms/1000).toFixed(2);}
 function avg(arr,n){if(arr.length<n)return null;const s=arr.slice(-n).sort((a,b)=>a-b).slice(1,-1);return s.reduce((a,b)=>a+b,0)/s.length;}
 function mean(arr){return arr.length?arr.reduce((a,b)=>a+b,0)/arr.length:null;}
 function pickCase(){
   const pool=active();if(!pool.length)return null;
   const cands=pool.length>1&&current?pool.filter(c=>c.id!==current.id):pool;
-  if(!$('optWeak').checked)return rnd(cands);
-  const ms=cands.map(c=>mean((stats[statKey(c)]||[]).slice(-5))).filter(v=>v!=null),base=ms.length?mean(ms):1;
-  const w=cands.map(c=>{const h=stats[statKey(c)]||[];if(h.length<3)return 2.2;return Math.max(.4,Math.pow(mean(h.slice(-5))/base,2))*(statusOf(c)==='learned'?.6:1);});
-  let r=Math.random()*w.reduce((a,b)=>a+b,0);for(let i=0;i<cands.length;i++){r-=w[i];if(r<=0)return cands[i];}
+  if(!$('optSmart').checked)return rnd(cands);
+  const now=Date.now();
+  const w=cands.map(c=>{const r=srsOf(c);if(!r)return 2.5;                       // never seen: fairly likely
+    if(r.due<=now)return 4+Math.min(4,(now-r.due)/SRS_IV[Math.min(r.box,6)]);    // due: most likely, more if overdue
+    return r.box>=4?.12:.5;});                                                     // not due yet: rarely
+  let x=Math.random()*w.reduce((a,b)=>a+b,0);for(let i=0;i<cands.length;i++){x-=w[i];if(x<=0)return cands[i];}
   return cands[cands.length-1];}
 function nameLabel(c){return c.group==='PLL'?c.name+' perm':c.name;}
 function loadCase(){
   current=pinned?(allCases().find(c=>c.id===pinned)||null):null;if(!current){pinned=null;current=pickCase();}updatePickLabel();
   if(!current){$('drillName').textContent='Nothing to practice';$('drillMini').innerHTML='';$('drillSetup').textContent='Turn a practice set on, or set some cases back to Learning in the Cases tab.';return;}
-  currentAuf=aufFor(current);
+  currentAuf=aufFor(current);dRevealed=false;
   const st=caseState(current,currentAuf);
   $('drillMini').innerHTML=(current.mode==='f2l'||current.mode==='centers')?'':diagram(current,currentAuf,st);
-  $('drillGroup').textContent=(current.size>3?current.size+'x'+current.size+' · ':'')+current.group;
+  $('drillGroup').textContent=(current.stage?current.size+'x'+current.size+' · ':'')+current.group;
   const hide=$('optHide').checked;
   $('drillName').textContent=hide?'?':nameLabel(current);$('drillName').classList.toggle('hidden-name',hide);
-  $('drillSetup').textContent=setupStr(current,currentAuf);$('bigNote').hidden=current.size===3||!!current.stage;
+  $('drillSetup').textContent=setupStr(current,currentAuf);$('bigNote').hidden=current.size<=3||!!current.stage;
   dp.load(st,current.mode,solveToks(current,currentAuf),'Solution hidden.',eng(current));
-  if(!$('optHideSolve').checked)dp.reveal();$('btnReveal').hidden=!$('optHideSolve').checked;}
+  if(!$('optHideSolve').checked)dp.reveal();$('btnReveal').hidden=!$('optHideSolve').checked;
+  $('drillReview').textContent=$('optSmart').checked?dueLabel(current):'';
+  renderExtras();}
+let dRevealed=false;
+// alternates + notes for the current case (stored against the right-hand case id)
+let alts=store.get('alts',{}),notes=store.get('notes',{});
+function altsFor(c){return(alts[c.id]||[]).map(a=>c.lefty?mirrorAlg(a,c):a);}
+function renderExtras(){const c=current;if(!c)return;const al=altsFor(c);
+  $('drillAlts').hidden=!al.length;$('drillAlts').innerHTML=al.length?'<span class="label">Also works</span>'+al.map(a=>`<div class="alt mono">${a}</div>`).join(''):'';
+  $('drillNote').value=notes[c.id]||'';}
+$('drillNote').addEventListener('input',e=>{if(!current)return;const v=e.target.value;if(v.trim())notes[current.id]=v;else delete notes[current.id];clearTimeout(renderExtras.h);renderExtras.h=setTimeout(()=>store.set('notes',notes),400);});
 // ---- case picker ----
 const pinKey=()=>cubeN===3?'pinned':'pinned'+cubeN;
 let pinned=store.get(pinKey(),null),pickBuilt=false;
@@ -827,18 +1092,23 @@ function renderSession(){
     return `<li><span>${s.name}</span><span><span class="t">${fmt(s.t)}</span><button data-del="${idx}" aria-label="Delete solve">✕</button></span></li>`}).join('');}
 function renderSecs(){const cs=allCases();const secs=sectionsFor(cubeN);
   const chip=k=>{const n=cs.filter(c=>secOf(c)===k&&statusOf(c)!=='skip').length;
-    return `<button class="chip${k==='parity'||k==='centers'?' parity':''}" data-sec="${k}" aria-pressed="${isOn(cubeN,k)}">${SEC_LABEL[k]}<span class="n">${n}</span></button>`;};
+    return `<button class="chip${k==='parity'||k==='centers'||k==='cll'?' parity':''}" data-sec="${k}" aria-pressed="${isOn(cubeN,k)}">${SEC_LABEL[k]}<span class="n">${n}</span></button>`;};
   let html='';
-  if(cubeN>3)html+=chip(sectionsFor(cubeN)[0])+`<span class="secdiv">3x3 stage</span>`+['f2l','oll','pll'].map(chip).join('');
+  if(cubeN>3)html+=secs.filter(k=>!STAGE.includes(k)).map(chip).join('')+`<span class="secdiv">3x3 stage</span>`+STAGE.map(chip).join('');
   else html+=secs.map(chip).join('');
   $('secChips').innerHTML=html;
-  document.querySelectorAll('[data-test="ll"],[data-test="f2l"]').forEach(b=>b.hidden=cubeN>3);$('scrHelp').hidden=cubeN>3;}
+  document.querySelectorAll('[data-test="ll"],[data-test="f2l"]').forEach(b=>b.hidden=cubeN!==3);$('scrHelp').hidden=cubeN!==3;}
 $('secChips').addEventListener('click',e=>{const b=e.target.closest('[data-sec]');if(!b)return;
   (secOn[cubeN]=secOn[cubeN]||{})[b.dataset.sec]=!isOn(cubeN,b.dataset.sec);store.set('secs',secOn);renderSecs();loadCase();refreshView();});
-function refreshView(){const v=view();if(v==='timer'){newScramble();tmRender();}if(v==='quiz')loadQuiz();if(v==='cases')renderCases();if(v==='test'){testStarted=true;newTest();}}
+function refreshView(){const v=view();if(v==='timer'){newScramble();tmRender();}if(v==='progress')renderProgress();if(v==='quiz')loadQuiz();if(v==='cases')renderCases();if(v==='test'){testStarted=true;newTest();}}
 function setCube(N){cubeN=N;store.set('cube',N);document.querySelectorAll('#cubeSel button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.cube===N));
-  pinned=store.get(pinKey(),null);if(N>3&&tMode!=='recall'){tMode='recall';document.querySelectorAll('[data-test]').forEach(x=>x.setAttribute('aria-pressed',x.dataset.test==='recall'));}
+  pinned=store.get(pinKey(),null);if(N!==3&&tMode!=='recall'){tMode='recall';document.querySelectorAll('[data-test]').forEach(x=>x.setAttribute('aria-pressed',x.dataset.test==='recall'));}
   renderSecs();loadCase();refreshView();}
+function setLook(v){look=v;store.set('look',v);for(const k in snapCache)delete snapCache[k];
+  document.querySelectorAll('[data-look]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.look===v));
+  for(const P of [dp,tp])if(P.cube){P.cube.build(null,null);}if(tmCube)tmCube.build(null,null);
+  loadCase();refreshView();if(!$('pickPanel').hidden)buildPicker();}
+document.querySelector('.look').addEventListener('click',e=>{const b=e.target.closest('[data-look]');if(b){b.blur();setLook(b.dataset.look);}});
 $('cubeSel').addEventListener('click',e=>{const b=e.target.closest('[data-cube]');if(!b)return;b.blur();setCube(+b.dataset.cube);});
 $('log').addEventListener('click',e=>{const b=e.target.closest('[data-del]');if(!b)return;
   const s=session[+b.dataset.del];session.splice(+b.dataset.del,1);
@@ -846,8 +1116,10 @@ $('log').addEventListener('click',e=>{const b=e.target.closest('[data-del]');if(
   store.set('session',session);store.set('stats',stats);renderSession();});
 function record(ms){
   if(!current)return;
-  const sk=statKey(current);session.push({id:sk,name:(current.size>3?current.size+'x'+current.size+' · ':'')+nameLabel(current),t:ms});
+  const sk=statKey(current);session.push({id:sk,name:(current.size!==3?current.size+'x'+current.size+' · ':'')+nameLabel(current)+(current.lefty?' (L)':''),t:ms});
   (stats[sk]=stats[sk]||[]).push(ms);if(stats[sk].length>50)stats[sk].shift();
+  dlog.push({k:sk,t:ms,at:Date.now()});if(dlog.length>6000)dlog.splice(0,dlog.length-6000);store.set('dlog',dlog);
+  if($('optSmart').checked){const q=gradeTime(current,ms,dRevealed&&$('optHideSolve').checked);grade(current,q);}
   if(session.length>200)session.shift();
   store.set('session',session);store.set('stats',stats);renderSession();
   $('timerHint').textContent=`Last: ${nameLabel(current)} in ${fmt(ms)} · ${current.alg}`;
@@ -871,17 +1143,18 @@ document.addEventListener('keyup',e=>{if(view()!=='drill'||typing())return;if(e.
 timerEl.addEventListener('pointerdown',e=>{e.preventDefault();press();});
 timerEl.addEventListener('pointerup',e=>{e.preventDefault();release();});
 $('optHideSolve').onchange=e=>{e.target.blur();store.set('hideSolve',e.target.checked);$('btnReveal').hidden=!e.target.checked;if(e.target.checked)dp.hide();else dp.reveal();};
-$('btnReveal').onclick=e=>{e.currentTarget.blur();if(current){dp.reveal();if($('optHide').checked)$('drillName').textContent=nameLabel(current);}};
+$('btnReveal').onclick=e=>{e.currentTarget.blur();if(current){dRevealed=true;dp.reveal();if($('optHide').checked)$('drillName').textContent=nameLabel(current);}};
 $('btnSkip').onclick=e=>{e.currentTarget.blur();loadCase();};
 $('optHide').onchange=e=>{e.target.blur();store.set('hide',$('optHide').checked);if(current){const h=$('optHide').checked;$('drillName').textContent=h?'?':nameLabel(current);$('drillName').classList.toggle('hidden-name',h);}};
-$('optWeak').onchange=e=>{e.target.blur();store.set('weak',$('optWeak').checked);};
+$('optSmart').onchange=e=>{e.target.blur();store.set('smart',e.target.checked);};
+$('optLefty').onchange=e=>{e.target.blur();lefty=e.target.checked;store.set('lefty',lefty);loadCase();refreshView();toast(lefty?'Left-hand mode on: algs are mirrored':'Left-hand mode off');};
 
 // ---- test ----
 const tp=makePlayer('test3d','testAlg',{reset:'tReset',step:'tStep',play:'tPlay',speed:'tSpeed'});
 let tMode='recall',tCase=null,tAuf='',tDone=false,tMine=null,tScore=store.get('tscore',{r:0,n:0,s:0}),tReveal=[];
 function renderTScore(){$('tRight').textContent=tScore.r;$('tTried').textContent=tScore.n;$('tStreak').textContent=tScore.s;}
 function solvesCase(st,mode,e){
-  if(e&&e.N>3){if(!e.reduced)return AUFS.some(a=>nxSolvedState(e.apply(cloneSt(st),e.parse(a)),e.N));st=reduceTo3(st,e.N);}
+  if(e&&e.N!==3){if(!e.reduced)return AUFS.some(a=>nxSolvedState(e.apply(cloneSt(st),e.parse(a)),e.N));st=reduceTo3(st,e.N);}
   const cm=centerMap(st);
   if(mode==='f2l')return st.every(x=>x.p[1]===1||x.c===cm[x.n.join(',')]);
   const below=st.every(x=>x.p[1]===1||x.c===cm[x.n.join(',')]);if(!below)return false;
@@ -924,14 +1197,14 @@ function newTest(){
   $('tPlay').textContent='Play';}
 function revealTest(){
   tp.reveal();
-  if(tMode==='recall'){if(!tDone){tDone=true;tScore.n++;tScore.s=0;store.set('tscore',tScore);renderTScore();
+  if(tMode==='recall'){if(!tDone){tDone=true;tScore.n++;tScore.s=0;store.set('tscore',tScore);renderTScore();if($('optSmart').checked)grade(tCase,'again');
     $('tVerdict').textContent='Revealed: here is the saved alg.';$('tVerdict').className='verdict bad';}return;}
   const html=tReveal.map(([lab,c,a])=>`<div><span class="label">${lab}</span> <b>${nameLabel(c)}</b> <span class="mono">${c.alg}</span></div>`).join('');
   $('scrHint').innerHTML=`<div class="reveal-list">${html}</div>`;}
 $('tForm').addEventListener('submit',e=>{e.preventDefault();if(!tCase)return;const txt=$('tInput').value.trim();if(!txt)return;
   const E=eng(tCase);let toks;try{toks=E.parse(txt)}catch(err){$('tVerdict').textContent=err.message;$('tVerdict').className='verdict bad';return;}
   const ok=AUFS.some(pre=>solvesCase(E.apply(E.apply(caseState(tCase,tAuf),E.parse(pre)),toks),tCase.mode,E));
-  if(!tDone){tDone=true;tScore.n++;if(ok){tScore.r++;tScore.s++;}else tScore.s=0;store.set('tscore',tScore);renderTScore();}
+  if(!tDone){tDone=true;tScore.n++;if(ok){tScore.r++;tScore.s++;}else tScore.s=0;store.set('tscore',tScore);renderTScore();if($('optSmart').checked)grade(tCase,ok?'good':'again');}
   tMine=toks;$('tMine').hidden=false;
   if(ok){const k=t=>E.simp(t).map(E.tok).join(' ');const same=k(toks)===k(E.parse(tCase.alg));
     $('tVerdict').textContent=same?'Correct.':'Correct. That works, and it differs from your saved alg.';$('tVerdict').className='verdict ok';}
@@ -964,7 +1237,7 @@ $('choices').addEventListener('click',e=>{const b=e.target.closest('button');if(
 
 // ---- cases ----
 function renderCases(){
-  const cases=allCases(),groups=[...new Set(cases.map(c=>c.group))];
+  const cases=allCases(cubeN,true),groups=[...new Set(cases.map(c=>c.group))];
   $('groups').innerHTML=groups.map(g=>{const cs=cases.filter(c=>c.group===g);const on=cs.filter(c=>statusOf(c)!=='skip').length;
     return `<div class="group"><div class="group-head"><h2>${g}</h2><span class="count">${on} of ${cs.length} in rotation</span><span class="spacer"></span>
       <button class="btn" data-gall="${g}" data-to="learning">Drill all</button><button class="btn" data-gall="${g}" data-to="skip">Skip all</button></div>
@@ -973,9 +1246,15 @@ function card(c){const h=stats[statKey(c)]||[];const s=statusOf(c);
   const best=h.length?Math.min(...h):null,a=mean(h.slice(-5));
   return `<div class="card ${s==='skip'?'off':''}" data-id="${c.id}">
     <div class="card-top">${thumb(c,'')}<div><div class="nm">${c.name}</div>
-      <div class="st">${h.length} solves<br>best ${fmt(best)} · avg ${fmt(a)}</div></div></div>
+      <div class="st">${h.length} solves<br>best ${fmt(best)} · avg ${fmt(a)}<br><span class="due">${dueLabel(c)}</span></div></div></div>
     <textarea id="alg-${c.id.replace(/\W/g,'_')}" data-alg spellcheck="false" aria-label="Algorithm for ${c.name}">${c.alg}</textarea>
     <span class="err" data-err></span>
+    <details class="more"${(alts[c.id]||[]).length||notes[c.id]?' open':''}><summary>Alternatives &amp; notes${(alts[c.id]||[]).length?' ('+alts[c.id].length+')':''}</summary>
+      ${(alts[c.id]||[]).map((x,i)=>`<div class="alt-row"><span class="mono">${x}</span><button class="linkbtn" data-use="${i}">Use as main</button><button class="linkbtn" data-delalt="${i}" aria-label="Remove alternative">✕</button></div>`).join('')}
+      <form class="alt-add" data-addalt><input class="mono" id="alt-${c.id.replace(/\W/g,'_')}" placeholder="Add another alg for this case" aria-label="Alternative algorithm"><button class="btn">Add</button></form>
+      <span class="err" data-alterr></span>
+      <textarea data-note id="note-${c.id.replace(/\W/g,'_')}" rows="2" placeholder="Notes: fingertricks, recognition…" aria-label="Notes">${notes[c.id]||''}</textarea>
+    </details>
     <div class="card-foot"><span class="st">${s==='learned'?'✓ Learned':s==='skip'?'Skipped':''}</span>
       <span style="display:flex;gap:6px">
       <select data-status aria-label="Status"><option value="learning"${s==='learning'?' selected':''}>Learning</option><option value="learned"${s==='learned'?' selected':''}>Learned</option><option value="skip"${s==='skip'?' selected':''}>Skip</option></select>
@@ -987,7 +1266,7 @@ function checkAlg(alg,c){const E=eng(c);let toks;try{toks=E.parse(alg)}catch(e){
   const a=analyse(alg);if(!a.upright)return'This alg leaves the cube rotated. Undo any x or z rotation at the end.';
   if(!a.f2l)return'This alg breaks the first two layers.';
   return null;}
-$('groups').addEventListener('change',e=>{const cd=e.target.closest('.card');if(!cd)return;const c=allCases().find(x=>x.id===cd.dataset.id);
+$('groups').addEventListener('change',e=>{const cd=e.target.closest('.card');if(!cd)return;const c=allCases(cubeN,true).find(x=>x.id===cd.dataset.id);
   if(e.target.matches('[data-status]')){status[c.id]=e.target.value;store.set('status',status);renderCases();renderSecs();loadCase();}
   if(e.target.matches('[data-alg]')){const alg=e.target.value.trim().replace(/\s+/g,' ');const err=checkAlg(alg,c);
     cd.querySelector('[data-err]').textContent=err||'';if(err)return;
@@ -995,20 +1274,30 @@ $('groups').addEventListener('change',e=>{const cd=e.target.closest('.card');if(
     else{if(alg===c.def)delete overrides[c.id];else overrides[c.id]=alg;store.set('algs',overrides);}
     toast('Saved '+c.name);renderCases();}});
 $('groups').addEventListener('click',e=>{
-  const g=e.target.closest('[data-gall]');if(g){allCases().filter(c=>c.group===g.dataset.gall).forEach(c=>status[c.id]=g.dataset.to);store.set('status',status);renderCases();renderSecs();loadCase();return;}
+  const g=e.target.closest('[data-gall]');if(g){allCases(cubeN,true).filter(c=>c.group===g.dataset.gall).forEach(c=>status[c.id]=g.dataset.to);store.set('status',status);renderCases();renderSecs();loadCase();return;}
   const cd=e.target.closest('.card');if(!cd)return;
   if(e.target.matches('[data-reset]')){delete overrides[cd.dataset.id];store.set('algs',overrides);renderCases();toast('Reset to default');}
-  if(e.target.matches('[data-remove]')){custom=custom.filter(x=>'Custom/'+x.name!==cd.dataset.id);store.set('custom',custom);renderCases();renderSecs();toast('Removed');}});
+  if(e.target.matches('[data-remove]')){custom=custom.filter(x=>'Custom/'+x.name!==cd.dataset.id);store.set('custom',custom);renderCases();renderSecs();toast('Removed');}
+  const c=allCases(cubeN,true).find(x=>x.id===cd.dataset.id);
+  if(e.target.matches('[data-use]')){const i=+e.target.dataset.use,list=alts[c.id];const nu=list[i];list[i]=c.alg;
+    if(nu===c.def)delete overrides[c.id];else overrides[c.id]=nu;store.set('algs',overrides);store.set('alts',alts);renderCases();loadCase();toast('Main alg updated');}
+  if(e.target.matches('[data-delalt]')){alts[c.id].splice(+e.target.dataset.delalt,1);if(!alts[c.id].length)delete alts[c.id];store.set('alts',alts);renderCases();}});
+$('groups').addEventListener('submit',e=>{const f=e.target.closest('[data-addalt]');if(!f)return;e.preventDefault();const cd=f.closest('.card');
+  const c=allCases(cubeN,true).find(x=>x.id===cd.dataset.id);const alg=f.querySelector('input').value.trim().replace(/\s+/g,' ');if(!alg)return;
+  const err=checkAlg(alg,c);cd.querySelector('[data-alterr]').textContent=err||'';if(err)return;
+  (alts[c.id]=alts[c.id]||[]).push(alg);store.set('alts',alts);renderCases();toast('Alternative added');});
+$('groups').addEventListener('input',e=>{if(!e.target.matches('[data-note]'))return;const id=e.target.closest('.card').dataset.id;const v=e.target.value;
+  if(v.trim())notes[id]=v;else delete notes[id];clearTimeout(renderCases.h);renderCases.h=setTimeout(()=>store.set('notes',notes),400);});
 $('addForm').addEventListener('submit',e=>{e.preventDefault();const name=$('addName').value.trim(),alg=$('addAlg').value.trim().replace(/\s+/g,' ');
   if(custom.some(c=>c.name===name)){$('addErr').textContent='You already have a case with that name.';return;}
   const err=checkAlg(alg,null);if(err){$('addErr').textContent=err;return;}
   custom.push({name,alg});store.set('custom',custom);$('addErr').textContent='';$('addName').value='';$('addAlg').value='';renderCases();renderSecs();toast('Added '+name);});
 
 // ---- speed timer ----
-const SCR_LEN={3:21,4:40,5:60,7:100,9:120};
+const SCR_LEN={2:11,3:21,4:40,5:60,6:80,7:100,9:120};
 function genScramble(N){
-  const faces=['R','L','U','D','F','B'],axis={R:0,L:0,U:1,D:1,F:2,B:2};
-  const depths=N===3?[1]:Array.from({length:Math.floor(N/2)},(_,i)=>i+1); // 4x4/5x5: R, Rw · 7x7: up to 3Rw · 9x9: up to 4Rw
+  const faces=N===2?['R','U','F']:['R','L','U','D','F','B'],axis={R:0,L:0,U:1,D:1,F:2,B:2};
+  const depths=N<=3?[1]:Array.from({length:Math.floor(N/2)},(_,i)=>i+1); // 4x4/5x5: R, Rw · 7x7: up to 3Rw · 9x9: up to 4Rw
   const out=[];let ax=-1,used=new Set();
   while(out.length<SCR_LEN[N]){const f=rnd(faces),d=rnd(depths),k=f+d;
     if(axis[f]===ax){if(used.has(k))continue;}else{ax=axis[f];used=new Set();}
@@ -1021,45 +1310,90 @@ function fmtT(ms){if(ms==null)return'—';if(ms===Infinity)return'DNF';const c=M
   return sec>=60?Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0')+'.'+cs:sec+'.'+cs;}
 function aoN(list,n){if(list.length<n)return null;const v=list.slice(-n).map(tval).sort((a,b)=>a-b);const trim=n<=12?1:Math.ceil(n*.05);
   const k=v.slice(trim,n-trim);return k.includes(Infinity)?Infinity:k.reduce((a,b)=>a+b,0)/k.length;}
+const SPLITS={off:[],cfop:['Cross','F2L','OLL','PLL'],red:['Centers','Edges','3x3'],roux:['First block','Second block','CMLL','LSE']};
+function bestAo(L,n){let b=null;for(let k=n;k<=L.length;k++){const v=aoN(L.slice(0,k),n);if(v!==null&&v!==Infinity&&(b===null||v<b))b=v;}return b;}
+function bestSingle(L){const f=L.map(tval).filter(v=>v!==Infinity);return f.length?Math.min(...f):null;}
 function tmRender(){const L=tmList(),fin=L.map(tval).filter(v=>v!==Infinity);
   $('tmSessLabel').textContent=cubeN+'x'+cubeN+' session';$('tmTitle').textContent=cubeN+'x'+cubeN+' scramble';
   $('tmN').textContent=L.length;$('tmBest').textContent=fin.length?fmtT(Math.min(...fin)):'—';
   $('tmMean').textContent=fin.length?fmtT(fin.reduce((a,b)=>a+b,0)/fin.length):'—';
   $('tmAo5').textContent=fmtT(aoN(L,5));$('tmAo12').textContent=fmtT(aoN(L,12));$('tmAo50').textContent=fmtT(aoN(L,50));
-  $('tmList').innerHTML=L.length?L.map((s,i)=>`<li title="${s.scr}"><span class="i">${i+1}</span><span class="t">${s.pen==='DNF'?'DNF <span class="i">('+fmtT(s.t)+')</span>':fmtT(tval(s))+(s.pen==='+2'?'+':'')}</span><span class="acts"><button data-pen="+2" data-i="${i}" aria-pressed="${s.pen==='+2'}">+2</button><button data-pen="DNF" data-i="${i}" aria-pressed="${s.pen==='DNF'}">DNF</button><button data-del="${i}" aria-label="Delete solve">✕</button></span></li>`).reverse().join('')
-    :'<li class="empty" style="display:block">No solves yet for this cube.</li>';}
+  const spLine=s=>s.splits?'<span class="sp">'+s.splits.map((t,k)=>SPLITS[s.sp][k]+' '+fmtT(t-(k?s.splits[k-1]:0))).join(' · ')+'</span>':'';
+  $('tmList').innerHTML=L.length?L.map((s,i)=>`<li title="${s.scr}"><span class="i">${i+1}</span><span class="t">${s.pen==='DNF'?'DNF <span class="i">('+fmtT(s.t)+')</span>':fmtT(tval(s))+(s.pen==='+2'?'+':'')}</span><span class="acts"><button data-pen="+2" data-i="${i}" aria-pressed="${s.pen==='+2'}">+2</button><button data-pen="DNF" data-i="${i}" aria-pressed="${s.pen==='DNF'}">DNF</button><button data-del="${i}" aria-label="Delete solve">✕</button></span>${spLine(s)}</li>`).reverse().join('')
+    :'<li class="empty" style="display:block">No solves yet for this cube.</li>';
+  // split averages over the last 12 solves that used the current split mode
+  const mode=$('tmSplits').value,ph=SPLITS[mode],withS=L.filter(s=>s.sp===mode&&s.splits&&s.pen!=='DNF').slice(-12);
+  $('tmSplitPanel').hidden=!ph.length||!withS.length;
+  if(ph.length&&withS.length){const avgs=ph.map((_,k)=>withS.reduce((a,s)=>a+(s.splits[k]-(k?s.splits[k-1]:0)),0)/withS.length);const mx=Math.max(...avgs);
+    $('tmSplitAvg').innerHTML=avgs.map((v,k)=>`<div class="sbar"><span>${ph[k]}</span><span class="trk"><i style="width:${(v/mx*100).toFixed(1)}%"></i></span><span class="v">${fmtT(v)}</span></div>`).join('');}}
 $('tmList').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const L=tmList();
   if(b.dataset.del!==undefined)L.splice(+b.dataset.del,1);else{const s=L[+b.dataset.i];s.pen=s.pen===b.dataset.pen?'':b.dataset.pen;}
   store.set('solves',solves);tmRender();});
 $('tmClear').onclick=()=>{$('tmClear').hidden=true;$('tmClearYes').hidden=false;setTimeout(()=>{$('tmClear').hidden=false;$('tmClearYes').hidden=true;},4000);};
 $('tmClearYes').onclick=()=>{solves[cubeN]=[];store.set('solves',solves);$('tmClear').hidden=false;$('tmClearYes').hidden=true;tmRender();};
-function newScramble(){tmScr=genScramble(cubeN);$('tmScr').textContent=tmScr;$('tmScr').classList.toggle('long',cubeN>=7);
+// random-state 3x3 scrambles come from a two-phase solver running in a worker; random-move is the fallback while it warms up
+let scrW=null,rsQ=[],tmFallback=false;
+function initRS(){if(scrW)return;try{const src=$('scrWorkerSrc').textContent;if(src.length<1000)return;
+  scrW=new Worker(URL.createObjectURL(new Blob([src],{type:'text/javascript'})));
+  scrW.onmessage=e=>{const d=e.data;if(d.type==='ready'){scrW.postMessage({type:'scramble'});scrW.postMessage({type:'scramble'});}
+    else if(d.type==='scramble'){rsQ.push(d.scramble);if(tmFallback&&cubeN===3&&view()==='timer'&&(tm.state==='idle'||tm.state==='stopped')&&!tm.inspecting)newScramble();}};}catch(err){scrW=null;}}
+function newScramble(){
+  if(cubeN===3){initRS();if(rsQ.length){tmScr=rsQ.shift();tmFallback=false;if(scrW)scrW.postMessage({type:'scramble'});$('tmKind').textContent='Random-state';}
+    else{tmScr=genScramble(3);tmFallback=!!scrW;$('tmKind').textContent=scrW?'Random-move · random-state warming up':'Random-move';}}
+  else{tmScr=genScramble(cubeN);tmFallback=false;$('tmKind').textContent='Random-move';}
+  $('tmScr').textContent=tmScr;$('tmScr').classList.toggle('long',cubeN>=7);
   if(HAS3D){try{if(!tmCube)tmCube=new Cube3D($('tm3d'));const e=engN(cubeN);tmCube.stop();tmCube.build(e.apply(e.solved(),e.parse(tmScr)),'full',e);}catch(err){}}}
 $('tmNew').onclick=e=>{e.currentTarget.blur();if(tm.state==='idle'||tm.state==='stopped')newScramble();};
 $('tmInsp').checked=store.get('insp',false);$('tmInsp').onchange=e=>{e.target.blur();store.set('insp',e.target.checked);};
-const tm={state:'idle',t0:0,insp0:0,raf:0,hold:0};
+$('tmCalls').value=store.get('calls','off');$('tmCalls').onchange=e=>{e.target.blur();store.set('calls',e.target.value);};
+$('tmSplits').value=store.get('splits','off');$('tmSplits').onchange=e=>{e.target.blur();store.set('splits',e.target.value);tmRender();};
+// inspection calls
+let actx=null;
+function beep(n){try{actx=actx||new(window.AudioContext||window.webkitAudioContext)();for(let k=0;k<n;k++){const o=actx.createOscillator(),g=actx.createGain();o.frequency.value=880;o.connect(g);g.connect(actx.destination);
+  const t=actx.currentTime+k*.18;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.25,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+.13);o.start(t);o.stop(t+.14);}}catch(e){}}
+function call(sec){const m=$('tmCalls').value;if(m==='off')return;
+  if(m==='voice'&&window.speechSynthesis){try{speechSynthesis.cancel();speechSynthesis.speak(new SpeechSynthesisUtterance(sec===8?'Eight seconds':'Twelve seconds'));return;}catch(e){}}
+  beep(sec===8?1:2);}
+// PB celebration
+function celebrate(text){const t=$('toast');t.textContent=text;t.classList.add('pb');t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>{t.hidden=true;t.classList.remove('pb');},3200);
+  if(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  const c=document.createElement('canvas');c.id='confetti';c.width=innerWidth;c.height=innerHeight;document.body.appendChild(c);const x=c.getContext('2d');
+  const cols=Object.values(COLORS);const ps=Array.from({length:140},()=>({x:innerWidth/2,y:innerHeight*.35,vx:(Math.random()-.5)*14,vy:-Math.random()*13-3,r:Math.random()*6+3,c:rnd(cols),a:Math.random()*6}));
+  let f=0;(function fr(){x.clearRect(0,0,c.width,c.height);for(const p of ps){p.vy+=.38;p.x+=p.vx;p.y+=p.vy;p.a+=.2;x.save();x.translate(p.x,p.y);x.rotate(p.a);x.fillStyle=p.c;x.fillRect(-p.r/2,-p.r/2,p.r,p.r*.6);x.restore();}
+    if(++f<110)requestAnimationFrame(fr);else c.remove();})();}
+const tm={state:'idle',t0:0,insp0:0,raf:0,hold:0,splits:[]};
 const tmEl=$('tmTimer'),tmTimeEl=$('tmTime');
+const phases=()=>SPLITS[$('tmSplits').value]||[];
 function tmSet(st){tm.state=st;for(const c of['hold','ready','insp','warn'])tmEl.classList.remove(c);
   if(st==='hold'||st==='ready')tmEl.classList.add(st);document.body.classList.toggle('timing',st==='running');}
 function tmLoop(){const now=performance.now();
   if(tm.state==='running'){tmTimeEl.textContent=fmtT(now-tm.t0);}
   else if(tm.inspecting&&(tm.state==='insp'||tm.state==='hold'||tm.state==='ready')){const el=(now-tm.insp0)/1000;
+    if(el>=8&&!tm.c8){tm.c8=1;call(8);}if(el>=12&&!tm.c12){tm.c12=1;call(12);}
     tmTimeEl.textContent=el<15?String(Math.ceil(15-el)):el<17?'+2':'DNF';
     if(tm.state==='insp'){tmEl.classList.toggle('insp',el<8);tmEl.classList.toggle('warn',el>=8);}}
   else return;tm.raf=requestAnimationFrame(tmLoop);}
 function tmPress(){
-  if(tm.state==='running'){cancelAnimationFrame(tm.raf);const t=performance.now()-tm.t0;tmSet('stopped');
-    const s={t,pen:tm.pen,scr:tmScr,at:Date.now()};tmList().push(s);store.set('solves',solves);tmTimeEl.textContent=s.pen==='DNF'?'DNF':fmtT(tval(s))+(s.pen==='+2'?'+':'');
-    $('tmHint').textContent='Saved. New scramble below.';tmRender();newScramble();return;}
-  if((tm.state==='idle'||tm.state==='stopped')&&$('tmInsp').checked){tm.inspecting=true;tm.insp0=performance.now();tm.armed=false;tmSet('insp');
+  if(tm.state==='running'){const now=performance.now(),ph=phases();
+    if(ph.length&&tm.splits.length<ph.length-1){tm.splits.push(now-tm.t0);$('tmPhase').textContent=ph[tm.splits.length]+'…';return;} // record a split, keep going
+    cancelAnimationFrame(tm.raf);const t=now-tm.t0;tmSet('stopped');$('tmPhase').textContent='';
+    const L=tmList(),pS=bestSingle(L),p5=bestAo(L,5),p12=bestAo(L,12);
+    const s={t,pen:tm.pen,scr:tmScr,at:Date.now()};if(ph.length){s.splits=[...tm.splits,t];s.sp=$('tmSplits').value;}
+    L.push(s);store.set('solves',solves);tmTimeEl.textContent=s.pen==='DNF'?'DNF':fmtT(tval(s))+(s.pen==='+2'?'+':'');
+    $('tmHint').textContent='Saved. New scramble below.';tmRender();newScramble();
+    const nS=bestSingle(L),n5=bestAo(L,5),n12=bestAo(L,12);const pb=[];
+    if(pS!==null&&nS!==null&&nS<pS)pb.push('single '+fmtT(nS));if(p5!==null&&n5!==null&&n5<p5)pb.push('Ao5 '+fmtT(n5));if(p12!==null&&n12!==null&&n12<p12)pb.push('Ao12 '+fmtT(n12));
+    if(pb.length)celebrate('New PB! '+pb.join(' · '));return;}
+  if((tm.state==='idle'||tm.state==='stopped')&&$('tmInsp').checked){tm.inspecting=true;tm.insp0=performance.now();tm.armed=false;tm.c8=tm.c12=0;tmSet('insp');
     $('tmHint').textContent='Inspecting. Hold space when ready, release to start.';cancelAnimationFrame(tm.raf);tmLoop();return;}
   if(tm.state==='insp'&&!tm.armed)return; // ignore the key-repeat of the press that started inspection
   if(tm.state==='idle'||tm.state==='stopped'||tm.state==='insp'){tmSet('hold');if(!tm.inspecting)tmTimeEl.textContent='0.00';tm.hold=setTimeout(()=>{if(tm.state==='hold')tmSet('ready');},300);}}
 function tmRelease(){
   if(tm.state==='insp'){tm.armed=true;return;}
   if(tm.state==='hold'){clearTimeout(tm.hold);tmSet(tm.inspecting?'insp':'idle');return;}
-  if(tm.state==='ready'){const el=tm.inspecting?performance.now()-tm.insp0:0;tm.pen=el>17000?'DNF':el>15000?'+2':'';tm.inspecting=false;
-    tmSet('running');tm.t0=performance.now();$('tmHint').textContent='Any key stops.';cancelAnimationFrame(tm.raf);tmLoop();return;}
+  if(tm.state==='ready'){const el=tm.inspecting?performance.now()-tm.insp0:0;tm.pen=el>17000?'DNF':el>15000?'+2':'';tm.inspecting=false;tm.splits=[];
+    tmSet('running');tm.t0=performance.now();const ph=phases();$('tmPhase').textContent=ph.length?ph[0]+'…':'';
+    $('tmHint').textContent=ph.length?'Press any key at the end of each step.':'Any key stops.';cancelAnimationFrame(tm.raf);tmLoop();return;}
   if(tm.state==='stopped')tmSet('idle');}
 document.addEventListener('keydown',e=>{if(view()!=='timer'||typing()||e.repeat)return;
   if(tm.state==='running'){e.preventDefault();tmPress();return;}
@@ -1069,18 +1403,86 @@ document.addEventListener('keyup',e=>{if(view()!=='timer'||typing())return;if(e.
 tmEl.addEventListener('pointerdown',e=>{e.preventDefault();tmPress();});
 tmEl.addEventListener('pointerup',e=>{e.preventDefault();tmRelease();});
 
+// ---- progress ----
+function niceTicks(lo,hi,n=4){const span=hi-lo||1,raw=span/n,mag=Math.pow(10,Math.floor(Math.log10(raw))),st=[1,2,2.5,5,10].map(m=>m*mag).find(x=>x>=raw);
+  const out=[];for(let v=Math.ceil(lo/st)*st;v<=hi+1e-9;v+=st)out.push(+v.toFixed(6));return out;}
+function timerChart(L){const W=760,H=240,pl=46,pr=12,pt=12,pb=26;if(L.length<2)return'<p class="note">Do a few timed solves to see your chart.</p>';
+  const vals=L.map(tval),fin=vals.filter(v=>v!==Infinity);if(fin.length<2)return'<p class="note">Not enough finished solves yet.</p>';
+  const sorted=fin.slice().sort((a,b)=>a-b),cap=sorted[Math.floor(sorted.length*.97)]*1.15;           // ignore wild outliers when scaling
+  const lo=Math.max(0,sorted[0]*.85),hi=Math.max(cap,sorted[0]*1.2);
+  const X=i=>pl+(W-pl-pr)*(L.length===1?0:i/(L.length-1)),Y=v=>pt+(H-pt-pb)*(1-(Math.min(v,hi)-lo)/(hi-lo));
+  let g='';for(const t of niceTicks(lo/1000,hi/1000)){const y=Y(t*1000);g+=`<line class="ax" x1="${pl}" x2="${W-pr}" y1="${y}" y2="${y}"/><text class="tk" x="${pl-6}" y="${y+4}" text-anchor="end">${t}s</text>`;}
+  const xt=niceTicks(1,L.length,5).filter(v=>Number.isInteger(v));for(const t of xt)g+=`<text class="tk" x="${X(t-1)}" y="${H-6}" text-anchor="middle">${t}</text>`;
+  let best=Infinity;for(let i=0;i<L.length;i++){const v=vals[i];if(v===Infinity)continue;const pbv=v<best;if(pbv)best=v;g+=`<circle class="${pbv?'pbdot':'dot'}" cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="${pbv?3.6:2.6}"/>`;}
+  for(const [n,cls] of [[5,'a5'],[12,'a12']]){let d='';for(let i=n-1;i<L.length;i++){const a=aoN(L.slice(0,i+1),n);if(a===null||a===Infinity)continue;d+=(d?'L':'M')+X(i).toFixed(1)+' '+Y(a).toFixed(1);}if(d)g+=`<path class="${cls}" d="${d}"/>`;}
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Solve times over the session">${g}</svg>`;}
+function pbHistory(L){const out=[];const add=(label,fn)=>{let b=null,at=null;for(let k=1;k<=L.length;k++){const v=fn(L.slice(0,k));if(v!==null&&v!==Infinity&&(b===null||v<b)){b=v;at=L[k-1].at;}}out.push([label,b,at]);};
+  add('Single',bestSingle);for(const n of [5,12,50,100])add('Ao'+n,x=>aoN(x,n));return out;}
+function daysChart(){const day=86400e3,today=new Date();today.setHours(0,0,0,0);const N=21,start=today.getTime()-(N-1)*day;
+  const pre=cubeN===3?null:cubeN+'x/';const rows=dlog.filter(r=>r.at>=start&&(pre?r.k.startsWith(pre):!/^\dx\//.test(r.k)));
+  const b=Array.from({length:N},()=>({n:0,sum:0}));for(const r of rows){const i=Math.floor((r.at-start)/day);if(i>=0&&i<N){b[i].n++;b[i].sum+=r.t;}}
+  const W=380,H=180,pl=34,pr=10,pt=10,pb=24,mxN=Math.max(1,...b.map(x=>x.n));const means=b.map(x=>x.n?x.sum/x.n:null),fm=means.filter(v=>v!==null);
+  const bw=(W-pl-pr)/N;let g='';
+  b.forEach((x,i)=>{const h=(H-pt-pb)*x.n/mxN;g+=`<rect class="bar${x.n?' on':''}" x="${(pl+i*bw+1).toFixed(1)}" y="${(H-pb-h).toFixed(1)}" width="${(bw-2).toFixed(1)}" height="${h.toFixed(1)}" rx="2"><title>${x.n} reps</title></rect>`;});
+  if(fm.length){const lo=Math.min(...fm)*.85,hi=Math.max(...fm)*1.1,Y=v=>pt+(H-pt-pb)*(1-(v-lo)/((hi-lo)||1));let d='';
+    means.forEach((v,i)=>{if(v===null)return;const x=pl+i*bw+bw/2;d+=(d?'L':'M')+x.toFixed(1)+' '+Y(v).toFixed(1);g+=`<circle class="mlp" cx="${x.toFixed(1)}" cy="${Y(v).toFixed(1)}" r="2.6"><title>${fmt(v)}s average</title></circle>`;});
+    g+=`<path class="ml" d="${d}"/>`;for(const t of niceTicks(lo/1000,hi/1000,3))g+=`<text class="tk" x="${pl-5}" y="${Y(t*1000)+4}" text-anchor="end">${t}s</text>`;}
+  g+=`<text class="tk" x="${pl}" y="${H-6}">3 weeks ago</text><text class="tk" x="${W-pr}" y="${H-6}" text-anchor="end">today</text>`;
+  $('pgDaysNote').textContent=rows.length?`${rows.length} drill reps on the ${cubeN}x${cubeN} in the last 3 weeks. Bars show reps, the line shows your average time that day.`:'No drill reps on this cube in the last 3 weeks yet.';
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Drill reps and average time per day">${g}</svg>`;}
+function renderProgress(){const L=tmList();$('pgTimerTitle').textContent='Timer · '+cubeN+'x'+cubeN;$('pgTimerChart').innerHTML=timerChart(L);
+  $('pgPBs').innerHTML=pbHistory(L).map(([l,v,at])=>`<div class="pb"><div class="label">${l}</div><div class="v">${fmtT(v)}</div><div class="d">${at?new Date(at).toLocaleDateString():'—'}</div></div>`).join('');
+  $('pgDays').innerHTML=daysChart();
+  const cs=allCases(),secs=sectionsFor(cubeN).filter(k=>cs.some(c=>secOf(c)===k)),now=Date.now();
+  $('pgReview').innerHTML=`<div class="rv"><span class="h">Section</span><span class="h">New</span><span class="h">Due</span><span class="h">Learning</span><span class="h">Learned</span>`+
+    secs.map(k=>{const x=cs.filter(c=>secOf(c)===k&&statusOf(c)!=='skip');const nw=x.filter(c=>!srsOf(c)).length,due=x.filter(c=>srsOf(c)&&srsOf(c).due<=now).length;
+      const ld=x.filter(c=>statusOf(c)==='learned').length;return `<span>${SEC_LABEL[k]}</span><span class="n">${nw}</span><span class="n">${due}</span><span class="n">${x.length-ld}</span><span class="n">${ld}</span>`;}).join('')+'</div>';
+  const rows=active().map(c=>({c,a:mean((stats[statKey(c)]||[]).slice(-5))})).filter(r=>r.a!=null).sort((x,y)=>y.a-x.a);const mx=rows.length?rows[0].a:1;
+  $('pgCases').innerHTML=rows.length?rows.map(r=>`<button class="crow" data-go="${r.c.id}" title="${r.c.group}"><span>${nameLabel(r.c)}</span><span class="trk"><i style="width:${(r.a/mx*100).toFixed(1)}%"></i></span><span class="v">${fmt(r.a)}</span></button>`).join('')
+    :'<p class="note">Time some drills and your case averages show up here.</p>';}
+$('pgCases').addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(!b)return;pinned=b.dataset.go;store.set(pinKey(),pinned);$('tab-drill').click();loadCase();});
+// ---- back up and import ----
+function saveText(name,text){$('dataOut').hidden=true;
+  if(window.desktop&&window.desktop.saveFile){window.desktop.saveFile(name,text).then(r=>{$('dataMsg').textContent=r&&r.ok?'Saved to '+r.path:r&&r.canceled?'':'Could not save the file.';});return;}
+  $('dataText').value=text;$('dataOut').hidden=false;$('dataMsg').textContent='Copy this text and save it as '+name+'.';}
+$('dataCopy').onclick=()=>{const t=$('dataText');navigator.clipboard&&navigator.clipboard.writeText(t.value).then(()=>$('dataMsg').textContent='Copied.',()=>{t.select();});};
+$('bkSave').onclick=()=>{const data={};try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k.startsWith('lll:'))data[k.slice(4)]=JSON.parse(localStorage.getItem(k));}}catch(e){}
+  saveText('last-layer-lab-backup-'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify({app:'last-layer-lab',version:2,saved:new Date().toISOString(),data},null,1));};
+function readFile(input,cb){const f=input.files&&input.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{input.value='';cb(String(r.result),f.name);};r.readAsText(f);}
+$('bkLoad').onchange=e=>readFile(e.target,txt=>{let o;try{o=JSON.parse(txt);}catch(err){$('dataMsg').textContent='That file isn\'t a Last Layer Lab backup.';return;}
+  if(!o||o.app!=='last-layer-lab'||!o.data){$('dataMsg').textContent='That file isn\'t a Last Layer Lab backup.';return;}
+  const n=Object.keys(o.data).length;$('csPick').hidden=false;$('csPick').innerHTML=`<span>Restore this backup from ${new Date(o.saved).toLocaleString()}? It replaces everything currently in the app (${n} items).</span><span><button class="btn primary" id="bkYes">Restore</button> <button class="btn" id="bkNo">Cancel</button></span>`;
+  $('bkNo').onclick=()=>{$('csPick').hidden=true;};
+  $('bkYes').onclick=()=>{try{Object.keys(localStorage).filter(k=>k.startsWith('lll:')).forEach(k=>localStorage.removeItem(k));for(const k in o.data)localStorage.setItem('lll:'+k,JSON.stringify(o.data[k]));}catch(err){}location.reload();};});
+$('csSave').onclick=()=>{const L=tmList();if(!L.length){$('dataMsg').textContent='No timer solves on the '+cubeN+'x'+cubeN+' to export yet.';return;}
+  const sess=L.map(s=>[[s.pen==='DNF'?-1:s.pen==='+2'?2000:0,Math.round(s.t)],s.scr||'','',Math.round((s.at||Date.now())/1000)]);
+  const fin=L.map(tval).filter(v=>v!==Infinity);
+  const out={session1:sess,properties:{sessionData:JSON.stringify({1:{name:cubeN+'x'+cubeN+' (Last Layer Lab)',opt:{},rank:1,stat:[L.length,L.length-fin.length,fin.length?Math.round(fin.reduce((a,b)=>a+b,0)/fin.length):-1]}})}};
+  saveText('cstimer-'+cubeN+'x'+cubeN+'-'+new Date().toISOString().slice(0,10)+'.txt',JSON.stringify(out));};
+$('csLoad').onchange=e=>readFile(e.target,txt=>{let o;try{o=JSON.parse(txt);}catch(err){$('dataMsg').textContent='That file isn\'t a csTimer export.';return;}
+  const keys=Object.keys(o||{}).filter(k=>/^session\d+$/.test(k)&&Array.isArray(o[k])&&o[k].length);if(!keys.length){$('dataMsg').textContent='No solves found in that csTimer file.';return;}
+  let names={};try{const sd=JSON.parse(o.properties&&o.properties.sessionData||'{}');for(const k in sd)names['session'+k]=sd[k].name;}catch(err){}
+  $('csPick').hidden=false;$('csPick').innerHTML=`<span>Pick the csTimer sessions to add to your <b>${cubeN}x${cubeN}</b> times:</span>`+
+    keys.map(k=>`<label><input type="checkbox" data-sess="${k}" checked> ${names[k]||k.replace('session','Session ')} · ${o[k].length} solves</label>`).join('')+`<span><button class="btn primary" id="csYes">Import</button> <button class="btn" id="csNo">Cancel</button></span>`;
+  $('csNo').onclick=()=>{$('csPick').hidden=true;};
+  $('csYes').onclick=()=>{const L=tmList(),have=new Set(L.map(s=>(s.at||0)+'|'+Math.round(s.t)));let added=0;
+    document.querySelectorAll('[data-sess]:checked').forEach(cb=>{for(const r of o[cb.dataset.sess]){if(!Array.isArray(r)||!Array.isArray(r[0]))continue;const pen=r[0][0],t=r[0][1],at=(r[3]||0)*1000;
+      const key=at+'|'+Math.round(t);if(have.has(key)||!(t>0))continue;have.add(key);L.push({t,pen:pen===-1?'DNF':pen===2000?'+2':'',scr:r[1]||'',at});added++;}});
+    L.sort((a,b)=>(a.at||0)-(b.at||0));store.set('solves',solves);$('csPick').hidden=true;$('dataMsg').textContent=`Imported ${added} solve${added===1?'':'s'} into your ${cubeN}x${cubeN} times.`;tmRender();renderProgress();};});
+
 // ---- tabs ----
 let testStarted=false;
 document.querySelector('nav').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
   document.querySelectorAll('nav button').forEach(x=>x.setAttribute('aria-selected',x===b));
-  ['drill','timer','test','quiz','cases'].forEach(v=>$('view-'+v).hidden=v!==b.dataset.view);
-  $('secChips').hidden=b.dataset.view==='timer';
+  ['drill','timer','progress','test','quiz','cases'].forEach(v=>$('view-'+v).hidden=v!==b.dataset.view);
+  $('secChips').hidden=b.dataset.view==='timer';if(b.dataset.view==='progress')renderProgress();if(b.dataset.view==='drill'){renderExtras();if(current)$('drillReview').textContent=$('optSmart').checked?dueLabel(current):'';}
   if(b.dataset.view==='timer'){if(!tmScr)newScramble();tmRender();}
   if(b.dataset.view==='cases')renderCases();if(b.dataset.view==='quiz')loadQuiz();
   if(b.dataset.view==='test'&&!testStarted){testStarted=true;newTest();}b.blur();});
 
-$('optHide').checked=store.get('hide',false);$('optHideSolve').checked=store.get('hideSolve',false);$('optWeak').checked=store.get('weak',true);
+$('optHide').checked=store.get('hide',false);$('optHideSolve').checked=store.get('hideSolve',false);$('optSmart').checked=store.get('smart',true);$('optLefty').checked=lefty;
 document.querySelectorAll('#cubeSel button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.cube===cubeN));
+document.querySelectorAll('[data-look]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.look===look));
 renderSecs();loadCase();renderSession();renderTScore();
 
 // ---- desktop updates ----
