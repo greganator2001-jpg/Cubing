@@ -221,6 +221,25 @@ body.timing header,body.timing .secbar,body.timing #view-timer .side,body.timing
 #csPick{display:flex;flex-direction:column;gap:6px;background:var(--sunk);border-radius:10px;padding:12px}
 #csPick label{display:flex;gap:8px;align-items:center;font-size:.88rem}
 
+.sb-wrap{overflow-x:auto}
+.sb{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:560px}
+.sb th{font:600 .68rem var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:right;padding:6px 10px;border-bottom:1px solid var(--line)}
+.sb th:first-child,.sb td:first-child{text-align:left}
+.sb td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:right;vertical-align:top}
+.sb tr:last-child td{border-bottom:0}
+.sb .cube{font:700 1rem var(--f-display)}
+.sb .v{font:700 1.05rem var(--f-display);display:block}
+.sb .d{font-size:.7rem;color:var(--muted)}
+.sb .none{color:var(--muted)}
+.sb tr.cur td{background:var(--sunk)}
+.sb .fresh .v{color:var(--ready)}
+.sb .fresh .d::before{content:"★ ";color:var(--ready)}
+.feed{display:flex;flex-direction:column;gap:6px}
+.feed .it{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:baseline;font-size:.86rem;padding:6px 10px;background:var(--sunk);border-radius:8px}
+.feed .it b{font-family:var(--f-display)}
+.feed .gain{color:var(--ready);font-weight:600;font-variant-numeric:tabular-nums}
+.feed .when{color:var(--muted);font-size:.75rem}
+
 /* Quiz */
 .quiz{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px;display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center}
 .quiz .pic svg,.quiz .pic img{width:210px;height:210px}
@@ -417,6 +436,11 @@ html,body{margin:0}
   <!-- PROGRESS -->
   <section id="view-progress" hidden>
     <div class="prog">
+      <div class="pcard wide">
+        <div class="top-row"><h2 class="ph">PB scoreboard</h2><span class="note">Best results from the timer, every cube</span></div>
+        <div class="sb-wrap"><table class="sb" id="pbBoard"></table></div>
+        <div class="feed" id="pbFeed"></div>
+      </div>
       <div class="pcard wide">
         <div class="top-row"><h2 class="ph" id="pgTimerTitle">Timer · 3x3</h2><span class="legend"><i class="lg-dot"></i>Singles <i class="lg-a5"></i>Ao5 <i class="lg-a12"></i>Ao12</span></div>
         <div class="chart" id="pgTimerChart"></div>
@@ -814,7 +838,10 @@ const DEFAULT_CASES=[
  ["6x6 Parity", "OLL parity (outer edges)", "2R2 B2 U2 2L U2 2R' U2 2R U2 F2 2R F2 2L' B2 2R2", 6],
  ["6x6 Parity", "OLL parity (inner edges)", "3R2 B2 U2 3L U2 3R' U2 3R U2 F2 3R F2 3L' B2 3R2", 6],
  ["6x6 Parity", "PLL parity (outer edges)", "2R2 U2 2R2 3Uw2 2R2 3Uw2", 6],
- ["6x6 Parity", "PLL parity (inner edges)", "3R2 U2 3R2 3Uw2 3R2 3Uw2", 6]
+ ["6x6 Parity", "PLL parity (inner edges)", "3R2 U2 3R2 3Uw2 3R2 3Uw2", 6],
+ ["4x4 Centers", "X-center", "2R U 2L' U' 2R' U 2L U'", 4],
+ ["5x5 Centers", "X-center", "2R U 2L' U' 2R' U 2L U'", 5],
+ ["5x5 Centers", "+center", "2R U 3L' U' 2R' U 3L U'", 5]
 ];
 const modeOf=g=>g.includes('Centers')?'centers':g.startsWith('F2L')?'f2l':(g==='PLL'||g.includes('Parity')||g.startsWith('2x2 CLL'))?'pll':g.endsWith('Edges')?'eo':'oll';
 const store={get(k,d){try{const v=localStorage.getItem('lll:'+k);return v?JSON.parse(v):d}catch(e){return d}},
@@ -827,10 +854,10 @@ let cubeN=CUBES.includes(store.get('cube',3))?store.get('cube',3):3;
 const SEC_LABEL={centers:'Centers',parity:'Parity',cll:'CLL',f2l:'F2L',oll:'2-Look OLL',ollf:'OLL',pll:'PLL',custom:'Custom'};
 const STAGE=['f2l','oll','ollf','pll'];
 const secOf=c=>c.group.includes('Centers')?'centers':c.group.includes('Parity')?'parity':c.group.startsWith('2x2 CLL')?'cll':c.group.startsWith('OLL ·')?'ollf':c.group.startsWith('F2L')?'f2l':c.group.startsWith('2-Look')?'oll':c.group==='PLL'?'pll':'custom';
-const SEC_DEFAULT={2:{cll:true},3:{f2l:true,oll:true,ollf:false,pll:true,custom:true},4:{parity:true},5:{parity:true},6:{centers:true,parity:true},7:{centers:true},9:{centers:true}};
+const SEC_DEFAULT={2:{cll:true},3:{f2l:true,oll:true,ollf:false,pll:true,custom:true},4:{centers:true,parity:true},5:{centers:true,parity:true},6:{centers:true,parity:true},7:{centers:true},9:{centers:true}};
 let secOn=store.get('secs',{});
 const isOn=(N,k)=>{const v=(secOn[N]||{})[k];return v===undefined?!!SEC_DEFAULT[N][k]:v;};
-const sectionsFor=N=>N===2?['cll']:N===3?STAGE.concat(custom.length?['custom']:[]):(N===6?['centers','parity']:N>6?['centers']:['parity']).concat(STAGE);
+const sectionsFor=N=>N===2?['cll']:N===3?STAGE.concat(custom.length?['custom']:[]):(N>6?['centers']:['centers','parity']).concat(STAGE);
 // ---- left-hand mode: every alg mirrored left-to-right (swap R/L, reverse turns except x and M) ----
 let lefty=store.get('lefty',false);
 const MSW={R:'L',L:'R',r:'l',l:'r'};
@@ -1430,7 +1457,24 @@ function daysChart(){const day=86400e3,today=new Date();today.setHours(0,0,0,0);
   g+=`<text class="tk" x="${pl}" y="${H-6}">3 weeks ago</text><text class="tk" x="${W-pr}" y="${H-6}" text-anchor="end">today</text>`;
   $('pgDaysNote').textContent=rows.length?`${rows.length} drill reps on the ${cubeN}x${cubeN} in the last 3 weeks. Bars show reps, the line shows your average time that day.`:'No drill reps on this cube in the last 3 weeks yet.';
   return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Drill reps and average time per day">${g}</svg>`;}
-function renderProgress(){const L=tmList();$('pgTimerTitle').textContent='Timer · '+cubeN+'x'+cubeN;$('pgTimerChart').innerHTML=timerChart(L);
+// PB scoreboard: best single and averages per cube, plus a feed of recent PBs across all cubes
+const PB_KINDS=[['Single',L=>bestSingle(L),1],['Ao5',L=>aoN(L,5),5],['Ao12',L=>aoN(L,12),12],['Ao50',L=>aoN(L,50),50],['Ao100',L=>aoN(L,100),100]];
+function pbEvents(N){const L=(solves[N]||[]).slice().sort((a,b)=>(a.at||0)-(b.at||0)),ev=[],best={};
+  for(let k=1;k<=L.length;k++){const pre=L.slice(0,k);for(const [kind,fn,need] of PB_KINDS){if(k<need)continue;
+    const v=kind==='Single'?(tval(L[k-1])===Infinity?null:tval(L[k-1])):fn(pre);if(v===null||v===Infinity)continue;
+    if(best[kind]===undefined||v<best[kind]){if(best[kind]!==undefined)ev.push({N,kind,v,prev:best[kind],at:L[k-1].at});best[kind]=v;best[kind+'@']=L[k-1].at;}}}
+  return{ev,best,count:L.length};}
+function ago(at){if(!at)return'';const d=(Date.now()-at)/60e3;return d<60?Math.max(1,Math.round(d))+' min ago':d<1440?Math.round(d/60)+' h ago':d<2880?'yesterday':Math.round(d/1440)+' days ago';}
+function renderScoreboard(){const all=[];const week=Date.now()-7*86400e3;
+  let html='<thead><tr><th>Cube</th>'+PB_KINDS.map(k=>`<th>${k[0]}</th>`).join('')+'<th>Solves</th></tr></thead><tbody>';
+  for(const N of CUBES){const r=pbEvents(N);all.push(...r.ev);
+    html+=`<tr class="${N===cubeN?'cur':''}"><td class="cube">${N}x${N}</td>`+PB_KINDS.map(([k])=>{const v=r.best[k],at=r.best[k+'@'];
+      return v===undefined?'<td class="none">—</td>':`<td class="${at>=week?'fresh':''}"><span class="v">${fmtT(v)}</span><span class="d">${at?new Date(at).toLocaleDateString():''}</span></td>`;}).join('')+`<td>${r.count||'<span class="none">0</span>'}</td></tr>`;}
+  $('pbBoard').innerHTML=html+'</tbody>';
+  const recent=all.sort((a,b)=>(b.at||0)-(a.at||0)).slice(0,8);
+  $('pbFeed').innerHTML=recent.length?'<span class="label">Recent PBs</span>'+recent.map(e=>`<div class="it"><span><b>${e.N}x${e.N} ${e.kind}</b> ${fmtT(e.v)}</span><span class="gain">${e.prev-e.v<10?'<0.01':fmtT(e.prev-e.v)}s faster</span><span class="when">${ago(e.at)}</span></div>`).join('')
+    :'<p class="note">Set a few times in the Timer and your PBs show up here. Results from the last 7 days are starred.</p>';}
+function renderProgress(){renderScoreboard();const L=tmList();$('pgTimerTitle').textContent='Timer · '+cubeN+'x'+cubeN;$('pgTimerChart').innerHTML=timerChart(L);
   $('pgPBs').innerHTML=pbHistory(L).map(([l,v,at])=>`<div class="pb"><div class="label">${l}</div><div class="v">${fmtT(v)}</div><div class="d">${at?new Date(at).toLocaleDateString():'—'}</div></div>`).join('');
   $('pgDays').innerHTML=daysChart();
   const cs=allCases(),secs=sectionsFor(cubeN).filter(k=>cs.some(c=>secOf(c)===k)),now=Date.now();
