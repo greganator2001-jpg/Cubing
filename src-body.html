@@ -164,7 +164,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
   <header>
     <div class="brand"><h1>Last Layer Lab</h1><small>F2L · OLL · PLL · Parity</small></div>
     <div class="cubes" role="group" aria-label="Cube" id="cubeSel">
-      <button data-cube="3" aria-pressed="true">3x3</button><button data-cube="4" aria-pressed="false">4x4</button><button data-cube="5" aria-pressed="false">5x5</button>
+      <button data-cube="3" aria-pressed="true">3x3</button><button data-cube="4" aria-pressed="false">4x4</button><button data-cube="5" aria-pressed="false">5x5</button><button data-cube="7" aria-pressed="false">7x7</button><button data-cube="9" aria-pressed="false">9x9</button>
     </div>
     <nav role="tablist">
       <button role="tab" id="tab-drill" aria-selected="true" data-view="drill">Drill</button>
@@ -193,7 +193,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
           <h2 class="case-name" id="drillName">—</h2>
           <div><span class="label">Setup: apply to a solved cube, yellow on top, green in front</span>
             <div class="setup" id="drillSetup">—</div>
-            <div class="empty" id="bigNote" hidden>2R means turn only the second layer in from the right. Rw and Uw turn the outer two layers together.</div></div>
+            <div class="empty" id="bigNote" hidden>A number before a move turns only that layer, counted in from that face: 2R is the second layer from the right, 3L the third from the left. Rw and Uw turn the outer two layers together.</div></div>
         </div>
       </div>
       <div class="viewer">
@@ -342,21 +342,40 @@ const DEFAULT_CASES=[
  ['4x4 Parity','OLL parity',"2R2 B2 U2 2L U2 2R' U2 2R U2 F2 2R F2 2L' B2 2R2",4],
  ['4x4 Parity','PLL parity',"2R2 U2 2R2 Uw2 2R2 Uw2",4],
  ['4x4 Parity','Double parity',"2R2 B2 U2 2L U2 2R' U2 2R U2 F2 2R F2 2L' B2 2R2 U2 2R2 U2 2R2 Uw2 2R2 Uw2",4],
- ['5x5 Parity','Flipped edge',"2R2 B2 U2 2L U2 2R' U2 2R U2 F2 2R F2 2L' B2 2R2",5]
+ ['5x5 Parity','Flipped edge',"2R2 B2 U2 2L U2 2R' U2 2R U2 F2 2R F2 2L' B2 2R2",5],
+ ['7x7 Centers','Outer X-center',"2R U 2L' U' 2R' U 2L U'",7],
+ ['7x7 Centers','Inner X-center',"3R U 3L' U' 3R' U 3L U'",7],
+ ['7x7 Centers','Outer +center',"2R U 4L' U' 2R' U 4L U'",7],
+ ['7x7 Centers','Inner +center',"3R U 4L' U' 3R' U 4L U'",7],
+ ['7x7 Centers','Right oblique',"2R U 3R U' 2R' U 3R' U'",7],
+ ['7x7 Centers','Left oblique',"2R U 3L' U' 2R' U 3L U'",7],
+ ['9x9 Centers','Outer X-center',"2R U 2L' U' 2R' U 2L U'",9],
+ ['9x9 Centers','Middle X-center',"3R U 3L' U' 3R' U 3L U'",9],
+ ['9x9 Centers','Inner X-center',"4R U 4L' U' 4R' U 4L U'",9],
+ ['9x9 Centers','Outer +center',"2R U 5L' U' 2R' U 5L U'",9],
+ ['9x9 Centers','Middle +center',"3R U 5L' U' 3R' U 5L U'",9],
+ ['9x9 Centers','Inner +center',"4R U 5L' U' 4R' U 5L U'",9],
+ ['9x9 Centers','Right oblique 2-3',"2R U 3R U' 2R' U 3R' U'",9],
+ ['9x9 Centers','Left oblique 2-3',"2R U 3L' U' 2R' U 3L U'",9],
+ ['9x9 Centers','Right oblique 2-4',"2R U 4R U' 2R' U 4R' U'",9],
+ ['9x9 Centers','Left oblique 2-4',"2R U 4L' U' 2R' U 4L U'",9],
+ ['9x9 Centers','Right oblique 3-4',"3R U 4R U' 3R' U 4R' U'",9],
+ ['9x9 Centers','Left oblique 3-4',"3R U 4L' U' 3R' U 4L U'",9]
 ];
-const modeOf=g=>g.startsWith('F2L')?'f2l':(g==='PLL'||g.includes('Parity'))?'pll':g.endsWith('Edges')?'eo':'oll';
+const modeOf=g=>g.includes('Centers')?'centers':g.startsWith('F2L')?'f2l':(g==='PLL'||g.includes('Parity'))?'pll':g.endsWith('Edges')?'eo':'oll';
 const store={get(k,d){try{const v=localStorage.getItem('lll:'+k);return v?JSON.parse(v):d}catch(e){return d}},
   set(k,v){try{localStorage.setItem('lll:'+k,JSON.stringify(v))}catch(e){}}};
 
 let overrides=store.get('algs',{}), status=store.get('status',{}), stats=store.get('stats',{}), custom=store.get('custom',[]);
 // ---- which cube, and which sections of it ----
-let cubeN=[3,4,5].includes(store.get('cube',3))?store.get('cube',3):3;
-const SEC_LABEL={parity:'Parity',f2l:'F2L',oll:'OLL',pll:'PLL',custom:'Custom'};
-const secOf=c=>c.group.includes('Parity')?'parity':c.group.startsWith('F2L')?'f2l':c.group.startsWith('2-Look')?'oll':c.group==='PLL'?'pll':'custom';
-const SEC_DEFAULT={3:{f2l:true,oll:true,pll:true,custom:true},4:{parity:true,f2l:false,oll:false,pll:false},5:{parity:true,f2l:false,oll:false,pll:false}};
+const CUBES=[3,4,5,7,9];
+let cubeN=CUBES.includes(store.get('cube',3))?store.get('cube',3):3;
+const SEC_LABEL={centers:'Centers',parity:'Parity',f2l:'F2L',oll:'OLL',pll:'PLL',custom:'Custom'};
+const secOf=c=>c.group.includes('Centers')?'centers':c.group.includes('Parity')?'parity':c.group.startsWith('F2L')?'f2l':c.group.startsWith('2-Look')?'oll':c.group==='PLL'?'pll':'custom';
+const SEC_DEFAULT={3:{f2l:true,oll:true,pll:true,custom:true},4:{parity:true,f2l:false,oll:false,pll:false},5:{parity:true,f2l:false,oll:false,pll:false},7:{centers:true,f2l:false,oll:false,pll:false},9:{centers:true,f2l:false,oll:false,pll:false}};
 let secOn=store.get('secs',{});
 const isOn=(N,k)=>{const v=(secOn[N]||{})[k];return v===undefined?!!SEC_DEFAULT[N][k]:v;};
-const sectionsFor=N=>N===3?['f2l','oll','pll'].concat(custom.length?['custom']:[]):['parity','f2l','oll','pll'];
+const sectionsFor=N=>N===3?['f2l','oll','pll'].concat(custom.length?['custom']:[]):[N>5?'centers':'parity','f2l','oll','pll'];
 function allCases(N=cubeN){
   const base=DEFAULT_CASES.filter(x=>!x[3]).map(([g,n,a])=>({id:g+'/'+n,group:g,name:n,alg:overrides[g+'/'+n]||a,def:a,mode:modeOf(g),size:N,stage:N>3}));
   if(N>3){const par=DEFAULT_CASES.filter(x=>x[3]===N).map(([g,n,a])=>({id:g+'/'+n,group:g,name:n,alg:overrides[g+'/'+n]||a,def:a,mode:modeOf(g),size:N}));
@@ -369,6 +388,7 @@ const setOf=secOf;
 const active=()=>allCases().filter(c=>statusOf(c)!=='skip'&&isOn(cubeN,secOf(c)));
 const AUFS=['','U','U2',"U'"];
 const rnd=a=>a[Math.floor(Math.random()*a.length)];
+const aufFor=c=>c.mode==='centers'?'':rnd(AUFS); // centre cases stay put so the target slot is fixed
 const cloneSt=st=>st.map(s=>({...s,p:s.p.slice(),n:s.n.slice()}));
 // ---- engines: one for the 3x3, one per bigger size ----
 const E3={N:3,unit:1,solved:solvedCube,parse:parseAlg,apply:(st,t)=>applyAlg(st,t),inv:t=>t.slice().reverse().map(([f,n])=>[f,-n]),
@@ -401,6 +421,7 @@ function setupStr(c,auf){const e=eng(c);return e.setup([...e.inv(e.parse(c.alg))
 function stickerColor(s,mode,N=3){
   let h=s.h.split(',').map(Number);if(N>3)h=h.map(v=>Math.abs(v)===N-1?Math.sign(v):0);
   const nz=h.filter(v=>v!==0).length;
+  if(mode==='centers')return nz===1?COLORS[s.c]:GRAY;
   if(nz===1||mode==='pll'||mode==='full')return COLORS[s.c];
   const ll=h[1]===1;
   if(!ll)return COLORS[s.c];
@@ -463,7 +484,7 @@ class Cube3D{
     for(const k in by){const p=k.split(',').map(Number);if(!p.some(v=>v))continue;
       const g=new THREE.Group();g.position.set(p[0]*u,p[1]*u,p[2]*u);g.userData.p=p;g.add(new THREE.Mesh(G.box,G.body));
       for(const s of by[k]){const m=new THREE.Mesh(G.st,mat(stickerColor(s,this.mode,this.eng.N)));const n=new THREE.Vector3(s.n[0],s.n[1],s.n[2]);
-        m.position.copy(n).multiplyScalar(.487);m.quaternion.setFromUnitVectors(Z(),n);g.add(m);}
+        m.position.copy(n).multiplyScalar(.493);m.quaternion.setFromUnitVectors(Z(),n);g.add(m);}
       this.root.add(g);}
     this.dirty=true;}
   stop(){this.queue=[];if(this.anim){this.eng.apply(this.state,[this.anim.tk]);this.anim=null;this.build();}}
@@ -484,7 +505,7 @@ function snapshot(c,auf,st){const k=c.id+'|'+c.alg+'|'+auf;if(!st&&snapCache[k])
   try{if(!snapCube){snapCube=new Cube3D(document.createElement('div'),false);snapCube.r.setSize(240,240,false);snapCube.cam.aspect=1;snapCube.cam.updateProjectionMatrix();}
     snapCube.build(st||caseState(c,auf),c.mode,eng(c));snapCube.r.render(snapCube.scene,snapCube.cam);
     const url=snapCube.r.domElement.toDataURL('image/png');if(!st)snapCache[k]=url;return url;}catch(e){return null;}}
-function thumb(c,auf){if(c.mode==='f2l'){const u=snapshot(c,auf);if(u)return `<img src="${u}" alt="${c.name} case">`;}
+function thumb(c,auf){if(c.mode==='f2l'||c.mode==='centers'){const u=snapshot(c,auf);if(u)return `<img src="${u}" alt="${c.name} case">`;}
   return diagram(c,auf);}
 
 // ---- playback controller shared by drill and test ----
@@ -530,9 +551,9 @@ function nameLabel(c){return c.group==='PLL'?c.name+' perm':c.name;}
 function loadCase(){
   current=pinned?(allCases().find(c=>c.id===pinned)||null):null;if(!current){pinned=null;current=pickCase();}updatePickLabel();
   if(!current){$('drillName').textContent='Nothing to practice';$('drillMini').innerHTML='';$('drillSetup').textContent='Turn a practice set on, or set some cases back to Learning in the Cases tab.';return;}
-  currentAuf=rnd(AUFS);
+  currentAuf=aufFor(current);
   const st=caseState(current,currentAuf);
-  $('drillMini').innerHTML=current.mode==='f2l'?'':diagram(current,currentAuf,st);
+  $('drillMini').innerHTML=(current.mode==='f2l'||current.mode==='centers')?'':diagram(current,currentAuf,st);
   $('drillGroup').textContent=(current.size>3?current.size+'x'+current.size+' · ':'')+current.group;
   const hide=$('optHide').checked;
   $('drillName').textContent=hide?'?':nameLabel(current);$('drillName').classList.toggle('hidden-name',hide);
@@ -568,9 +589,9 @@ function renderSession(){
     return `<li><span>${s.name}</span><span><span class="t">${fmt(s.t)}</span><button data-del="${idx}" aria-label="Delete solve">✕</button></span></li>`}).join('');}
 function renderSecs(){const cs=allCases();const secs=sectionsFor(cubeN);
   const chip=k=>{const n=cs.filter(c=>secOf(c)===k&&statusOf(c)!=='skip').length;
-    return `<button class="chip${k==='parity'?' parity':''}" data-sec="${k}" aria-pressed="${isOn(cubeN,k)}">${SEC_LABEL[k]}<span class="n">${n}</span></button>`;};
+    return `<button class="chip${k==='parity'||k==='centers'?' parity':''}" data-sec="${k}" aria-pressed="${isOn(cubeN,k)}">${SEC_LABEL[k]}<span class="n">${n}</span></button>`;};
   let html=`<span class="label">${cubeN}x${cubeN} · Practicing</span>`;
-  if(cubeN>3)html+=chip('parity')+`<span class="secdiv">3x3 stage, after reduction</span>`+['f2l','oll','pll'].map(chip).join('');
+  if(cubeN>3)html+=chip(sectionsFor(cubeN)[0])+`<span class="secdiv">3x3 stage, after reduction</span>`+['f2l','oll','pll'].map(chip).join('');
   else html+=secs.map(chip).join('');
   $('secbar').innerHTML=html;
   document.querySelectorAll('[data-test="ll"],[data-test="f2l"]').forEach(b=>b.hidden=cubeN>3);$('scrHelp').hidden=cubeN>3;}
@@ -637,7 +658,7 @@ function newTest(){
   const pool=active();
   if(tMode==='recall'){
     if(!pool.length){$('tName').textContent='Nothing to test';return;}
-    tCase=rnd(pool);tAuf=rnd(AUFS);$('tGroup').textContent=tCase.group;$('tName').textContent=nameLabel(tCase);
+    tCase=rnd(pool);tAuf=aufFor(tCase);$('tGroup').textContent=tCase.group;$('tName').textContent=nameLabel(tCase);
     tp.load(caseState(tCase,tAuf),tCase.mode,solveToks(tCase,tAuf),'Answer hidden. Type your alg above, or reveal.',eng(tCase));
     $('tPlay').textContent='Play solution';return;}
   const all=allCases().filter(c=>statusOf(c)!=='skip');
@@ -687,7 +708,7 @@ document.querySelectorAll('[data-test]').forEach(b=>b.onclick=()=>{tMode=b.datas
 let qScore=store.get('quiz',{r:0,n:0}),qCase=null,qDone=false;
 function loadQuiz(){
   const pool=active();if(!pool.length){$('quizDiagram').innerHTML='';$('choices').innerHTML='<p class="empty">No cases selected.</p>';return;}
-  qCase=rnd(pool);qDone=false;$('quizDiagram').innerHTML=thumb(qCase,rnd(AUFS));
+  qCase=rnd(pool);qDone=false;$('quizDiagram').innerHTML=thumb(qCase,aufFor(qCase));
   const same=pool.filter(c=>c.group===qCase.group&&c.id!==qCase.id);
   const near=pool.filter(c=>setOf(c)===setOf(qCase)&&c.id!==qCase.id);
   const src=same.length>=3?same:near.length>=3?near:pool.filter(c=>c.id!==qCase.id);
