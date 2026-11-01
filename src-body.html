@@ -1170,7 +1170,7 @@ function record(ms){
   loadCase();}
 let tState='idle',holdTimer=null,startT=0,raf=null;
 const timerEl=$('timer'),timeEl=$('time');
-function setT(s){tState=s;timerEl.classList.toggle('hold',s==='hold');timerEl.classList.toggle('ready',s==='ready');}
+function setT(s){tState=s;timerEl.classList.toggle('hold',s==='hold');timerEl.classList.toggle('ready',s==='ready');try{window.desktop&&window.desktop.setBusy&&window.desktop.setBusy(s==='running'||s==='hold'||s==='ready');}catch(e){}}
 function press(){
   if(tState==='running'){cancelAnimationFrame(raf);const ms=performance.now()-startT;timeEl.textContent=fmt(ms);setT('stopped');record(ms);return;}
   if(tState==='idle'||tState==='stopped'){setT('hold');timeEl.textContent='0.00';holdTimer=setTimeout(()=>setT('ready'),300);}}
@@ -1432,8 +1432,11 @@ function celebrate(text){const t=$('toast');t.textContent=text;t.classList.add('
 const tm={state:'idle',t0:0,insp0:0,raf:0,hold:0,splits:[]};
 const tmEl=$('tmTimer'),tmTimeEl=$('tmTime');
 const phases=()=>tmPz?[]:(SPLITS[$('tmSplits').value]||[]);
+const setBusy=on=>{try{window.desktop&&window.desktop.setBusy&&window.desktop.setBusy(on);}catch(e){}};
 function tmSet(st){tm.state=st;for(const c of['hold','ready','insp','warn'])tmEl.classList.remove(c);
-  if(st==='hold'||st==='ready')tmEl.classList.add(st);document.body.classList.toggle('timing',st==='running');}
+  if(st==='hold'||st==='ready')tmEl.classList.add(st);document.body.classList.toggle('timing',st==='running');
+  setBusy(st==='running'||st==='insp'||st==='hold'||st==='ready'||tState==='running');
+  if(st==='running')store.set('tmRun',{w:Date.now()-(performance.now()-tm.t0),key:tmKey(),pz:tmPz,N:cubeN,scr:tmScr,pen:tm.pen||'',sp:$('tmSplits').value,splits:tm.splits});else store.set('tmRun',null);}
 function tmLoop(){const now=performance.now();
   if(tm.state==='running'){tmTimeEl.textContent=fmtT(now-tm.t0);}
   else if(tm.inspecting&&(tm.state==='insp'||tm.state==='hold'||tm.state==='ready')){const el=(now-tm.insp0)/1000;
@@ -1443,7 +1446,7 @@ function tmLoop(){const now=performance.now();
   else return;tm.raf=requestAnimationFrame(tmLoop);}
 function tmPress(){
   if(tm.state==='running'){const now=performance.now(),ph=phases();
-    if(ph.length&&tm.splits.length<ph.length-1){tm.splits.push(now-tm.t0);$('tmPhase').textContent=ph[tm.splits.length]+'…';return;} // record a split, keep going
+    if(ph.length&&tm.splits.length<ph.length-1){tm.splits.push(now-tm.t0);const r=store.get('tmRun',null);if(r){r.splits=tm.splits;store.set('tmRun',r);}$('tmPhase').textContent=ph[tm.splits.length]+'…';return;} // record a split, keep going
     cancelAnimationFrame(tm.raf);const t=now-tm.t0;tmSet('stopped');$('tmPhase').textContent='';
     const L=tmList(),pS=bestSingle(L),p5=bestAo(L,5),p12=bestAo(L,12);
     const s={t,pen:tm.pen,scr:tmScr,at:Date.now()};if(ph.length){s.splits=[...tm.splits,t];s.sp=$('tmSplits').value;}
@@ -1460,7 +1463,7 @@ function tmRelease(){
   if(tm.state==='insp'){tm.armed=true;return;}
   if(tm.state==='hold'){clearTimeout(tm.hold);tmSet(tm.inspecting?'insp':'idle');return;}
   if(tm.state==='ready'){const el=tm.inspecting?performance.now()-tm.insp0:0;tm.pen=el>17000?'DNF':el>15000?'+2':'';tm.inspecting=false;tm.splits=[];
-    tmSet('running');tm.t0=performance.now();const ph=phases();$('tmPhase').textContent=ph.length?ph[0]+'…':'';
+    tm.t0=performance.now();tmSet('running');const ph=phases();$('tmPhase').textContent=ph.length?ph[0]+'…':'';
     $('tmHint').textContent=ph.length?'Press any key at the end of each step.':'Any key stops.';cancelAnimationFrame(tm.raf);tmLoop();return;}
   if(tm.state==='stopped')tmSet('idle');}
 document.addEventListener('keydown',e=>{if(view()!=='timer'||typing()||e.repeat)return;
@@ -1682,4 +1685,8 @@ function renderStreak(){const days=new Set();const k=t=>{const d=new Date(t);ret
   for(const r of dlog)if(r.at)days.add(k(r.at));for(const n in solves)for(const r of solves[n]||[])if(r.at)days.add(k(r.at));
   let n=0,d=new Date();if(!days.has(k(d)))d.setDate(d.getDate()-1);while(days.has(k(d))){n++;d.setDate(d.getDate()-1);}$('streakN').textContent=n;}
 renderSecs();loadCase();renderSession();renderTScore();renderStreak();
+(function resumeRun(){const r=store.get('tmRun',null);if(!r||!r.w)return;const age=Date.now()-r.w;if(age<0||age>12*3600e3){store.set('tmRun',null);return;}
+  if(r.pz)tmPz=r.pz;else if(r.N&&r.N!==cubeN)setCube(r.N);$('tab-timer').click();tmScr=r.scr||tmScr;$('tmScr').textContent=tmScr;
+  if(r.sp)$('tmSplits').value=r.sp;tm.splits=r.splits||[];tm.pen=r.pen||'';tm.inspecting=false;tm.t0=performance.now()-age;tmSet('running');
+  $('tmHint').textContent='Your solve kept timing while the app refreshed. Any key stops.';cancelAnimationFrame(tm.raf);tmLoop();})();
 </script>
