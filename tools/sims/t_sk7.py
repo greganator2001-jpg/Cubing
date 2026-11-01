@@ -1,0 +1,6 @@
+exec(open('t_sk4.py').read().split("r={}")[0])
+others=lambda st,ex: all(tw(st,k) for k in C if k not in ex)
+g=lambda st: ok(st,center['U']) and others(st,['DFL','DBR']) and pos(st,'DFL') and pos(st,'DBR') and not tw(st,'DFL') and not tw(st,'DBR')
+a=search(S,gens,g,8);print('pair twist, centers ignored:',a)
+g3=lambda st: ok(st,center['U']) and others(st,['DFL','DBR','DBL']) and all(pos(st,k) and not tw(st,k) for k in ['DFL','DBR','DBL'])
+print('three twist:',search(S,gens,g3,8))

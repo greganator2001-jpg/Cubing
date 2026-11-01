@@ -186,6 +186,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 /* Timer tab */
 .tm-scr{font-family:var(--f-mono);font-size:1.15rem;line-height:1.55;background:var(--surface);border:1px solid #23262E;border-radius:14px;padding:14px 16px;word-break:break-word;min-height:3.2em}
 .tm-scr.long{font-size:.92rem}
+.tm-scr.mega{white-space:pre-line;font-size:.95rem}
 .tm-grid{display:flex;flex-direction:column;gap:16px}
 @media (max-width:760px){.tm-grid{grid-template-columns:minmax(0,1fr)}}
 .tm-timer{min-height:200px;border-radius:28px}
@@ -379,6 +380,7 @@ body.timing .rail,body.timing .secbar,body.timing #view-timer .side,body.timing 
 .gd-row{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:16px}
 @media (max-width:980px){.gd-row{grid-template-columns:minmax(0,1fr)}}
 .gd-row .viewer .cube3d{height:270px}
+.gd-row.nodemo{grid-template-columns:minmax(0,1fr)}.gd-row.nodemo .viewer{display:none}
 .gd-moves{display:flex;flex-direction:column;gap:12px}
 .gd-algpick{display:flex;flex-wrap:wrap;gap:6px}
 .gd-algpick button{font:700 .78rem var(--f-body);border:1px solid #2E323A;background:none;color:#9AA1AD;padding:5px 10px;border-radius:7px;cursor:pointer}
@@ -448,7 +450,7 @@ html,body{margin:0}
             <p id="lnText"></p>
             <div class="gd-pats" id="lnPats"></div>
           </div>
-          <div class="gd-row">
+          <div class="gd-row" id="lnRow">
             <div class="card2 gd-moves">
               <span class="label" id="lnMovesLabel">The moves</span>
               <div class="gd-algpick" id="lnAlgPick" role="group" aria-label="Which case"></div>
@@ -456,7 +458,7 @@ html,body{margin:0}
               <p class="gd-how" id="lnHow"></p>
               <div class="gd-legend" id="lnLegend"><b>R</b><span>Turn the right side away from you</span><b>U</b><span>Turn the top to the left</span><b>F</b><span>Turn the front clockwise</span><b>'</b><span>Same face, the other way · 2 means twice</span></div>
             </div>
-            <div class="viewer"><div class="cube3d" id="ln3d"></div><span class="drag-hint">Watch it</span>
+            <div class="viewer"><div class="cube3d" id="ln3d"></div><span class="drag-hint" id="lnDemoNote">Watch it</span>
               <div class="viewer-bar"><button class="btn" id="lnReset">Reset</button><button class="btn" id="lnStep">Step</button><button class="btn primary" id="lnPlay">▶ Show me</button>
                 <label class="speed" for="lnSpeed" hidden>Speed <input type="range" id="lnSpeed" min="120" max="900" value="520" style="direction:rtl"></label></div></div>
           </div>
@@ -1292,8 +1294,12 @@ function setLook(v){look=v;store.set('look',v);for(const k in snapCache)delete s
   for(const P of [dp,tp])if(P.cube){P.cube.build(null,null);}if(tmCube)tmCube.build(null,null);
   loadCase();refreshView();if(!$('pickPanel').hidden)buildPicker();}
 document.querySelector('.look').addEventListener('click',e=>{const b=e.target.closest('[data-look]');if(b){b.blur();setLook(b.dataset.look);}});
-$('cubeSel').addEventListener('click',e=>{const p=e.target.closest('[data-puzzle]');if(p){p.blur();openLearn(p.dataset.puzzle==='more'?null:p.dataset.puzzle);return;}
-  const b=e.target.closest('[data-cube]');if(!b)return;b.blur();setCube(+b.dataset.cube);if(view()==='learn'){learnSel=String(cubeN);renderLearn();}});
+function markPicker(){document.querySelectorAll('#cubeSel [data-cube]').forEach(b=>b.setAttribute('aria-pressed',!(view()==='timer'&&tmPz)&&+b.dataset.cube===cubeN));
+  document.querySelectorAll('#cubeSel [data-puzzle]').forEach(b=>b.setAttribute('aria-pressed',view()==='timer'&&tmPz===b.dataset.puzzle));}
+$('cubeSel').addEventListener('click',e=>{const p=e.target.closest('[data-puzzle]');if(p){p.blur();const id=p.dataset.puzzle;
+    if(view()==='timer'&&TPZ[id]){if(tm.state!=='idle'&&tm.state!=='stopped')return;tmPz=id;markPicker();newScramble();tmRender();return;}
+    openLearn(id==='more'?null:id);return;}
+  const b=e.target.closest('[data-cube]');if(!b)return;b.blur();if(tmPz){tmPz=null;if(+b.dataset.cube===cubeN){markPicker();newScramble();tmRender();return;}}setCube(+b.dataset.cube);markPicker();if(view()==='learn'){learnSel=String(cubeN);renderLearn();}});
 $('log').addEventListener('click',e=>{const b=e.target.closest('[data-del]');if(!b)return;
   const s=session[+b.dataset.del];session.splice(+b.dataset.del,1);
   const h=stats[s.id];if(h){const j=h.lastIndexOf(s.t);if(j>=0)h.splice(j,1);}
@@ -1487,8 +1493,30 @@ function genScramble(N){
     if(axis[f]===ax){if(used.has(k))continue;}else{ax=axis[f];used=new Set();}
     used.add(k);out.push((d===1?f:(d===2?'':d)+f+'w')+rnd(['',"'",'2']));}
   return out.join(' ');}
-let solves=store.get('solves',{}),tmScr='',tmCube=null;
-const tmList=()=>solves[cubeN]||(solves[cubeN]=[]);
+let solves=store.get('solves',{}),tmScr='',tmCube=null,tmPz=null;
+const TPZ={pyra:'Pyraminx',skewb:'Skewb',mega:'Megaminx',sq1:'Square-1',clock:'Clock'};
+const tmKey=()=>tmPz||cubeN;
+const keyLabel=k=>TPZ[k]||(k+'x'+k);
+const tmList=()=>solves[tmKey()]||(solves[tmKey()]=[]);
+// random-move scrambles for the other WCA puzzles
+function genPuzzle(id){const out=[];
+  if(id==='pyra'||id==='skewb'){const F=id==='pyra'?['U','L','R','B']:['R','L','U','B'];let last='';
+    while(out.length<11){const f=rnd(F);if(f===last)continue;last=f;out.push(f+rnd(['',"'"]));}
+    if(id==='pyra')for(const t of ['u','l','r','b']){const k=Math.floor(Math.random()*3);if(k)out.push(t+(k===2?"'":''));}
+    return out.join(' ');}
+  if(id==='mega'){const lines=[];for(let l=0;l<7;l++){const m=[];for(let i=0;i<10;i++)m.push((i%2?'D':'R')+rnd(['++','--']));m.push(rnd(['U',"U'"]));lines.push(m.join(' '));}return lines.join('\n');}
+  if(id==='clock'){const a=()=>{const n=Math.floor(Math.random()*12)-5;return n>=0?n+'+':(-n)+'-';};
+    const f=['UR','DR','DL','UL','U','R','D','L','ALL'].map(x=>x+a());const b=['U','R','D','L','ALL'].map(x=>x+a());
+    const pins=['UR','DR','DL','UL'].filter(()=>Math.random()<.5);return f.join(' ')+' y2 '+b.join(' ')+(pins.length?' '+pins.join(' '):'');}
+  if(id==='sq1'){let st=SQ.solved();const parts=[];let n=0,guard=0;
+    while(n<12&&guard++<5000){const a=Math.floor(Math.random()*12)-5,b=Math.floor(Math.random()*12)-5;if(!a&&!b&&n)continue;
+      const t=SQ.twist(st,a,b),sl=SQ.slash(t);if(!sl)continue;st=sl;parts.push((a||b)?`(${a},${b})`:'');n++;}
+    return parts.join('/')+'/';}
+  return '';}
+const SQ={solved(){const L=n=>{const r=[];for(let q=0;q<4;q++){r.push(n+'c'+q,n+'c'+q,n+'e'+q);}return r;};return{t:L('U'),d:L('D')};},
+  twist(st,a,b){const t=Array(12),d=Array(12);for(let i=0;i<12;i++){t[((i+a)%12+12)%12]=st.t[i];d[((i-b)%12+12)%12]=st.d[i];}return{t,d};},
+  ok(L){return L[11]!==L[0]&&L[5]!==L[6];},
+  slash(st){if(!SQ.ok(st.t)||!SQ.ok(st.d))return null;const t=st.t.slice(),d=st.d.slice();for(let i=0;i<6;i++){t[i]=st.d[5-i];d[i]=st.t[5-i];}return{t,d};}};
 const tval=s=>s.pen==='DNF'?Infinity:s.t+(s.pen==='+2'?2000:0);
 function fmtT(ms){if(ms==null)return'—';if(ms===Infinity)return'DNF';const c=Math.floor(ms/10),cs=String(c%100).padStart(2,'0'),sec=Math.floor(c/100);
   return sec>=60?Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0')+'.'+cs:sec+'.'+cs;}
@@ -1498,7 +1526,7 @@ const SPLITS={off:[],cfop:['Cross','F2L','OLL','PLL'],red:['Centers','Edges','3x
 function bestAo(L,n){let b=null;for(let k=n;k<=L.length;k++){const v=aoN(L.slice(0,k),n);if(v!==null&&v!==Infinity&&(b===null||v<b))b=v;}return b;}
 function bestSingle(L){const f=L.map(tval).filter(v=>v!==Infinity);return f.length?Math.min(...f):null;}
 function tmRender(){const L=tmList(),fin=L.map(tval).filter(v=>v!==Infinity);
-  $('tmSessLabel').textContent=cubeN+'x'+cubeN+' session';$('tmTitle').textContent=cubeN+'x'+cubeN+' scramble';
+  $('tmSessLabel').textContent=keyLabel(tmKey())+' session';$('tmTitle').textContent=keyLabel(tmKey())+' scramble';
   $('tmN').textContent=L.length;$('tmBest').textContent=fin.length?fmtT(Math.min(...fin)):'—';
   $('tmMean').textContent=fin.length?fmtT(fin.reduce((a,b)=>a+b,0)/fin.length):'—';
   $('tmAo5').textContent=fmtT(aoN(L,5));$('tmAo12').textContent=fmtT(aoN(L,12));$('tmAo50').textContent=fmtT(aoN(L,50));
@@ -1514,7 +1542,7 @@ $('tmList').addEventListener('click',e=>{const b=e.target.closest('button');if(!
   if(b.dataset.del!==undefined)L.splice(+b.dataset.del,1);else{const s=L[+b.dataset.i];s.pen=s.pen===b.dataset.pen?'':b.dataset.pen;}
   store.set('solves',solves);tmRender();});
 $('tmClear').onclick=()=>{$('tmClear').hidden=true;$('tmClearYes').hidden=false;setTimeout(()=>{$('tmClear').hidden=false;$('tmClearYes').hidden=true;},4000);};
-$('tmClearYes').onclick=()=>{solves[cubeN]=[];store.set('solves',solves);$('tmClear').hidden=false;$('tmClearYes').hidden=true;tmRender();};
+$('tmClearYes').onclick=()=>{solves[tmKey()]=[];store.set('solves',solves);$('tmClear').hidden=false;$('tmClearYes').hidden=true;tmRender();};
 // random-state 3x3 scrambles come from a two-phase solver running in a worker; random-move is the fallback while it warms up
 let scrW=null,rsQ=[],tmFallback=false;
 function initRS(){if(scrW)return;try{const src=$('scrWorkerSrc').textContent;if(src.length<1000)return;
@@ -1522,6 +1550,8 @@ function initRS(){if(scrW)return;try{const src=$('scrWorkerSrc').textContent;if(
   scrW.onmessage=e=>{const d=e.data;if(d.type==='ready'){scrW.postMessage({type:'scramble'});scrW.postMessage({type:'scramble'});}
     else if(d.type==='scramble'){rsQ.push(d.scramble);if(tmFallback&&cubeN===3&&view()==='timer'&&(tm.state==='idle'||tm.state==='stopped')&&!tm.inspecting)newScramble();}};}catch(err){scrW=null;}}
 function newScramble(){
+  document.querySelector('.tm-prev').hidden=!!tmPz;$('tmScr').classList.toggle('mega',tmPz==='mega');
+  if(tmPz){tmScr=genPuzzle(tmPz);tmFallback=false;$('tmKind').textContent='Random-move';$('tmScr').textContent=tmScr;$('tmScr').classList.remove('long');return;}
   if(cubeN===3){initRS();if(rsQ.length){tmScr=rsQ.shift();tmFallback=false;if(scrW)scrW.postMessage({type:'scramble'});$('tmKind').textContent='Random-state';}
     else{tmScr=genScramble(3);tmFallback=!!scrW;$('tmKind').textContent=scrW?'Random-move · random-state warming up':'Random-move';}}
   else{tmScr=genScramble(cubeN);tmFallback=false;$('tmKind').textContent='Random-move';}
@@ -1547,7 +1577,7 @@ function celebrate(text){const t=$('toast');t.textContent=text;t.classList.add('
     if(++f<110)requestAnimationFrame(fr);else c.remove();})();}
 const tm={state:'idle',t0:0,insp0:0,raf:0,hold:0,splits:[]};
 const tmEl=$('tmTimer'),tmTimeEl=$('tmTime');
-const phases=()=>SPLITS[$('tmSplits').value]||[];
+const phases=()=>tmPz?[]:(SPLITS[$('tmSplits').value]||[]);
 function tmSet(st){tm.state=st;for(const c of['hold','ready','insp','warn'])tmEl.classList.remove(c);
   if(st==='hold'||st==='ready')tmEl.classList.add(st);document.body.classList.toggle('timing',st==='running');}
 function tmLoop(){const now=performance.now();
@@ -1563,7 +1593,7 @@ function tmPress(){
     cancelAnimationFrame(tm.raf);const t=now-tm.t0;tmSet('stopped');$('tmPhase').textContent='';
     const L=tmList(),pS=bestSingle(L),p5=bestAo(L,5),p12=bestAo(L,12);
     const s={t,pen:tm.pen,scr:tmScr,at:Date.now()};if(ph.length){s.splits=[...tm.splits,t];s.sp=$('tmSplits').value;}
-    L.push(s);store.set('solves',solves);tmTimeEl.textContent=s.pen==='DNF'?'DNF':fmtT(tval(s))+(s.pen==='+2'?'+':'');
+    L.push(s);store.set('solves',solves);renderStreak();tmTimeEl.textContent=s.pen==='DNF'?'DNF':fmtT(tval(s))+(s.pen==='+2'?'+':'');
     $('tmHint').textContent='Saved. New scramble below.';tmRender();newScramble();
     const nS=bestSingle(L),n5=bestAo(L,5),n12=bestAo(L,12);const pb=[];
     if(pS!==null&&nS!==null&&nS<pS)pb.push('single '+fmtT(nS));if(p5!==null&&n5!==null&&n5<p5)pb.push('Ao5 '+fmtT(n5));if(p12!==null&&n12!==null&&n12<p12)pb.push('Ao12 '+fmtT(n12));
@@ -1624,14 +1654,14 @@ function pbEvents(N){const L=(solves[N]||[]).slice().sort((a,b)=>(a.at||0)-(b.at
 function ago(at){if(!at)return'';const d=(Date.now()-at)/60e3;return d<60?Math.max(1,Math.round(d))+' min ago':d<1440?Math.round(d/60)+' h ago':d<2880?'yesterday':Math.round(d/1440)+' days ago';}
 function renderScoreboard(){const all=[];const week=Date.now()-7*86400e3;
   let html='<thead><tr><th>Cube</th>'+PB_KINDS.map(k=>`<th>${k[0]}</th>`).join('')+'<th>Solves</th></tr></thead><tbody>';
-  for(const N of CUBES){const r=pbEvents(N);all.push(...r.ev);
-    html+=`<tr class="${N===cubeN?'cur':''}"><td class="cube">${N}x${N}</td>`+PB_KINDS.map(([k])=>{const v=r.best[k],at=r.best[k+'@'];
+  for(const N of CUBES.concat(Object.keys(TPZ).filter(k=>(solves[k]||[]).length))){const r=pbEvents(N);all.push(...r.ev);
+    html+=`<tr class="${N===tmKey()?'cur':''}"><td class="cube">${keyLabel(N)}</td>`+PB_KINDS.map(([k])=>{const v=r.best[k],at=r.best[k+'@'];
       return v===undefined?'<td class="none">—</td>':`<td class="${at>=week?'fresh':''}"><span class="v">${fmtT(v)}</span><span class="d">${at?new Date(at).toLocaleDateString():''}</span></td>`;}).join('')+`<td>${r.count||'<span class="none">0</span>'}</td></tr>`;}
   $('pbBoard').innerHTML=html+'</tbody>';
   const recent=all.sort((a,b)=>(b.at||0)-(a.at||0)).slice(0,8);
-  $('pbFeed').innerHTML=recent.length?'<span class="label">Recent PBs</span>'+recent.map(e=>`<div class="it"><span><b>${e.N}x${e.N} ${e.kind}</b> ${fmtT(e.v)}</span><span class="gain">${e.prev-e.v<10?'<0.01':fmtT(e.prev-e.v)}s faster</span><span class="when">${ago(e.at)}</span></div>`).join('')
+  $('pbFeed').innerHTML=recent.length?'<span class="label">Recent PBs</span>'+recent.map(e=>`<div class="it"><span><b>${keyLabel(e.N)} ${e.kind}</b> ${fmtT(e.v)}</span><span class="gain">${e.prev-e.v<10?'<0.01':fmtT(e.prev-e.v)}s faster</span><span class="when">${ago(e.at)}</span></div>`).join('')
     :'<p class="note">Set a few times in the Timer and your PBs show up here. Results from the last 7 days are starred.</p>';}
-function renderProgress(){renderScoreboard();const L=tmList();$('pgTimerTitle').textContent='Timer · '+cubeN+'x'+cubeN;$('pgTimerChart').innerHTML=timerChart(L);
+function renderProgress(){renderScoreboard();const L=tmList();$('pgTimerTitle').textContent='Timer · '+keyLabel(tmKey());$('pgTimerChart').innerHTML=timerChart(L);
   $('pgPBs').innerHTML=pbHistory(L).map(([l,v,at])=>`<div class="pb"><div class="label">${l}</div><div class="v">${fmtT(v)}</div><div class="d">${at?new Date(at).toLocaleDateString():'—'}</div></div>`).join('');
   $('pgDays').innerHTML=daysChart();
   const cs=allCases(),secs=sectionsFor(cubeN).filter(k=>cs.some(c=>secOf(c)===k)),now=Date.now();
@@ -1680,7 +1710,8 @@ function showTab(b){
   $('secChips').hidden=b.dataset.view==='timer'||b.dataset.view==='learn';document.querySelector('.look').hidden=b.dataset.view==='learn';if(b.dataset.view==='learn')renderLearn();if(b.dataset.view==='progress')renderProgress();if(b.dataset.view==='drill'){renderExtras();if(current)$('drillReview').textContent=$('optSmart').checked?dueLabel(current):'';}
   if(b.dataset.view==='timer'){if(!tmScr)newScramble();tmRender();}
   if(b.dataset.view==='cases')renderCases();if(b.dataset.view==='quiz')loadQuiz();
-  if(b.dataset.view==='test'&&!testStarted){testStarted=true;newTest();}b.blur();}
+  if(b.dataset.view==='test'&&!testStarted){testStarted=true;newTest();}b.blur();markPicker();
+  document.querySelectorAll('#cubeSel [data-puzzle]').forEach(x=>{if(TPZ[x.dataset.puzzle])x.title=b.dataset.view==='timer'?TPZ[x.dataset.puzzle]+': time it':TPZ[x.dataset.puzzle]+': how to solve';});}
 
 $('optHide').checked=store.get('hide',false);$('optHideSolve').checked=store.get('hideSolve',false);$('optSmart').checked=store.get('smart',true);$('optLefty').checked=lefty;
 document.querySelectorAll('#cubeSel button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.cube===cubeN));
@@ -1727,7 +1758,140 @@ const GUIDES={
    how:'Put the headlights on the <b>left</b> side and do the moves. No headlights? Do it once from anywhere, and you\'ll get some.',algs:[['T perm',"R U R' U' R' F R2 U' R' U' R U R' F'"]]},
   {t:'Line it up',sub:'U turns',k:'DONE',text:'Turn the top until every side is one color. That\'s a solved 2x2!',how:'Just turn the top layer (U) until it matches.',algs:[['Finish',"U"]]}]},
 };
-const ENG_FOR={'2':()=>engN(2),'3':()=>E3};
+// ---- Beginner guides for every puzzle in the Learn tab ----
+// Every algorithm here was checked on a simulator of that puzzle (tools/sims) or on the app's cube engines.
+// demo: which 3D engine can play the moves ('2'..'9' = NxN, '3' also used for 3x3 shape mods), or null for text only.
+const LEG_CUBE=[['R','Turn the right side away from you'],['U','Turn the top to the left'],['F','Turn the front clockwise'],["'",'Same face, the other way · 2 means twice']];
+const LEG_BIG=[['R, U, F','Outer layer only, like a 3x3'],['Rw, Uw','The outer two layers together'],['2R, 2L','Only the second layer in from that side'],['3Uw','The outer three layers together']];
+const G_BIGCUBE=(N)=>{
+  const odd=N%2===1,w='Uw',pairs=N>5?'Pair every edge one layer at a time: the pieces next to the corners first, then the next ring in. Line up two matching pieces on the front-left and front-right edges, move them together with a wide turn, swap the finished edge out, then undo the wide turn.':'Find two pieces with the same two colors. Put one on the front-left edge and one on the front-right edge, at different heights. The moves join them, swap the finished edge away, and put the centers back.';
+  const steps=[
+    {t:'First two centers',sub:'No moves to learn',k:'CENTERS',text:`Build one full center (all ${(N-2)*(N-2)} pieces), then the center opposite it. Make small bars of matching pieces and slide them in with a wide turn, then undo the wide turn.`,
+     how:'Example: a wide turn opens the center, U brings a bar over, then undo the wide turn. Play it to see a bar move.',algs:[['Slide a bar in',`Rw U Rw'`]]},
+    {t:'Last four centers',sub:N>5?'Commutators':'Same trick',k:'CENTERS',text:'Hold your two finished centers on the left and right (or top and bottom) and build the four around the middle the same way. Only use wide turns that you undo right away so finished centers stay put.',
+     how:N>5?'For single pieces that are stuck, use the center commutators in this app: switch to the '+N+'x'+N+' and turn on the <b>Centers</b> set in Drill.':'If one piece is stuck, the X-center commutator from the <b>Centers</b> set in Drill swaps it without touching anything else.',
+     algs:[['X-center swap',"2R U 2L' U' 2R' U 2L U'"]]},
+    {t:'Pair the edges',sub:"Uw' R U R' F R' F' R Uw",k:'EDGES',text:pairs,
+     how:`Put the matching pieces on the <b>front-left</b> and <b>front-right</b> edges, do the moves, and repeat for the next edge. The wide ${w} turns put the centers back each time.`,algs:[['Pair an edge',`Uw' R U R' F R' F' R Uw`]].concat(N>=6?[['Inner ring',`3Uw' R U R' F R' F' R 3Uw`]]:[])},
+    {t:'Last edges and flipped edge',sub:'Parity fix',k:'EDGES',text:`The last two edges sometimes end up with pieces swapped so one edge looks flipped. That is normal on a ${N}x${N}. The fix swaps two pieces of one edge and leaves everything else alone.`,
+     how:'Hold the bad edge at the <b>front of the top</b> layer and do the moves.'+(N>5?' Use 2R/2L for the outer pieces and 3R/3L'+(N>7?' or 4R/4L':'')+' for the inner ones.':''),algs:[['Fix flipped edge',"2R2 B2 U2 2L U2 2R' U2 2R U2 F2 2R F2 2L' B2 2R2"]].concat(N>=6?[['Inner pieces',"3R2 B2 U2 3L U2 3R' U2 3R U2 F2 3R F2 3L' B2 3R2"]]:[])},
+    {t:'Solve it like a 3x3',sub:'Outer layers only',k:'3x3 STAGE',text:'Every center is now one big center and every edge is one big edge. Solve it with the same seven steps as a 3x3, using outer-layer turns only so you don\'t break the centers.',
+     how:'Follow the 3x3 guide from the white cross. Wide turns are no longer needed.',algs:[['3x3 moves',"R U R' U'"]]}];
+  if(!odd)steps.push({t:'Parity at the end',sub:'OLL and PLL parity',k:'LAST STEP',text:`Even cubes have two extra last-layer cases a 3x3 never shows: a single flipped edge (OLL parity), or two edges swapped (PLL parity). Each has one fix.`,
+     how:'<b>One edge flipped</b> with the rest oriented: hold it at the front and do OLL parity. <b>Two edges swapped</b> (or two corners swapped): do PLL parity. These are also in the <b>Parity</b> set in Drill.',
+     algs:[['OLL parity',N===4?"2R2 B2 U2 2L U2 2R' U2 2R U2 F2 2R F2 2L' B2 2R2":"3R2 B2 U2 3L U2 3R' U2 3R U2 F2 3R F2 3L' B2 3R2"],['PLL parity',N===4?"2R2 U2 2R2 Uw2 2R2 Uw2":"3R2 U2 3R2 3Uw2 3R2 3Uw2"]]});
+  return {title:`Solve a ${N}x${N}`,demo:String(N),legend:LEG_BIG,tip:`Big cubes are solved by turning them into a 3x3: centers, then edges, then the 3x3 steps you already know. Learn the 3x3 first.`,steps};};
+const G_SHAPE=(name,extra)=>({title:'Solve a '+name,demo:'3',demoNote:'Shown on a regular 3x3',legend:LEG_CUBE,
+  tip:`A ${name} is a 3x3 inside. Every move works the same; only the shape changes. Go by shape instead of color.`,
+  steps:[
+   {t:'Know the pieces',sub:'Shape, not color',k:'BEFORE YOU START',text:extra.know,how:'Turn it from solved a few times and watch how the pieces change shape. Every corner and edge still has one home.',algs:[['Try it',"R U R' U'"]]},
+   {t:'First layer',sub:'Cross, then corners',k:'FIRST LAYER',text:'Solve one side the 3x3 way: edges first (the cross), then the corners with R U R\' U\'. Check that the side pieces line up into flat faces.',how:'Same as 3x3 steps 1 and 2: hold the corner above its spot at front-right and repeat the moves.',algs:[['Corner trick',"R U R' U'"]]},
+   {t:'Middle layer',sub:'2 move sets',k:'SECOND LAYER',text:'Insert the four middle edges like the 3x3. An edge goes in when its shape continues the faces on both sides.',how:'Edge goes <b>right</b> → "Right". Edge goes <b>left</b> → "Left".',algs:[['Right',"U R U' R' U' F' U F"],['Left',"U' L' U L U F U' F'"]]},
+   {t:'Last layer',sub:'Same 4 algs as 3x3',k:'LAST LAYER',text:'Finish with the 3x3 last-layer steps: cross, edges, place corners, twist corners. Look at the shapes of the top pieces instead of the yellow color.',
+    how:'Use the moves in order. Play each one to compare with your puzzle.',algs:[['Top cross',"F R U R' U' F'"],['Swap edges',"R U R' U R U2 R' U"],['Cycle corners',"U R U' L' U R' U' L"],['Twist corner',"R' D' R D"]]},
+   ...(extra.centers?[{t:'Turned centers',sub:'Fix a sideways center',k:'LAST STEP',text:'On this puzzle the centers have a direction, so the shape can be almost right with one center turned. Everything else stays solved while you fix it.',
+    how:'<b>Top center upside down:</b> do "Top center 180°". <b>Top center and front center each a quarter turn off:</b> do "Top + front quarter" (it turns the top one way and the front the other way).',algs:[['Top center 180°',"R L U2 R' L' U R L U2 R' L' U"],['Top + front quarter',"S' E' S U' S' E S U"]]}]:[])]});
+const LEG_PYRA=[['U, L, R, B','Turn the top, left, right or back corner with its middle layer'],['u, l, r, b','Turn just the small tip'],["'",'Counterclockwise (looking at that corner)'],['Hold','One face toward you, U corner on top']];
+const LEG_MEGA=[['U, F, R, L','Top, front, right, left faces'],['DR','The face below, between front and right'],["U2'",'Two fifths of a turn counterclockwise'],["'",'Counterclockwise']];
+const LEG_SKEWB=[['R','Back-right-bottom corner'],['L','Front-left-bottom corner'],['B','Back-left-bottom corner'],['U','Back-left-top corner · \' = counterclockwise']];
+const LEG_CORNER=[['R','Top-front-right corner, clockwise looking at it'],['B','Top-back-right corner'],["'",'Counterclockwise'],['Hold','The side you finished goes on the bottom']];
+const LEG_IVY=[['R','Back-right-bottom corner'],['L','Front-left-bottom corner'],["'",'Counterclockwise looking at the corner'],['Hold','Corners only twist in place']];
+const LEG_CUBOID=[['R2, F2…','Half turns of the sides'],['U, D','Top and bottom turn a quarter at a time'],["'",'The other way'],['Hold','Square face on top']];
+const LEG_CLOCK=[['Pins','Push a pin in so it pops out on your side = "up"'],['Wheel','Turn any corner wheel'],['Up pins','Link the dials around them on your side'],['12','Every dial points straight up']];
+const LEG_SQ1=[['(a,b)','Turn the top by a and the bottom by b twelfths (30° each)'],['/','Turn the right half 180°'],['−','Counterclockwise'],['Hold','Slice line from front to back']];
+const GUIDES_MORE={
+ '4':G_BIGCUBE(4),'5':G_BIGCUBE(5),'6':G_BIGCUBE(6),'7':G_BIGCUBE(7),'9':G_BIGCUBE(9),
+ 'pyra':{title:'Solve a Pyraminx',demo:null,legend:LEG_PYRA,tip:'The Pyraminx is one of the easiest puzzles. Tips and centers are free, and the last step uses two short move sets.',steps:[
+  {t:'Tips',sub:'u, l, r, b',k:'FREE STEP',text:'The four small tips turn on their own. Turn each one until its three colors match the centers right below it.',how:'Turn a tip with its lowercase letter. It never affects anything else.',algs:[['Turn a tip',"u"]]},
+  {t:'Centers',sub:'U, L, R, B',k:'CENTERS',text:'Each corner has a three-color center piece under the tip. Pick a color for the bottom. Turn the L, R and B layers until their centers show that color on the bottom face, then turn U so its centers match the sides.',how:'Each layer turn spins one center in place. Once all four line up, never turn them out of line again for long.',algs:[['Spin a center',"R"]]},
+  {t:'Bottom edges',sub:'No moves to learn',k:'FIRST LAYER',text:'Place the three edges of the bottom face. Find a bottom edge in the top part, line it up above its spot, and turn the side down. If one is in the bottom the wrong way, take it out with a side turn first.',how:'Undo every helper turn right after, so the centers stay lined up. Finish with U so the top centers match.',algs:[]},
+  {t:'Last three edges',sub:"R U R' U R U R'",k:'LAST STEP',text:'Only the three top edges are left. They either need to move around in a circle, or two of them are flipped.',
+   how:'<b>Circle:</b> "Clockwise" moves front-left → front-right → back → front-left. "Counter" goes the other way. <b>Two flipped:</b> hold them at the front-left and front-right and do "Flip two".',
+   algs:[['Clockwise',"R U R' U R U R'"],['Counter',"R' U' R U' R' U' R"],['Flip two',"R' L R L' U L' U' L"]]}]},
+ 'skewb':{title:'Solve a Skewb',demo:null,legend:LEG_SKEWB,tip:'Every Skewb turn moves half the puzzle. Hold your first layer on top: these moves never break it.',steps:[
+  {t:'First layer',sub:'No moves to learn',k:'TOP LAYER',text:'Solve one center and the four corners around it, with each corner\'s side colors matching each other. Then turn the puzzle over so this layer is on top.',how:'Take it slow: put each corner in with one or two turns, then fix whatever you moved. All the moves after this keep the top layer solved.',algs:[]},
+  {t:'Bottom corners',sub:"R B R B' U' L U",k:'CORNERS',text:'Bottom corners can only be twisted in place now, and they come in diagonal pairs: front-left with back-right, and front-right with back-left.',
+   how:'Hold a twisted pair at <b>front-left and back-right</b> and do the moves once or twice until both are fixed. Then turn the whole puzzle a quarter (top still on top) for the other diagonal. Side centers get mixed up here; that\'s fine.',algs:[['Twist a pair',"R B R B' U' L U"]]},
+  {t:'Bottom center',sub:"R L' U' R U' L R U'",k:'CENTERS',text:'Find the center with the bottom color. Turn the whole puzzle (top stays on top) so that center is in front.',how:'Do the moves. The bottom center drops into place, and the right and back centers swap.',algs:[['Bring it down',"R L' U' R U' L R U'"]]},
+  {t:'Side centers',sub:"R L' B' U B U' R' U",k:'LAST STEP',text:'Only the four side centers are left. Either three are wrong, or all four are wrong in two swapped pairs.',
+   how:'<b>Three wrong:</b> hold the correct one on the <b>left</b> and do the moves once or twice (they cycle front → right → back). <b>All four wrong:</b> do the moves once from anywhere, then you\'ll have three wrong.',algs:[['Cycle three',"R L' B' U B U' R' U"]]}]},
+ 'mega':{title:'Solve a Megaminx',demo:null,legend:LEG_MEGA,tip:'A Megaminx solves like a giant 3x3: layer by layer from the bottom. The first five steps use only the 3x3 tricks you know.',steps:[
+  {t:'White star',sub:'No moves to learn',k:'FIRST LAYER',text:'Put the white face on the bottom. Bring the five white edges around the white center, with each edge\'s other color matching the face next to it.',how:'Like the 3x3 cross, with five edges.',algs:[]},
+  {t:'White corners',sub:'Like 3x3 corners',k:'FIRST LAYER',text:'Insert the five white corners one at a time, just like the 3x3 corners: bring a corner next to its spot, then use the two faces around the spot to drop it in with white on the bottom.',how:'Go slow and undo any helper turn right away so the star stays.',algs:[]},
+  {t:'Second layer edges',sub:'Like 3x3 middle edges',k:'SECOND LAYER',text:'Fill the five edges between the first-layer corners, using the same right/left insert idea as the 3x3 middle layer.',how:'Bring an edge above its slot, move it away from the slot, and pair it in. Go slow and undo helper turns.',algs:[]},
+  {t:'Third layer',sub:'Corners and edges',k:'THIRD LAYER',text:'The next ring has five corners and ten edges. Pair each corner with its edges and insert them like a 3x3 corner + edge (F2L-style).',how:'Work on one slot at a time and keep the top face free for setting pieces up.',algs:[]},
+  {t:'Fourth layer edges',sub:'Five more edges',k:'FOURTH LAYER',text:'Insert the five edges of the last ring below the top face, using the 3x3 middle-edge idea again.',how:'Hold the slot on the front-right, bring its edge to the top, and insert it.',algs:[]},
+  {t:'Last layer star',sub:"F R U R' U' F'",k:'LAST LAYER',text:'Make a star: all five top edges with the top color up.',how:'Do the moves, look again, and repeat from a different angle until you have the star.',algs:[['Star',"F R U R' U' F'"]]},
+  {t:'Last layer edges',sub:"R U R' U R U2' R'",k:'LAST LAYER',text:'Turn the top until two edges next to each other match their sides.',how:'Hold those two at the <b>front and left</b>. The moves cycle the other three (right → back-right → back-left). Do it once or twice. No two side by side? Do it once from anywhere and look again.',algs:[['Cycle edges',"R U R' U R U2' R'"]]},
+  {t:'Place corners',sub:"R U2' L' U2 R' U2' L U2",k:'LAST LAYER',text:'Get each top corner into its spot (twisted is fine).',how:'Hold two correct corners on the <b>left side</b> (front-left and back-left). The moves cycle the other three. Do it once or twice; repeat from a new angle if needed.',algs:[['Cycle corners',"R U2' L' U2 R' U2' L U2"]]},
+  {t:'Twist corners',sub:"R' DR' R DR",k:'LAST STEP',text:'Same as the 3x3 finish. Hold an unsolved corner at the front-right of the top.',how:'Repeat the moves 2 or 4 times until it is solved, then turn only the top to bring the next one in. Never turn the whole puzzle.',algs:[['Twist',"R' DR' R DR"]]}]},
+ 'sq1':{title:'Solve a Square-1',demo:null,legend:LEG_SQ1,tip:'Square-1 is about shape first. Once it is a cube again, sort pieces into their layers, then place corners, then edges. Positions below are seen from the top with the slice line running front to back.',steps:[
+  {t:'Get back to a cube',sub:'Shape first',k:'SHAPE',text:'Ignore colors. Move the corners (wide pieces) and edges (thin pieces) so each layer has 4 corners and 4 edges, then line them up into a cube.',how:'Gather pieces on one layer first: put six edges together on the bottom and the corners on top, then split them back out evenly. After a few tries you will recognize the common shapes.',algs:[]},
+  {t:'Sort the layers',sub:'(0,-1)/(1,1)/(-1,-1)/(0,1)',k:'COLORS',text:'Get every top-colored piece on top and every bottom-colored piece on the bottom, keeping the cube shape.',
+   how:'The moves trade the <b>two right-hand corners</b> of the top with the two right-hand corners of the bottom, and two edges as well. Turn each layer first so the pieces you want to trade are on the right. The middle may flip; that gets fixed later.',algs:[['Trade right halves',"(0,-1)/(1,1)/(-1,-1)/(0,1)"]]},
+  {t:'Place the corners',sub:'/(3,-3)/(3,0)/(-3,0)/(0,3)/(-3,0)/(3,0)',k:'CORNERS',text:'Put the four top corners in order, then the four bottom ones. Edges do not matter yet.',
+   how:'The moves swap the <b>two back corners</b> of the top (and mix some edges). Turn the top so the two corners you want to swap are at the back. For the bottom, turn the whole puzzle over and do the same.',algs:[['Swap back corners',"/(3,-3)/(3,0)/(-3,0)/(0,3)/(-3,0)/(3,0)"]]},
+  {t:'Place the edges',sub:'Swap two edges',k:'EDGES',text:'Now put the edges in order without moving corners. Swap edges two at a time.',
+   how:'<b>Right and back edges swapped:</b> use "Swap neighbors" (it also flips the middle; fix that in the next step). <b>Front and back edges swapped:</b> use "Swap front + back".',
+   algs:[['Swap neighbors',"/(-3,0)/(0,3)/(0,-3)/(0,3)/(2,0)/(0,2)/(-2,0)/(4,0)/(0,-2)/(0,2)/(-1,4)/(0,-3)/(0,3)"],['Swap front + back',"/(3,3)/(1,0)/(-2,-2)/(2,0)/(2,2)/(-1,0)/(-3,-3)/(-2,0)/(3,3)/(3,0)/(-1,-1)/(-3,0)/(1,1)/(-4,-3)"]]},
+  {t:'Fix the middle',sub:'/(6,0)/(6,0)/',k:'LAST STEP',text:'If the two halves of the middle layer do not form a rectangle, flip one half.',how:'Do the moves, then turn the top 180° (6,0) to line it back up.',algs:[['Flip middle',"/(6,0)/(6,0)/(6,0)"]]}]},
+ 'clock':{title:'Solve a Clock',demo:null,legend:LEG_CLOCK,tip:'No memorizing: each step uses a pin pattern, then you turn a wheel until two dials match. Solve the front, set it to 12, flip, and do the back the same way.',steps:[
+  {t:'Front cross',sub:'4 pin patterns',k:'FRONT',text:'Make the center and the four edge dials point the same way.',
+   how:'(1) Pins <b>bottom-left + bottom-right</b> up: turn until the center matches the top edge. (2) <b>Top-right + bottom-right</b> up: turn until it matches the left edge. (3) <b>Top-left + bottom-left</b> up: match the right edge. (4) <b>Top-left + top-right</b> up: match the bottom edge.',algs:[]},
+  {t:'Front corners',sub:'3 pins up',k:'FRONT',text:'Now bring each corner dial in line with the cross.',how:'For each corner: push <b>the other three pins up</b> (its own pin down). Turning a wheel then moves everything except that corner, so turn until everything matches it.',algs:[]},
+  {t:'Set the front to 12',sub:'All pins up',k:'FRONT',text:'All nine front dials point the same way. Push all four pins up and turn any wheel until they all point to 12.',how:'Your front is solved. The back corners are now at 12 too, because each corner is the same wheel on both sides.',algs:[]},
+  {t:'Back side',sub:'Same steps',k:'BACK',text:'Flip the clock over (left-right, like turning a page). Do the front cross and front corners again on this side, then set it to 12 with all pins up.',how:'The pins flip with it, so "up" on this side is still the side facing you. The side you already solved stays solved: only its corners move, and the last step puts them back on 12.',algs:[]}]},
+ 'mirror':G_SHAPE('Mirror Cube',{know:'Every piece is silver, so you go by size. Thick pieces belong on the side where the cube is thickest. Start by finding the center for each side: the thickest center is the big side.',centers:false}),
+ 'ghost':G_SHAPE('Ghost Cube',{know:'The hardest shape mod: no piece looks like a normal cube piece and the centers have a direction. Find the three-dimensional "corner" pieces first and remember which way the slanted faces lean.',centers:true}),
+ 'axis':G_SHAPE('Axis Cube',{know:'The Axis Cube is a 3x3 turned on a slant. Centers are arrows that point a direction, corners are big triangles, edges are thin wedges.',centers:true}),
+ 'fisher':G_SHAPE('Fisher Cube',{know:'A Fisher Cube is a 3x3 rotated 45° around the vertical axis. Top and bottom work like a normal cube; the side pieces are the ones that look different.',centers:true}),
+ 'windmill':G_SHAPE('Windmill Cube',{know:'A Windmill Cube is a 3x3 cut at an angle. Top and bottom centers are rectangles, so they can be sideways; the side pieces look like windmill blades.',centers:true}),
+ 'morphix':G_SHAPE('Mastermorphix',{know:'A Mastermorphix is a 3x3 shaped like a pyramid. Centers are pointed shapes with a direction, and some "faces" are tiny. Solve by color if yours has colors.',centers:true}),
+ 'gear':{title:'Solve a Gear Cube',demo:null,legend:[['R2, U2','A half turn of the face (the middle gears turn a quarter)'],['Gears','Edges are gears and turn as you go'],['Twisted gear','If a gear looks off, keep turning that face'],['Hold','Any side on top']],
+  tip:'Turning a face 180° spins the middle layer a quarter and turns the gears. Only half turns make sense, so there are far fewer positions than a 3x3.',steps:[
+  {t:'Corners',sub:'Half turns only',k:'CORNERS',text:'Corners only ever move by half turns. Use R2, L2, U2, D2, F2, B2 to put the four top corners and four bottom corners into place, like a 2x2 with only half turns.',how:'Solve the top four corners first, then the bottom four. Keep the move count small and watch where each corner goes.',algs:[]},
+  {t:'Edges',sub:'Gear pairs',k:'EDGES',text:'With corners done, move the edges (gears) into place. A half turn of a side moves the gears of the middle layer next to it.',how:'Use a half turn, a different half turn, and undo both to move gears around without losing your corners.',algs:[]},
+  {t:'Gear twist',sub:'Turn until aligned',k:'LAST STEP',text:'If everything is in place but a gear is twisted, keep turning a face that moves it: the gears return to normal after the face goes around three full turns.',how:'Turn one face 180° at a time and count. The rest of the puzzle comes back too.',algs:[]}]},
+ 'ivy':{title:'Solve an Ivy Cube',demo:null,legend:LEG_IVY,tip:'The easiest twisty puzzle: four corners that only twist, and six leaf-shaped centers.',steps:[
+  {t:'Corners',sub:'Twist in place',k:'CORNERS',text:'The four big corners never move, they only twist. Twist each one so the corners agree on which color goes on which side.',how:'Each face has two corner pieces; when both show the same color on that face, those corners agree.',algs:[['Twist',"R"]]},
+  {t:'Most centers',sub:'No moves to learn',k:'CENTERS',text:'Each turn moves three leaf centers around one corner. Put leaves into their faces one or two at a time, undoing helper turns.',how:'Look for a leaf that is one turn away from home.',algs:[]},
+  {t:'Last centers',sub:"R L R' L'",k:'LAST STEP',text:'When three leaves are left, cycle them.',how:'The moves send bottom → front → back. Hold the three wrong leaves on the <b>bottom, front and back</b> and do it once or twice. If four are wrong, do it once from anywhere first.',algs:[['Cycle three',"R L R' L'"]]}]},
+ 'dino':{title:'Solve a Dino Cube',demo:null,legend:LEG_CORNER,tip:'A Dino Cube only has edges, and every turn moves the three edges around one corner. No centers means you choose the color scheme as you go.',steps:[
+  {t:'Bottom edges',sub:'No moves to learn',k:'FIRST LAYER',text:'Pick a color for the bottom and put its four edges there, with their side colors forming the right color order.',how:'Any corner turn moves three edges; use it to bring an edge down, then fix what you moved.',algs:[]},
+  {t:'Middle edges',sub:'Put the side pairs in',k:'SECOND LAYER',text:'Fill the four vertical edges between the sides. Bring each one to the top, line it up, and turn it down with one corner turn.',how:'Undo helper turns right away so the bottom stays solved.',algs:[]},
+  {t:'Top edges',sub:"R B' R' B",k:'LAST STEP',text:'Only the four top edges are left. Usually three are wrong.',how:'Hold the correct top edge on the <b>left</b>. The moves cycle back → front → right. Do them once or twice. All four wrong? Do it once from anywhere first.',algs:[['Cycle three',"R B' R' B"]]}]},
+ 'redi':{title:'Solve a Redi Cube',demo:null,legend:LEG_CORNER,tip:'Redi corners stay put and only twist; the edges move like on a Dino Cube. Corners first, then edges.',steps:[
+  {t:'Twist the corners',sub:'Each corner on its own',k:'CORNERS',text:'Each corner spins in place. Twist every corner so all the stickers on one face of the corners match.',how:'Turning a corner also moves three edges, but don\'t worry about them yet.',algs:[['Twist',"R"]]},
+  {t:'Bottom edges',sub:'No moves to learn',k:'FIRST LAYER',text:'Put the four bottom edges in, matching the corners around them.',how:'Turn a corner to bring an edge into place, then undo helper turns.',algs:[]},
+  {t:'Middle edges',sub:'Side pairs',k:'SECOND LAYER',text:'Fill the four vertical edges between the sides.',how:'Bring the edge to the top above its slot and turn it down.',algs:[]},
+  {t:'Top edges',sub:"R B' R' B",k:'LAST STEP',text:'Finish the top edges with a three-edge cycle. Corners come back where they were.',how:'Hold the correct top edge on the <b>left</b>; the moves cycle back → front → right. Once or twice. All four wrong? Do it once first.',algs:[['Cycle three',"R B' R' B"]]}]},
+ 'kilo':{title:'Solve a Kilominx',demo:null,legend:LEG_MEGA,tip:'A Kilominx is a Megaminx with only corners, like a 2x2 version of it. Same last-layer moves as the Megaminx.',steps:[
+  {t:'First face',sub:'No moves to learn',k:'FIRST LAYER',text:'Pick a color and put its five corners around one face, with the side colors matching each other.',how:'Like the first layer of a 2x2.',algs:[]},
+  {t:'Next ring',sub:'Like 3x3 corners',k:'SECOND LAYER',text:'Put the first face on the bottom and insert the five corners of the next ring, using the faces around each slot to drop it in.',how:'Bring the corner next to its slot, turn it in, and undo helper turns.',algs:[]},
+  {t:'Third ring',sub:'Five more corners',k:'THIRD LAYER',text:'Insert the five corners of the ring below the top face the same way.',how:'Keep using the top face to set pieces up.',algs:[]},
+  {t:'Place top corners',sub:"R U2' L' U2 R' U2' L U2",k:'LAST LAYER',text:'Get every top corner into its spot.',how:'Hold two correct corners on the <b>left side</b> and do the moves once or twice.',algs:[['Cycle corners',"R U2' L' U2 R' U2' L U2"]]},
+  {t:'Twist top corners',sub:"R' DR' R DR",k:'LAST STEP',text:'Twist the corners like the 3x3 and Megaminx finish.',how:'Unsolved corner at front-right top: repeat until solved, then turn only the top.',algs:[['Twist',"R' DR' R DR"]]}]},
+ 'mpyra':{title:'Solve a Master Pyraminx',demo:null,legend:LEG_PYRA,tip:'A Master Pyraminx is a Pyraminx with extra layers. Reduce it to a normal Pyraminx: tips and centers, then pair the edges, then finish like a Pyraminx.',steps:[
+  {t:'Tips and centers',sub:'Like a Pyraminx',k:'FIRST',text:'Line up each tip with the center pieces under it, then line up the centers of each corner so their colors match the faces.',how:'Tip and corner-layer turns spin pieces in place.',algs:[]},
+  {t:'Face centers',sub:'One color per face',k:'CENTERS',text:'Each face also has a small triangle in the middle. Move them so each face\'s middle triangle matches that face.',how:'Use the middle layers and undo helper turns.',algs:[]},
+  {t:'Pair the edges',sub:'Three pieces each',k:'EDGES',text:'Each edge is three pieces. Line up matching pieces and join them with a middle-layer turn, then move the finished edge away.',how:'Like pairing edges on a 4x4.',algs:[]},
+  {t:'Finish the last edges',sub:'Like a Pyraminx',k:'LAST STEP',text:'With the edges paired, the last edges around the top behave like the Pyraminx last step: they need to cycle around or two need flipping.',how:'Use the same idea as the Pyraminx (cycle three, flip two), turning each corner together with all of its layers except the bottom row. Go slowly and check after each try.',algs:[]}]},
+ 'floppy':{title:'Solve a Floppy 3x3x1',demo:null,legend:LEG_CUBOID,tip:'Only half turns, one layer thick. Most people solve it in minutes without any moves to learn.',steps:[
+  {t:'Corners',sub:'No moves to learn',k:'CORNERS',text:'Put the four corners in their spots with half turns of the sides.',how:'Each side turn swaps two corners and flips the edge between them.',algs:[]},
+  {t:'Edges',sub:'R L F R L B',k:'EDGES',text:'If an edge shows the wrong color on top, it is flipped.',how:'The moves flip the <b>front and back</b> edges and keep everything else. If the left and right edges are flipped instead, turn the puzzle a quarter first.',algs:[['Flip front + back',"R L F R L B"]]},]},
+ 'domino':{title:'Solve a Domino 3x3x2',demo:null,legend:LEG_CUBOID,tip:'The top and bottom colors always stay on the top and bottom, so it\'s only about putting pieces in order.',steps:[
+  {t:'Corners',sub:'R2 U R2 U\' R2',k:'CORNERS',text:'Put all eight corners in place, top and bottom.',how:'Half turns of the sides trade pieces between layers. Use them with U and D to line up corners.',algs:[['Trade corners',"R2 U R2 U' R2"]]},
+  {t:'Bottom edges',sub:'No moves to learn',k:'EDGES',text:'Put the bottom edges in place without moving the corners for long.',how:'Bring an edge to the right side, half turn it down, and fix the corners you moved.',algs:[]},
+  {t:'Top edges',sub:'U2 R2 U2 R2 U2 R2',k:'LAST STEP',text:'Swap the last top edges two at a time.',how:'The moves swap the <b>front and back</b> top edges and keep everything else. Turn the top first so the two edges you want to swap are front and back.',algs:[['Swap front + back',"U2 R2 U2 R2 U2 R2"]]}]},
+ 'tower':{title:'Solve a Tower 2x2x3',demo:null,legend:LEG_CUBOID,tip:'Like a 2x2 with a middle layer. The tall sides only take half turns.',steps:[
+  {t:'Top and bottom',sub:'Layer colors',k:'LAYERS',text:'Get the top corners on top and the bottom corners on the bottom.',how:'Half turns of the sides trade pieces between the top and bottom layers.',algs:[]},
+  {t:'Bottom layer',sub:'No moves to learn',k:'LAYERS',text:'Put the bottom four corners in order.',how:'Use U, D and side half turns, fixing the top afterwards.',algs:[]},
+  {t:'Top corners',sub:'Front and back rows swap',k:'LAYERS',text:'If the front and back halves of the top are swapped, use the moves.',how:'They swap the top front corners with the top back corners and keep everything else.',algs:[['Swap rows',"R2 U2 F2 U R2 U2 F2 U' R2 U2 F2"]]},
+  {t:'Middle layer',sub:'R2 U2 R2 U2 R2 U2',k:'LAST STEP',text:'Swap middle pieces two at a time.',how:'The moves swap the <b>front-right and back-right</b> middle pieces. Turn the middle layer first to set up the pair you need.',algs:[['Swap two',"R2 U2 R2 U2 R2 U2"]]}]}
+};
+
+Object.assign(GUIDES,GUIDES_MORE);GUIDES['3'].legend=LEG_CUBE;GUIDES['2'].legend=LEG_CUBE;GUIDES['3'].demo='3';GUIDES['2'].demo='2';
+const engFor=d=>d==='3'?E3:engN(+d);
 let learnSel=null,learnStep=0,learnFilter='all',lnAlgIdx=0,lp=null;
 let learnDone=store.get('learn',{});
 const pzInfo=id=>PUZ.find(p=>p[0]===id);
@@ -1738,7 +1902,7 @@ function renderLearn(){
   $('lnLib').hidden=!!learnSel;$('lnGuide').hidden=!g;$('lnSoon').hidden=!(learnSel&&!g);
   if(!learnSel){renderLib();return;}
   if(!g){const p=pzInfo(learnSel)||[learnSel,learnSel];
-    $('lnSoon').innerHTML=`${pzSvg(learnSel,'pz')}<h2 class="ln-title" style="font-size:2rem">${p[1]}</h2><p class="gd-how" style="max-width:560px">The step-by-step guide for the ${p[1]} is on the way. Guides are being added a few puzzles at a time, and the 2x2 and 3x3 are ready now.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-ln-back>← All puzzles</button><button class="btn primary" data-ln-open="3">Learn the 3x3</button></div>`;
+    $('lnSoon').innerHTML=`${pzSvg(learnSel,'pz')}<h2 class="ln-title" style="font-size:2rem">${p[1]}</h2><p class="gd-how" style="max-width:560px">The step-by-step guide for the ${p[1]} is on the way.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-ln-back>← All puzzles</button><button class="btn primary" data-ln-open="3">Learn the 3x3</button></div>`;
     $('lnSoon').querySelector('svg').style.cssText='width:80px;height:85px';return;}
   renderGuide();}
 function renderLib(){
@@ -1765,11 +1929,19 @@ function renderGuide(){const G=GUIDES[learnSel],st=G.steps[learnStep],done=learn
   $('lnPats').innerHTML=(st.pats||[]).map((p,i)=>(i?`<span class="gd-arrow" aria-hidden="true">${p[2]==='goal'?'→':(learnSel==='2'?'or':'→')}</span>`:'')+`<div class="gd-pat${p[2]==='goal'?' goal':''}"${p[2]===1?' style="border-color:var(--accent);box-shadow:0 0 18px -6px var(--accent)"':''}>${patSvg(p[1])}<span>${p[0]}</span></div>`).join('');
   $('lnHow').innerHTML=st.how;if(lnAlgIdx>=st.algs.length)lnAlgIdx=0;
   $('lnAlgPick').innerHTML=st.algs.length>1?st.algs.map((a,i)=>`<button data-ln-alg="${i}" aria-pressed="${i===lnAlgIdx}">${a[0]}</button>`).join(''):'';
-  $('lnMovesLabel').textContent=st.algs.length>1?'The moves':'The moves · '+st.algs[0][0];
+  $('lnMovesLabel').textContent=!st.algs.length?'How to do it':st.algs.length>1?'The moves':'The moves · '+st.algs[0][0];
+  $('lnLegend').innerHTML=(G.legend||LEG_CUBE).map(([k,v])=>`<b>${k}</b><span>${v}</span>`).join('');
+  $('lnRow').classList.toggle('nodemo',!G.demo||!st.algs.length);$('lnDemoNote').textContent=G.demoNote||'Watch it';
   $('lnPrev').textContent=learnStep?'← '+G.steps[learnStep-1].t:'← All puzzles';
   $('lnNext').textContent=learnStep<nS-1?'Got it · next: '+G.steps[learnStep+1].t+' →':'Got it · I solved it! ✓';
   loadLnAlg();}
-function loadLnAlg(){const st=GUIDES[learnSel].steps[learnStep],alg=st.algs[lnAlgIdx][1],e=(ENG_FOR[learnSel]||(()=>E3))();
+function loadLnAlg(){const G=GUIDES[learnSel],st=G.steps[learnStep];
+  if(lp&&(!G.demo||!st.algs.length))lp.load(E3.solved(),'full',[],'',E3);
+  $('lnAlg').parentElement.hidden=!st.algs.length;
+  if(!st.algs.length){$('lnAlg').className='alg-line';$('lnAlg').innerHTML='';return;}
+  const alg=st.algs[lnAlgIdx][1];
+  if(!G.demo){$('lnAlg').className='alg-line';$('lnAlg').innerHTML=alg.split(/\s+|(?<=\/)(?=\()|(?<=\))(?=\/)/).filter(Boolean).map(t=>`<span>${t}</span>`).join('');return;}
+  const e=engFor(G.demo);
   if(!lp)lp=makePlayer('ln3d','lnAlg',{reset:'lnReset',step:'lnStep',play:'lnPlay',speed:'lnSpeed'});
   const toks=e.parse(alg);const start=e.apply(e.solved(),e.inv(toks));lp.load(start,'full',toks,'',e);lp.reveal();}
 function markDone(){const d=learnDone[learnSel]=learnDone[learnSel]||[];if(!d.includes(learnStep))d.push(learnStep);store.set('learn',learnDone);}
