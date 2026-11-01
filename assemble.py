@@ -1,7 +1,7 @@
 # Builds app/index.html from the web version's source.
 s=open('src-body.html').read()
 fonts=''.join(f'@font-face{{font-family:"{fam}";font-weight:{w};font-style:normal;font-display:swap;src:url(vendor/fonts/{fn}-latin-{w}-normal.woff2) format("woff2")}}\n'
-  for fam,fn,ws in [('Bricolage Grotesque','bricolage-grotesque',[500,700,800]),('Figtree','figtree',[400,500,600]),('JetBrains Mono','jetbrains-mono',[400,500])] for w in ws)
+  for fam,fn,ws in [('Chakra Petch','chakra-petch',[500,600,700]),('Barlow','barlow',[400,500,600,700]),('JetBrains Mono','jetbrains-mono',[400,500])] for w in ws)+'@font-face{font-family:"Chakra Petch";font-weight:700;font-style:italic;font-display:swap;src:url(vendor/fonts/chakra-petch-latin-700-italic.woff2) format("woff2")}\n'
 head_old=s[:s.index('<style>')]
 assert 'fonts.googleapis.com' in head_old and 'cdnjs' in head_old
 head_new='<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n'+\
@@ -15,7 +15,7 @@ def rep(a,b):
 rep('<style>','<style>\n'+fonts)
 rep('</style>','''html,body{margin:0}
 .brand-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.ver{align-self:center;font-family:var(--f-mono);font-size:.72rem;color:var(--muted);background:none;border:0;cursor:pointer;padding:4px 6px;border-radius:6px}
+.ver{font-family:var(--f-mono);font-size:.68rem;color:#6E7580;background:none;border:0;cursor:pointer;padding:4px 6px;border-radius:6px;margin-top:6px}
 .ver:hover{background:var(--sunk);color:var(--fg)}
 .updbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--accent);border-radius:12px;padding:10px 14px}
 .updbar .msg{flex:1;min-width:0}
@@ -24,8 +24,7 @@ rep('</style>','''html,body{margin:0}
 </style>''')
 rep('<div class="brand"><h1>Last Layer Lab</h1></div>',
  '<div class="brand"><h1>Last Layer Lab</h1><button class="ver" id="verBtn" title="Check for updates">v—</button></div>')
-rep('  </header>','''  </header>
-  <div class="updbar" id="updBar" hidden><span class="msg" id="updMsg"></span><button class="btn primary" id="updGo" hidden>Restart and update</button><button class="btn" id="updClose">Dismiss</button><div class="bar" id="updProg" hidden><i id="updFill"></i></div></div>''')
+rep('  <!--UPDBAR-->','''  <div class="updbar" id="updBar" hidden><span class="msg" id="updMsg"></span><button class="btn primary" id="updGo" hidden>Restart and update</button><button class="btn" id="updClose">Dismiss</button><div class="bar" id="updProg" hidden><i id="updFill"></i></div></div>''')
 s=s.replace('/*SCRW*/',open('tools/scramble-worker.bundle.js').read().strip()).replace('/*CUBE*/',open('src-cube.js').read()+open('src-nxn.js').read()).replace('/*F2L*/',open('src-f2l.json').read())
 upd='''
 // ---- desktop updates ----

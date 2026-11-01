@@ -1,51 +1,59 @@
 <title>Last Layer Lab</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=JetBrains+Mono:wght@400;500&family=Figtree:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,500;0,600;0,700;1,700&family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <style>
 /* Layout: header (name + tabs), one toolbar (cube + sections), then a workspace: case card (3D | info, timer under) beside a session column; stacks on phones */
 :root{
-  --bg:#f3f4f1; --surface:#ffffff; --sunk:#e8eae4; --line:#d5d8cf;
-  --fg:#1b1d19; --muted:#636a5c; --accent:#2f5bd3; --accent-fg:#ffffff;
-  --ready:#16a34a; --hold:#dc2626; --warn:#b45309;
-  --plastic:#141414; --gray-st:#8a8f86; --stage:#dfe2da;
-  --f-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
-  --f-body:"Figtree", "Segoe UI", system-ui, sans-serif;
+  --bg:#0B0C0F; --rail:#101217; --surface:#13151A; --sunk:#1B1E25; --line:#262A32;
+  --fg:#EEF0F4; --muted:#8A919D; --accent:#2F6BFF; --accent-soft:#A9C1FF; --accent-fg:#ffffff;
+  --ready:#22C55E; --hold:#EF4444; --warn:#FFB020; --good:#5FE0A0;
+  --plastic:#050505; --gray-st:#5d6259; --stage:#0F1116;
+  --f-display:"Chakra Petch", "Segoe UI", system-ui, sans-serif;
+  --f-body:"Barlow", "Segoe UI", system-ui, sans-serif;
   --f-mono:"JetBrains Mono", ui-monospace, Consolas, monospace;
+  color-scheme:dark;
 }
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#131512; --surface:#1c1f1b; --sunk:#252923; --line:#33382f;
-  --fg:#eceee8; --muted:#9aa192; --accent:#7c9cff; --accent-fg:#0d1220;
-  --ready:#4ade80; --hold:#f87171; --warn:#fbbf24; --plastic:#050505; --gray-st:#5d6259; --stage:#232722; color-scheme:dark}}
-:root[data-theme="dark"]{
-  --bg:#131512; --surface:#1c1f1b; --sunk:#252923; --line:#33382f;
-  --fg:#eceee8; --muted:#9aa192; --accent:#7c9cff; --accent-fg:#0d1220;
-  --ready:#4ade80; --hold:#f87171; --warn:#fbbf24; --plastic:#050505; --gray-st:#5d6259; --stage:#232722; color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
-body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45;
-  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 40px}
-.wrap{max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45;margin:0}
+.app{display:flex;min-height:100vh}
+.wrap{flex:1;min-width:0;max-width:1320px;display:flex;flex-direction:column;gap:16px;padding:20px max(16px,env(safe-area-inset-right,0px)) 40px 26px}
+.rail{position:sticky;top:0;height:100vh;flex:none;width:92px;background:var(--rail);display:flex;flex-direction:column;align-items:center;gap:6px;padding:18px 0 14px;z-index:6}
+.rail::after{content:"";position:absolute;top:0;right:0;bottom:0;width:3px;background:linear-gradient(#FFD500 0 16.6%,#FF7A1A 0 33.3%,#D0213B 0 50%,#2F6BFF 0 66.6%,#11A35A 0 83.3%,#F2F2F2 0)}
+.logo{width:42px;height:42px;display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin-bottom:14px;transform:rotate(-8deg)}
+.logo i{border-radius:3px}
+.brand h1{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.rail nav{display:flex;flex-direction:column;gap:4px;background:none;padding:0}
+.rail nav button{width:70px;padding:10px 0 9px;border-radius:12px;display:flex;flex-direction:column;align-items:center;gap:4px;font:700 .68rem var(--f-body);letter-spacing:.07em;text-transform:uppercase;color:#7F8794;border:0;background:none;cursor:pointer}
+.rail nav button svg{width:22px;height:22px}
+.rail nav button:hover{color:var(--fg);background:#171A21}
+.rail nav button[aria-selected="true"]{background:#1C2029;color:#fff;box-shadow:inset 0 -3px 0 var(--accent),0 10px 22px -14px var(--accent)}
+.rail .grow{flex:1}
+.streak{display:flex;flex-direction:column;align-items:center;gap:1px;color:var(--muted);font:700 .62rem var(--f-body);letter-spacing:.1em;text-align:center}
+.streak b{font:700 1.15rem var(--f-display);color:var(--fg)}
+.streak svg{width:18px;height:18px}
+.brand{display:flex;flex-direction:column;align-items:center}
+@media (max-width:700px){.app{flex-direction:column}.rail{position:sticky;top:0;height:auto;width:auto;flex-direction:row;padding:6px 8px;gap:4px;overflow-x:auto}
+  .rail::after{top:auto;left:0;height:3px;width:auto}.logo,.streak,.rail .grow{display:none}.rail nav{flex-direction:row}.rail nav button{width:60px;padding:7px 0}.wrap{padding:14px 16px 40px}}
 header{display:flex;flex-wrap:wrap;align-items:center;gap:12px 24px;justify-content:space-between}
 .brand{display:flex;align-items:baseline;gap:10px}
 .brand h1{font-family:var(--f-display);font-weight:800;font-size:1.5rem;margin:0;letter-spacing:-.02em}
 .brand small{font-family:var(--f-mono);color:var(--muted);font-size:.75rem}
-nav{display:flex;gap:4px;background:var(--sunk);padding:4px;border-radius:10px;flex-wrap:wrap}
-nav button{font:600 .9rem var(--f-body);border:0;background:none;color:var(--muted);padding:8px 14px;border-radius:7px;cursor:pointer}
-nav button[aria-selected="true"]{background:var(--surface);color:var(--fg);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+
 button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.btn{font:600 .85rem var(--f-body);border:1px solid var(--line);background:var(--surface);color:var(--fg);padding:7px 12px;border-radius:8px;cursor:pointer}
+.btn{font:600 .88rem var(--f-body);border:1px solid #2E323A;background:#15171C;color:var(--fg);padding:8px 14px;border-radius:9px;cursor:pointer}
 .btn:hover{border-color:var(--muted)}
-.btn.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent);font-weight:700;box-shadow:0 6px 20px -8px var(--accent)}
 .btn[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
-.label{font:600 .7rem var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.label{font:700 .7rem var(--f-body);letter-spacing:.12em;text-transform:uppercase;color:#6E7580}
 .mono{font-family:var(--f-mono)}
 .empty{color:var(--muted);font-size:.88rem}
 
 .split{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:18px}
 @media (max-width:860px){.split{grid-template-columns:minmax(0,1fr)}}
-.stage{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:16px;min-width:0}
+.stage{display:flex;flex-direction:column;gap:16px;min-width:0}
 .case-head{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap}
 .picker{position:relative;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .picker-btn{display:flex;align-items:center;gap:8px;max-width:100%}
@@ -70,82 +78,106 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 .drill-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:18px;align-items:start}
 @media (max-width:760px){.drill-grid{grid-template-columns:minmax(0,1fr)}}
 .info{display:flex;flex-direction:column;gap:14px;min-width:0}
+.card2{background:var(--surface);border:1px solid #23262E;border-radius:14px;padding:13px 15px}
 .block{display:flex;flex-direction:column;gap:6px}
 .top-row{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
 .linkbtn{border:0;background:none;color:var(--accent);font:600 .85rem var(--f-body);cursor:pointer;padding:4px 2px}
 .note{color:var(--muted);font-size:.8rem}
-.review{margin-left:6px;padding:1px 7px;border-radius:99px;background:var(--sunk);color:var(--accent);letter-spacing:.04em}
+#spLine{width:100%;height:44px;display:block}#spLine polyline{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+.sp-trend{font-size:.76rem;font-weight:700;color:var(--good)}.sp-trend.up{color:var(--hold)}.sp-best{color:var(--good)}
+.sp-empty{fill:#5F6670;font:12px var(--f-body)}
+.review{display:inline-flex;align-items:center;gap:6px;padding:2px 9px;border-radius:99px;border:1px solid rgba(255,176,32,.45);color:var(--warn);letter-spacing:.1em;font-size:.68rem}
+.review::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--warn);box-shadow:0 0 0 4px rgba(255,176,32,.2)}
 .review:empty{display:none}
 .alts{display:flex;flex-direction:column;gap:3px;margin-top:4px}
 .alt{font-size:.9rem;color:var(--muted)}
 .notes{font:400 .88rem/1.4 var(--f-body);width:100%;resize:vertical;border:1px solid var(--line);border-radius:8px;background:var(--sunk);color:var(--fg);padding:7px 9px}
 .case-meta{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1}
-.case-name{font-family:var(--f-display);font-weight:700;font-size:1.9rem;letter-spacing:-.02em;margin:0;line-height:1.1}
+.case-name{position:relative;font-family:var(--f-display);font-style:italic;font-weight:700;font-size:clamp(2rem,4.2vw,3.3rem);letter-spacing:0;margin:0;line-height:1}
+.case-meta{position:relative}
+.case-num{position:absolute;right:0;top:-24px;font:italic 700 8.5rem/1 var(--f-display);color:transparent;-webkit-text-stroke:1.5px #2A2F3A;pointer-events:none;user-select:none}
+.case-meta .label{position:relative;color:var(--accent-soft);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .case-name.hidden-name{color:var(--muted)}
-.setup{font-family:var(--f-mono);font-size:1rem;background:var(--sunk);border-radius:8px;padding:9px 12px;word-break:break-word}
+.setup{font-family:var(--f-mono);font-size:1rem;color:#C8CDD5;background:var(--surface);border:1px solid #23262E;border-radius:12px;padding:11px 14px;word-break:break-word}
 
 /* 3D viewer */
-.viewer{background:var(--stage);border-radius:12px;position:relative;overflow:hidden}
-.cube3d{height:320px;width:100%;cursor:grab;touch-action:none}
+.viewer{background:radial-gradient(ellipse 60% 55% at 50% 40%,rgba(47,107,255,.28),rgba(47,107,255,0) 70%),var(--stage);border:1px solid #23262E;border-radius:18px;position:relative;overflow:hidden}
+.viewer::before{content:"";position:absolute;left:-20%;right:-20%;bottom:0;height:46%;background-image:linear-gradient(rgba(120,150,255,.16) 1px,transparent 1px),linear-gradient(90deg,rgba(120,150,255,.16) 1px,transparent 1px);background-size:44px 44px;transform:perspective(420px) rotateX(60deg);transform-origin:bottom;pointer-events:none}
+.viewer::after{content:"";position:absolute;left:30%;right:30%;top:66%;height:26px;border-radius:50%;background:rgba(0,0,0,.6);filter:blur(12px);pointer-events:none}
+.cube3d{position:relative;z-index:1;height:340px;width:100%;cursor:grab;touch-action:none}
 .cube3d:active{cursor:grabbing}
 .cube3d canvas{display:block;width:100%!important;height:100%!important}
-.viewer .drag-hint{position:absolute;top:10px;left:12px;font-size:.75rem;color:var(--muted);pointer-events:none}
-.viewer-bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:10px 12px;border-top:1px solid var(--line);background:var(--surface)}
-.viewer-bar .speed{display:flex;align-items:center;gap:6px;font-size:.8rem;color:var(--muted);margin-left:auto}
+.viewer .drag-hint{position:absolute;z-index:2;top:14px;left:16px;font:700 .7rem var(--f-body);letter-spacing:.12em;text-transform:uppercase;color:var(--accent-soft);pointer-events:none}
+.viewer-bar{position:relative;z-index:2;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;padding:6px 14px 16px}
+.viewer-bar .speed{display:flex;align-items:center;gap:6px;font-size:.8rem;color:var(--muted)}
 .viewer-bar input[type=range]{width:72px}
 .mini:empty{display:none}
-.alg-line{font-family:var(--f-mono);font-size:1.05rem;display:flex;flex-wrap:wrap;gap:4px 8px;min-height:1.6em}
-.alg-line span{padding:0 3px;border-radius:4px}
+.alg-line{font:600 1.05rem var(--f-display);display:flex;flex-wrap:wrap;gap:6px;min-height:1.6em}
+.alg-line span{padding:3px 9px;border-radius:6px;background:#1F232B}
 .alg-line span.done{color:var(--muted)}
-.alg-line span.now{background:var(--accent);color:var(--accent-fg)}
-.alg-line.concealed{color:var(--muted);font-family:var(--f-body);font-size:.88rem}
+.alg-line span.now{background:var(--accent);color:var(--accent-fg);box-shadow:0 0 16px -2px var(--accent)}
+.alg-line.concealed{color:var(--muted);font-family:var(--f-body);font-size:.88rem;font-weight:500}
+.alg-line.concealed span{background:none;padding:0}
 .no3d{padding:30px;text-align:center;color:var(--muted)}
 
-.timer{user-select:none;-webkit-user-select:none;touch-action:none;cursor:pointer;border-radius:12px;background:var(--sunk);text-align:center;padding:18px 10px 14px}
-.time{font-family:var(--f-display);font-weight:700;font-size:clamp(2.8rem,9vw,4.6rem);line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.04em}
-.timer.hold .time{color:var(--hold)} .timer.ready .time{color:var(--ready)}
-.timer .hint{color:var(--muted);font-size:.85rem;margin-top:10px;word-break:break-word}
+.mat{user-select:none;-webkit-user-select:none;touch-action:none;cursor:pointer;display:flex;align-items:center;gap:20px;background:linear-gradient(#17191F,#0D0E12);border:1px solid #2A2E37;border-radius:999px;padding:14px 22px;box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 18px 40px -20px rgba(0,0,0,.9)}
+.pad{flex:none;display:flex;flex-direction:column;align-items:center;gap:6px;font:700 .66rem var(--f-body);letter-spacing:.14em;color:#6E7580}
+.pad i{width:78px;height:78px;border-radius:50%;background:radial-gradient(circle at 40% 30%,#2C313B,#111318);border:3px solid #343842;box-shadow:inset 0 2px 6px rgba(0,0,0,.6);transition:border-color .1s,box-shadow .1s}
+.mat.hold .pad i{border-color:var(--hold);box-shadow:0 0 22px -2px rgba(239,68,68,.7),inset 0 2px 6px rgba(0,0,0,.6)} .mat.hold .pad{color:var(--hold)}
+.mat.ready .pad i,.mat.insp .pad i{border-color:var(--ready);box-shadow:0 0 22px -2px rgba(34,197,94,.75),inset 0 2px 6px rgba(0,0,0,.6)} .mat.ready .pad{color:var(--ready)}
+.lcdcol{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:8px}
+.lcd{background:#0A1A10;border:2px solid #1B2A20;border-radius:12px;padding:4px 28px;box-shadow:inset 0 0 24px rgba(0,0,0,.8);max-width:100%}
+.time,.tm-time{font-family:var(--f-display);font-weight:700;font-size:clamp(2.8rem,8vw,5.6rem);line-height:1;letter-spacing:.04em;font-variant-numeric:tabular-nums;color:#7CFFB2;text-shadow:0 0 18px rgba(124,255,178,.5)}
+.mat.hold .time,.mat.hold .tm-time{color:#FF8A8A;text-shadow:0 0 18px rgba(255,90,90,.5)}
+.mat.warn .tm-time{color:#FFC861;text-shadow:0 0 18px rgba(255,176,32,.5)}
+.mat .hint{color:#6E7580;font:600 .74rem var(--f-body);letter-spacing:.08em;text-transform:uppercase;text-align:center;word-break:break-word}
+@media (max-width:640px){.pad{display:none}.mat{border-radius:22px;padding:14px}}
 .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .toggle{display:flex;align-items:center;gap:6px;font-size:.85rem;color:var(--muted);cursor:pointer}
 .side{display:flex;flex-direction:column;gap:14px;min-width:0}
-.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.panel{background:var(--surface);border:1px solid #23262E;border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.stat .v{font-family:var(--f-display);font-weight:600;font-size:1.15rem;font-variant-numeric:tabular-nums}
+.stat .v{font-family:var(--f-display);font-weight:700;font-size:1.35rem;font-variant-numeric:tabular-nums}
 .log{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;max-height:320px;overflow:auto}
 .log li{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);font-size:.88rem}
 .log li:last-child{border-bottom:0}
 .log .t{font-family:var(--f-display);font-weight:600;font-variant-numeric:tabular-nums}
 .log button{border:0;background:none;color:var(--muted);cursor:pointer;font-size:.8rem;padding:0 4px}
-.cubes{display:flex;flex-wrap:wrap;gap:4px;background:var(--sunk);padding:4px;border-radius:10px;max-width:100%}
-@media (max-width:560px){.cubes button{padding:6px 9px;font-size:.88rem}.look{margin-left:0}}
-.cubes button{font:700 .95rem var(--f-display);border:0;background:none;color:var(--muted);padding:7px 14px;border-radius:7px;cursor:pointer;font-variant-numeric:tabular-nums}
-.cubes button[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg)}
+.cubes{display:flex;flex-wrap:wrap;gap:2px;background:#15171C;border:1px solid #262A32;padding:4px;border-radius:12px;max-width:100%}
+.cubes button{font:600 .74rem var(--f-display);border:0;background:none;color:#7F8794;padding:5px 7px 4px;border-radius:8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:44px}
+.cubes button svg{width:30px;height:32px;opacity:.8}
+.cubes button:hover{color:var(--fg);background:#1B1E25}.cubes button:hover svg{opacity:1}
+.cubes button[aria-pressed="true"]{background:#EEF0F4;color:#0B0C0F;box-shadow:0 0 0 1px var(--accent),0 8px 20px -10px var(--accent)}
+.cubes button[aria-pressed="true"] svg{opacity:1}
+.cubes .sep{width:1px;align-self:stretch;margin:6px 3px;background:#2A2E37}
+.cubes .more{border:1px dashed #3A3F49}
+.cubes .more .quad{display:grid;grid-template-columns:1fr 1fr;gap:2px;width:30px;height:32px;align-content:center}
+.cubes .more .quad svg{width:14px;height:15px}
+@media (max-width:560px){.cubes button{min-width:38px;padding:4px}.cubes button svg{width:24px;height:26px}.look{margin-left:0}}
 .head-mid{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.secbar{display:flex;align-items:center;gap:10px 14px;flex-wrap:wrap;padding:8px;background:var(--surface);border:1px solid var(--line);border-radius:14px}
+.secbar{display:flex;align-items:center;gap:10px 16px;flex-wrap:wrap}
 .secchips{display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:1}
-.look{display:flex;gap:2px;background:var(--sunk);padding:3px;border-radius:9px;margin-left:auto}
+.look{display:flex;gap:2px;background:#15171C;border:1px solid #262A32;padding:3px;border-radius:9px;margin-left:auto}
 .look button{font:600 .78rem var(--f-body);border:0;background:none;color:var(--muted);padding:5px 10px;border-radius:6px;cursor:pointer}
-.look button[aria-pressed="true"]{background:var(--surface);color:var(--fg);box-shadow:0 1px 2px rgba(0,0,0,.12)}
-.chip{font:600 .86rem var(--f-body);border:1px solid var(--line);background:var(--surface);color:var(--fg);padding:6px 13px;border-radius:99px;cursor:pointer;display:inline-flex;gap:7px;align-items:baseline}
-.chip .n{font-weight:500;color:var(--muted);font-size:.78rem}
-.chip[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
-.chip[aria-pressed="true"] .n{color:inherit;opacity:.7}
-.chip.parity{border-color:var(--accent);color:var(--accent)}
-.chip.parity[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg)}
+.look button[aria-pressed="true"]{background:#262A32;color:var(--fg)}
+.chip{--c:#8A919D;font:700 .82rem var(--f-body);letter-spacing:.03em;border:1px solid #2E323A;background:none;color:#7F8794;padding:6px 12px;border-radius:7px;cursor:pointer;display:inline-flex;gap:8px;align-items:center}
+.chip::before{content:"";width:8px;height:8px;border-radius:2px;background:var(--c)}
+.chip .n{font-weight:600;opacity:.75;font-size:.76rem}
+.chip[aria-pressed="true"]{border-color:var(--c);color:#fff;background:color-mix(in srgb,var(--c) 18%,transparent);box-shadow:0 0 16px -6px var(--c)}
+.chip[data-sec="f2l"]{--c:#11A35A}.chip[data-sec="oll"],.chip[data-sec="ollf"]{--c:#FFD500}.chip[data-sec="custom"]{--c:#B9C0CB}.chip[data-sec="pll"]{--c:#2F6BFF}
+.chip.parity{--c:#FF7A1A}.chip[data-sec="centers"]{--c:#D0213B}.chip[data-sec="cll"]{--c:#FFD500}
 .secdiv{display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:.78rem;padding:0 4px}
 .secdiv::before{content:"";width:1px;height:20px;background:var(--line)}
 
 /* Timer tab */
-.tm-scr{font-family:var(--f-mono);font-size:1.15rem;line-height:1.55;background:var(--sunk);border-radius:10px;padding:14px 16px;word-break:break-word;min-height:3.2em}
+.tm-scr{font-family:var(--f-mono);font-size:1.15rem;line-height:1.55;background:var(--surface);border:1px solid #23262E;border-radius:14px;padding:14px 16px;word-break:break-word;min-height:3.2em}
 .tm-scr.long{font-size:.92rem}
-.tm-grid{display:grid;grid-template-columns:minmax(0,1fr) 230px;gap:16px;align-items:stretch}
+.tm-grid{display:flex;flex-direction:column;gap:16px}
 @media (max-width:760px){.tm-grid{grid-template-columns:minmax(0,1fr)}}
-.tm-timer{user-select:none;-webkit-user-select:none;touch-action:none;cursor:pointer;border-radius:12px;background:var(--sunk);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:28px 10px;min-height:230px}
-.tm-time{font-family:var(--f-display);font-weight:700;font-size:clamp(3.4rem,12vw,6.6rem);line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.04em}
-.tm-timer.hold .tm-time{color:var(--hold)} .tm-timer.ready .tm-time{color:var(--ready)}
-.tm-timer.insp .tm-time{color:var(--accent)} .tm-timer.warn .tm-time{color:var(--warn)}
-.tm-timer .hint{color:var(--muted);font-size:.85rem;text-align:center}
-.tm-phase{font:700 .95rem var(--f-display);color:var(--accent);min-height:1.2em}
+.tm-timer{min-height:200px;border-radius:28px}
+.tm-timer .lcd{padding:8px 34px}
+.tm-timer .tm-time{font-size:clamp(3.2rem,9vw,6.4rem)}
+.tm-phase{font:700 .95rem var(--f-display);color:var(--accent-soft);min-height:1.2em}
 .tm-list .sp{grid-column:2/-1;font-size:.72rem;color:var(--muted);margin-top:-3px}
 .splitbars{display:flex;flex-direction:column;gap:6px}
 .sbar{display:grid;grid-template-columns:6.5em 1fr 3.4em;gap:8px;align-items:center;font-size:.82rem}
@@ -154,7 +186,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 .toggle select{font:500 .82rem var(--f-body);border:1px solid var(--line);border-radius:7px;background:var(--surface);color:var(--fg);padding:4px 6px}
 .toast.pb{background:var(--accent);color:var(--accent-fg);font-weight:700;font-size:1rem;padding:10px 18px}
 #confetti{position:fixed;inset:0;pointer-events:none;z-index:30}
-.tm-prev{background:var(--stage);border-radius:12px;overflow:hidden;position:relative}
+.tm-prev{background:radial-gradient(ellipse 50% 60% at 50% 45%,rgba(47,107,255,.22),rgba(47,107,255,0) 70%),var(--stage);border:1px solid #23262E;border-radius:18px;overflow:hidden;position:relative}
 .tm-prev .cube3d{height:230px}
 .tm-prev .label{position:absolute;top:10px;left:12px}
 .tm-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 8px}
@@ -167,13 +199,13 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 .tm-list .acts button{border:1px solid transparent;background:none;color:var(--muted);font:600 .72rem var(--f-body);padding:3px 6px;border-radius:6px;cursor:pointer}
 .tm-list .acts button:hover{border-color:var(--line);color:var(--fg)}
 .tm-list .acts button[aria-pressed="true"]{background:var(--warn);color:#fff}
-body.timing header,body.timing .secbar,body.timing #view-timer .side,body.timing #tmTop,body.timing #tmScr,body.timing .tm-prev,body.timing #tmOpts{opacity:.06;pointer-events:none}
-@media (prefers-reduced-motion:no-preference){header,.secbar,#view-timer .side,#tmTop,#tmScr,.tm-prev,#tmOpts{transition:opacity .2s}}
+body.timing .rail,body.timing .secbar,body.timing #view-timer .side,body.timing #tmTop,body.timing #tmScr,body.timing .tm-prev,body.timing #tmOpts{opacity:.06;pointer-events:none}
+@media (prefers-reduced-motion:no-preference){.rail,.secbar,#view-timer .side,#tmTop,#tmScr,.tm-prev,#tmOpts{transition:opacity .2s}}
 
 /* Progress */
 .prog{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
 @media (max-width:820px){.prog{grid-template-columns:minmax(0,1fr)}}
-.pcard{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.pcard{background:var(--surface);border:1px solid #23262E;border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
 .pcard.wide{grid-column:1/-1}
 .ph{font:700 1.1rem var(--f-display);margin:0}
 .chart{width:100%;overflow-x:auto}
@@ -229,7 +261,7 @@ body.timing header,body.timing .secbar,body.timing #view-timer .side,body.timing
 .feed .when{color:var(--muted);font-size:.75rem}
 
 /* Quiz */
-.quiz{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px;display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center}
+.quiz{background:var(--surface);border:1px solid #23262E;border-radius:16px;padding:22px;display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center}
 .quiz .pic svg,.quiz .pic img{width:210px;height:210px}
 .choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;width:100%;max-width:440px}
 .choices button{font:600 1rem var(--f-body);padding:14px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer}
@@ -254,7 +286,7 @@ body.timing header,body.timing .secbar,body.timing #view-timer .side,body.timing
 .group-head .count{color:var(--muted);font-size:.85rem}
 .group-head .spacer{flex:1}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.card{background:var(--surface);border:1px solid #23262E;border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0}
 .card.off{opacity:.55}
 .card-top{display:flex;gap:12px;align-items:center}
 .card-top svg,.card-top img{width:96px;height:96px;flex:none}
@@ -280,28 +312,138 @@ body.timing header,body.timing .secbar,body.timing #view-timer .side,body.timing
 .addform input{font:400 .9rem var(--f-body);border:1px solid var(--line);border-radius:8px;background:var(--sunk);color:var(--fg);padding:8px 10px;width:100%}
 .addform input.mono{font-family:var(--f-mono)}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:.88rem;z-index:5}
-@media (prefers-reduced-motion:no-preference){.timer .time{transition:color .08s}}
+
+
+/* Learn */
+.ln-head{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px 16px}
+.ln-title{margin:2px 0 0;font:italic 700 clamp(1.8rem,3.6vw,2.6rem)/1 var(--f-display)}
+.ln-kicker{font:700 .72rem var(--f-body);letter-spacing:.14em;color:var(--accent-soft)}
+.ln-search{display:flex;align-items:center;gap:8px;background:#15171C;border:1px solid #2A2E37;border-radius:10px;padding:8px 12px;min-width:min(260px,100%);margin-left:auto;color:#6E7580}
+.ln-search input{all:unset;flex:1;min-width:0;color:var(--fg);font:500 .95rem var(--f-body)}
+.ln-filters{display:flex;flex-wrap:wrap;gap:8px}
+.ln-filters button{font:700 .82rem var(--f-body);border:1px solid #2E323A;background:none;color:#7F8794;padding:6px 12px;border-radius:999px;cursor:pointer}
+.ln-filters button[aria-pressed="true"]{border-color:var(--accent);background:rgba(47,107,255,.18);color:var(--accent-soft)}
+.ln-sec h2{margin:0;font:700 1.1rem var(--f-display);display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.ln-sec h2 small{font:400 .85rem var(--f-body);color:#6E7580}
+.ln-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-top:10px}
+.ln-card{position:relative;text-align:left;font:inherit;color:inherit;cursor:pointer;background:var(--surface);border:1px solid #23262E;border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:7px;min-width:0}
+.ln-card:hover{border-color:#3A3F49;background:#171A20}
+.ln-card.started{border-color:var(--accent);box-shadow:0 10px 26px -16px var(--accent)}
+.ln-card svg.pz{width:48px;height:51px}
+.ln-card .nm{font-weight:700;font-size:1rem}
+.ln-card .meta{font-size:.78rem;color:#6E7580}
+.ln-card .tag{position:absolute;top:10px;right:10px;font:700 .6rem var(--f-body);letter-spacing:.08em;color:#9AA1AD;background:#1F232B;padding:2px 6px;border-radius:4px}
+.ln-card .tag.soon{color:var(--warn);background:rgba(255,176,32,.1)}
+.ln-card .done{font-size:.78rem;font-weight:700;color:var(--good)}
+.dots{display:flex;gap:4px}.dots i{width:7px;height:7px;border-radius:50%;background:#2E323A}.dots i.on{background:var(--warn)}
+.ln-prog{display:flex;align-items:center;gap:8px;font-size:.78rem;font-weight:700;color:var(--accent-soft)}
+.ln-prog span{flex:1;height:5px;border-radius:3px;background:#262A32;overflow:hidden}.ln-prog b{display:block;height:100%;background:var(--accent)}
+.ln-empty{color:var(--muted);padding:10px 2px}
+.gd{display:grid;grid-template-columns:minmax(220px,290px) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:860px){.gd{grid-template-columns:minmax(0,1fr)}}
+.gd-steps{background:var(--surface);border:1px solid #23262E;border-radius:16px;padding:14px 10px;display:flex;flex-direction:column;gap:4px}
+.gd-steps ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+.gd-steps button{all:unset;box-sizing:border-box;width:100%;cursor:pointer;display:flex;align-items:center;gap:12px;padding:8px 10px;border-radius:10px;border:1px solid transparent}
+.gd-steps button:hover{background:#171A20}
+.gd-steps button[aria-current="step"]{background:#1A1E27;border-color:var(--accent)}
+.gd-steps .dot{flex:none;width:30px;height:30px;border-radius:50%;border:2px solid #343842;color:#6E7580;display:grid;place-items:center;font:700 .95rem var(--f-display)}
+.gd-steps .ok .dot{background:#11A35A;border-color:#11A35A;color:#0B0C0F}
+.gd-steps [aria-current="step"] .dot{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 0 16px -2px var(--accent)}
+.gd-steps .t{display:flex;flex-direction:column;min-width:0}.gd-steps .t b{font-size:.95rem;color:#C8CDD5}.gd-steps [aria-current="step"] .t b{color:#fff}
+.gd-steps .t small{font:500 .74rem var(--f-mono);color:#6E7580;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gd-tip{margin-top:8px;padding:12px;border-radius:12px;background:rgba(17,163,90,.1);border:1px solid rgba(17,163,90,.35);font-size:.85rem;color:#9FE6C1;line-height:1.45}
+.gd-main{display:flex;flex-direction:column;gap:16px;min-width:0}
+.gd-hero{position:relative;overflow:hidden;border-radius:18px;border:1px solid #23262E;background:radial-gradient(ellipse 55% 70% at 85% 30%,rgba(47,107,255,.2),rgba(47,107,255,0) 70%),var(--stage);padding:20px 22px;display:flex;flex-direction:column;gap:14px}
+.gd-num{position:absolute;right:18px;top:-18px;font:italic 700 9rem/1 var(--f-display);color:transparent;-webkit-text-stroke:1.5px #2A2F3A;pointer-events:none}
+.gd-hero h2{position:relative;margin:4px 0 0;font:italic 700 clamp(1.8rem,3.4vw,2.7rem)/1.02 var(--f-display)}
+.gd-hero p{position:relative;margin:0;max-width:640px;color:#AEB4BE;font-size:1rem;line-height:1.55}
+.gd-pats{position:relative;display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.gd-pat{display:flex;flex-direction:column;align-items:center;gap:6px;background:#0F1116;border:1px solid #262A32;border-radius:12px;padding:10px}
+.gd-pat.goal{border-color:rgba(17,163,90,.6)}
+.gd-pat span{font-size:.75rem;font-weight:700;color:#9AA1AD}
+.gd-arrow{color:#5F6670}
+.gd-row{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:16px}
+@media (max-width:980px){.gd-row{grid-template-columns:minmax(0,1fr)}}
+.gd-row .viewer .cube3d{height:270px}
+.gd-moves{display:flex;flex-direction:column;gap:12px}
+.gd-algpick{display:flex;flex-wrap:wrap;gap:6px}
+.gd-algpick button{font:700 .78rem var(--f-body);border:1px solid #2E323A;background:none;color:#9AA1AD;padding:5px 10px;border-radius:7px;cursor:pointer}
+.gd-algpick button[aria-pressed="true"]{border-color:var(--accent);color:#fff;background:rgba(47,107,255,.18)}
+.gd-big .alg-line{font-size:1.35rem}
+.gd-how{margin:0;color:#AEB4BE;font-size:.95rem;line-height:1.5}
+.gd-how b{color:#fff}
+.gd-legend{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:.88rem;color:#AEB4BE;align-items:baseline}
+.gd-legend b{font:700 1.05rem var(--f-display);color:#fff}
+.gd-nav{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.btn.go{border-color:#11A35A;background:rgba(17,163,90,.14);color:#6BE3A6;font-weight:700}
+.gd-soon{background:var(--surface);border:1px solid #23262E;border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:12px;align-items:flex-start}
 </style>
 
+<div class="app">
+<aside class="rail">
+  <div class="logo" aria-hidden="true"><i style="background:#FFD500"></i><i style="background:#FFD500"></i><i style="background:#FF7A1A"></i><i style="background:#FFD500"></i><i style="background:#11A35A"></i><i style="background:#FFD500"></i><i style="background:#2F6BFF"></i><i style="background:#FFD500"></i><i style="background:#D0213B"></i></div>
+  <nav role="tablist" aria-label="Sections" aria-orientation="vertical">
+    <button role="tab" id="tab-learn" aria-selected="false" data-view="learn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 5c3-1.5 7-1.5 10 1 3-2.5 7-2.5 10-1v14c-3-1.5-7-1.5-10 1-3-2.5-7-2.5-10-1z"/><path d="M12 6v14"/></svg>Learn</button>
+    <button role="tab" id="tab-drill" aria-selected="true" data-view="drill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>Drill</button>
+    <button role="tab" id="tab-timer" aria-selected="false" data-view="timer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg>Timer</button>
+    <button role="tab" id="tab-progress" aria-selected="false" data-view="progress"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V5M4 19h16M8 15l4-4 3 3 5-6"/></svg>Stats</button>
+    <button role="tab" id="tab-test" aria-selected="false" data-view="test"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3 8-8M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg>Test</button>
+    <button role="tab" id="tab-quiz" aria-selected="false" data-view="quiz"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>Spot</button>
+    <button role="tab" id="tab-cases" aria-selected="false" data-view="cases"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="7" height="7" rx="1.5"/><rect x="14" y="4" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Cases</button>
+  </nav>
+  <span class="grow"></span>
+  <div class="streak" id="streak" title="Days in a row you've practiced"><svg viewBox="0 0 24 24" fill="none" stroke="#FFB020" stroke-width="2.2" aria-hidden="true"><path d="M12 2c1 4 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-5 1-9z"/></svg><b id="streakN">0</b>DAY STREAK</div>
+  <div class="brand"><h1>Last Layer Lab</h1></div>
+</aside>
 <div class="wrap">
-  <header>
-    <div class="brand"><h1>Last Layer Lab</h1></div>
-    <nav role="tablist">
-      <button role="tab" id="tab-drill" aria-selected="true" data-view="drill">Drill</button>
-      <button role="tab" id="tab-timer" aria-selected="false" data-view="timer">Timer</button>
-      <button role="tab" id="tab-progress" aria-selected="false" data-view="progress">Progress</button>
-      <button role="tab" id="tab-test" aria-selected="false" data-view="test">Test</button>
-      <button role="tab" id="tab-quiz" aria-selected="false" data-view="quiz">Recognize</button>
-      <button role="tab" id="tab-cases" aria-selected="false" data-view="cases">Cases</button>
-    </nav>
-  </header>
+  <!--UPDBAR-->
   <div class="secbar" id="secbar">
     <div class="cubes" role="group" aria-label="Cube" id="cubeSel">
-      <button data-cube="2" aria-pressed="false">2x2</button><button data-cube="3" aria-pressed="true">3x3</button><button data-cube="4" aria-pressed="false">4x4</button><button data-cube="5" aria-pressed="false">5x5</button><button data-cube="6" aria-pressed="false">6x6</button><button data-cube="7" aria-pressed="false">7x7</button><button data-cube="9" aria-pressed="false">9x9</button>
+      <button data-cube="2" aria-pressed="false" aria-label="2x2"><svg viewBox="0 0 32 34" aria-hidden="true"><polygon points="16.00,1.00 29.00,8.50 16.00,16.00 3.00,8.50" fill="#FFD500" stroke="#0B0C0F" stroke-width="0.9" stroke-linejoin="round"/><path d="M22.50 4.75L9.50 12.25M9.50 4.75L22.50 12.25" stroke="#0B0C0F" stroke-width="1.36" fill="none" stroke-linecap="round"/><polygon points="3.00,8.50 16.00,16.00 16.00,31.00 3.00,23.50" fill="#11A35A" stroke="#0B0C0F" stroke-width="0.9" stroke-linejoin="round"/><path d="M9.50 12.25L9.50 27.25M3.00 16.00L16.00 23.50" stroke="#0B0C0F" stroke-width="1.36" fill="none" stroke-linecap="round"/><polygon points="16.00,16.00 29.00,8.50 29.00,23.50 16.00,31.00" fill="#FF7A1A" stroke="#0B0C0F" stroke-width="0.9" stroke-linejoin="round"/><path d="M22.50 12.25L22.50 27.25M16.00 23.50L29.00 16.00" stroke="#0B0C0F" stroke-width="1.36" fill="none" stroke-linecap="round"/></svg><span>2x2</span></button><button data-cube="3" aria-pressed="true" aria-label="3x3"><svg viewBox="0 0 32 34" aria-hidden="true"><polygon points="16.00,1.00 29.00,8.50 16.00,16.00 3.00,8.50" fill="#FFD500" stroke="#0B0C0F" stroke-width="0.9" stroke-linejoin="round"/><path d="M20.33 3.50L7.33 11.00M24.67 6.00L11.67 13.50M11.67 3.50L24.67 11.00M7.33 6.00L20.33 13.50" stroke="#0B0C0F" stroke-width="1.2400000000000002" fill="none" stroke-linecap="round"/><polygon points="3.00,8.50 16.00,16.00 16.00,31.00 3.00,23.50" fill="#11A35A" stroke="#0B0C0F" stroke-width="0.9" stroke-linejoin="round"/><path d="M7.33 11.00L7.33 26.00M11.67 13.50L11.67 28.50M3.00 13.50L16.00 21.00M3.00 18.50L16.00 26.00" stroke="#0B0C0F" stroke-width="1.2400000000000002" fill="none" stroke-linecap="round"/><polygon points="16.00,16.00 29.00,8.50 29.00,23.50 16.00,31.00" fill="#FF7A1A" stroke="#0B0C0F" stroke-width="0.9" stroke-linejoin="round"/><path d="M20.33 13.50L20.33 28.50M24.67 11.00L24.67 26.00M16.00 21.00L29.00 13.50M16.00 26.00L29.00 18.50" stroke="#0B0C0F" stroke-width="1.2400000000000002" fill="none" stroke-linecap="round"/></svg><span>3x3</span></button><button data-cube="4" aria-pressed="false" aria-label="4x4"><svg viewBox="0 0 32 34" aria-hidden="true"><polygon points="16.00,1.00 29.00,8.50 16.00,16.00 3.00,8.50" fill="#FFD500" stroke="#0B0C0F" stroke-width="0.9" stroke-linejoin="round"/><path d="M19.25 2.88L6.25 10.38M22.50 4.75L9.50 12.25M25.75 6.62L12.75 14.12M12.75 2.88L25.75 10.38M9.50 4.75L22.50 12.25M6.25 6.62L19.25 14.12" stroke="#0B0C0F" stroke-width="1.12" fill="none" stroke-linecap="round"/><polygon points="3.00,8.50 16.00,16.00 16.00,31.00 3.00,23.50" fill="#11A35A" stroke="#0B0C0F" stroke-width="0.9" stroke-linejoin="round"/><path d="M6.25 10.38L6.25 25.38M9.50 12.25L9.50 27.25M12.75 14.12L12.75 29.12M3.00 12.25L16.00 19.75M3.00 16.00L16.00 23.50M3.00 19.75L16.00 27.25" stroke="#0B0C0F" stroke-width="1.12" fill="none" stroke-linecap="round"/><polygon points="16.00,16.00 29.00,8.50 29.00,23.50 16.00,31.00" fill="#FF7A1A" stroke="#0B0C0F" stroke-width="0.9" stroke-linejoin="round"/><path d="M19.25 14.12L19.25 29.12M22.50 12.25L22.50 27.25M25.75 10.38L25.75 25.38M16.00 19.75L29.00 12.25M16.00 23.50L29.00 16.00M16.00 27.25L29.00 19.75" stroke="#0B0C0F" stroke-width="1.12" fill="none" stroke-linecap="round"/></svg><span>4x4</span></button><button data-cube="5" aria-pressed="false" aria-label="5x5"><svg viewBox="0 0 32 34" aria-hidden="true"><polygon points="16.00,1.00 29.00,8.50 16.00,16.00 3.00,8.50" fill="#FFD500" stroke="#0B0C0F" stroke-width="0.9" stroke-linejoin="round"/><path d="M18.60 2.50L5.60 10.00M21.20 4.00L8.20 11.50M23.80 5.50L10.80 13.00M26.40 7.00L13.40 14.50M13.40 2.50L26.40 10.00M10.80 4.00L23.80 11.50M8.20 5.50L21.20 13.00M5.60 7.00L18.60 14.50" stroke="#0B0C0F" stroke-width="1.0" fill="none" stroke-linecap="round"/><polygon points="3.00,8.50 16.00,16.00 16.00,31.00 3.00,23.50" fill="#11A35A" stroke="#0B0C0F" stroke-width="0.9" stroke-linejoin="round"/><path d="M5.60 10.00L5.60 25.00M8.20 11.50L8.20 26.50M10.80 13.00L10.80 28.00M13.40 14.50L13.40 29.50M3.00 11.50L16.00 19.00M3.00 14.50L16.00 22.00M3.00 17.50L16.00 25.00M3.00 20.50L16.00 28.00" stroke="#0B0C0F" stroke-width="1.0" fill="none" stroke-linecap="round"/><polygon points="16.00,16.00 29.00,8.50 29.00,23.50 16.00,31.00" fill="#FF7A1A" stroke="#0B0C0F" stroke-width="0.9" stroke-linejoin="round"/><path d="M18.60 14.50L18.60 29.50M21.20 13.00L21.20 28.00M23.80 11.50L23.80 26.50M26.40 10.00L26.40 25.00M16.00 19.00L29.00 11.50M16.00 22.00L29.00 14.50M16.00 25.00L29.00 17.50M16.00 28.00L29.00 20.50" stroke="#0B0C0F" stroke-width="1.0" fill="none" stroke-linecap="round"/></svg><span>5x5</span></button><button data-cube="6" aria-pressed="false" aria-label="6x6"><svg viewBox="0 0 32 34" aria-hidden="true"><polygon points="16.00,1.00 29.00,8.50 16.00,16.00 3.00,8.50" fill="#FFD500" stroke="#0B0C0F" stroke-width="0.9" stroke-linejoin="round"/><path d="M18.17 2.25L5.17 9.75M20.33 3.50L7.33 11.00M22.50 4.75L9.50 12.25M24.67 6.00L11.67 13.50M26.83 7.25L13.83 14.75M13.83 2.25L26.83 9.75M11.67 3.50L24.67 11.00M9.50 4.75L22.50 12.25M7.33 6.00L20.33 13.50M5.17 7.25L18.17 14.75" stroke="#0B0C0F" stroke-width="0.8800000000000001" fill="none" stroke-linecap="round"/><polygon points="3.00,8.50 16.00,16.00 16.00,31.00 3.00,23.50" fill="#11A35A" stroke="#0B0C0F" stroke-width="0.9" stroke-linejoin="round"/><path d="M5.17 9.75L5.17 24.75M7.33 11.00L7.33 26.00M9.50 12.25L9.50 27.25M11.67 13.50L11.67 28.50M13.83 14.75L13.83 29.75M3.00 11.00L16.00 18.50M3.00 13.50L16.00 21.00M3.00 16.00L16.00 23.50M3.00 18.50L16.00 26.00M3.00 21.00L16.00 28.50" stroke="#0B0C0F" stroke-width="0.8800000000000001" fill="none" stroke-linecap="round"/><polygon points="16.00,16.00 29.00,8.50 29.00,23.50 16.00,31.00" fill="#FF7A1A" stroke="#0B0C0F" stroke-width="0.9" stroke-linejoin="round"/><path d="M18.17 14.75L18.17 29.75M20.33 13.50L20.33 28.50M22.50 12.25L22.50 27.25M24.67 11.00L24.67 26.00M26.83 9.75L26.83 24.75M16.00 18.50L29.00 11.00M16.00 21.00L29.00 13.50M16.00 23.50L29.00 16.00M16.00 26.00L29.00 18.50M16.00 28.50L29.00 21.00" stroke="#0B0C0F" stroke-width="0.8800000000000001" fill="none" stroke-linecap="round"/></svg><span>6x6</span></button><button data-cube="7" aria-pressed="false" aria-label="7x7"><svg viewBox="0 0 32 34" aria-hidden="true"><polygon points="16.00,1.00 29.00,8.50 16.00,16.00 3.00,8.50" fill="#FFD500" stroke="#0B0C0F" stroke-width="0.9" stroke-linejoin="round"/><path d="M17.86 2.07L4.86 9.57M19.71 3.14L6.71 10.64M21.57 4.21L8.57 11.71M23.43 5.29L10.43 12.79M25.29 6.36L12.29 13.86M27.14 7.43L14.14 14.93M14.14 2.07L27.14 9.57M12.29 3.14L25.29 10.64M10.43 4.21L23.43 11.71M8.57 5.29L21.57 12.79M6.71 6.36L19.71 13.86M4.86 7.43L17.86 14.93" stroke="#0B0C0F" stroke-width="0.7600000000000001" fill="none" stroke-linecap="round"/><polygon points="3.00,8.50 16.00,16.00 16.00,31.00 3.00,23.50" fill="#11A35A" stroke="#0B0C0F" stroke-width="0.9" stroke-linejoin="round"/><path d="M4.86 9.57L4.86 24.57M6.71 10.64L6.71 25.64M8.57 11.71L8.57 26.71M10.43 12.79L10.43 27.79M12.29 13.86L12.29 28.86M14.14 14.93L14.14 29.93M3.00 10.64L16.00 18.14M3.00 12.79L16.00 20.29M3.00 14.93L16.00 22.43M3.00 17.07L16.00 24.57M3.00 19.21L16.00 26.71M3.00 21.36L16.00 28.86" stroke="#0B0C0F" stroke-width="0.7600000000000001" fill="none" stroke-linecap="round"/><polygon points="16.00,16.00 29.00,8.50 29.00,23.50 16.00,31.00" fill="#FF7A1A" stroke="#0B0C0F" stroke-width="0.9" stroke-linejoin="round"/><path d="M17.86 14.93L17.86 29.93M19.71 13.86L19.71 28.86M21.57 12.79L21.57 27.79M23.43 11.71L23.43 26.71M25.29 10.64L25.29 25.64M27.14 9.57L27.14 24.57M16.00 18.14L29.00 10.64M16.00 20.29L29.00 12.79M16.00 22.43L29.00 14.93M16.00 24.57L29.00 17.07M16.00 26.71L29.00 19.21M16.00 28.86L29.00 21.36" stroke="#0B0C0F" stroke-width="0.7600000000000001" fill="none" stroke-linecap="round"/></svg><span>7x7</span></button><button data-cube="9" aria-pressed="false" aria-label="9x9"><svg viewBox="0 0 32 34" aria-hidden="true"><polygon points="16.00,1.00 29.00,8.50 16.00,16.00 3.00,8.50" fill="#FFD500" stroke="#0B0C0F" stroke-width="0.9" stroke-linejoin="round"/><path d="M17.44 1.83L4.44 9.33M18.89 2.67L5.89 10.17M20.33 3.50L7.33 11.00M21.78 4.33L8.78 11.83M23.22 5.17L10.22 12.67M24.67 6.00L11.67 13.50M26.11 6.83L13.11 14.33M27.56 7.67L14.56 15.17M14.56 1.83L27.56 9.33M13.11 2.67L26.11 10.17M11.67 3.50L24.67 11.00M10.22 4.33L23.22 11.83M8.78 5.17L21.78 12.67M7.33 6.00L20.33 13.50M5.89 6.83L18.89 14.33M4.44 7.67L17.44 15.17" stroke="#0B0C0F" stroke-width="0.52" fill="none" stroke-linecap="round"/><polygon points="3.00,8.50 16.00,16.00 16.00,31.00 3.00,23.50" fill="#11A35A" stroke="#0B0C0F" stroke-width="0.9" stroke-linejoin="round"/><path d="M4.44 9.33L4.44 24.33M5.89 10.17L5.89 25.17M7.33 11.00L7.33 26.00M8.78 11.83L8.78 26.83M10.22 12.67L10.22 27.67M11.67 13.50L11.67 28.50M13.11 14.33L13.11 29.33M14.56 15.17L14.56 30.17M3.00 10.17L16.00 17.67M3.00 11.83L16.00 19.33M3.00 13.50L16.00 21.00M3.00 15.17L16.00 22.67M3.00 16.83L16.00 24.33M3.00 18.50L16.00 26.00M3.00 20.17L16.00 27.67M3.00 21.83L16.00 29.33" stroke="#0B0C0F" stroke-width="0.52" fill="none" stroke-linecap="round"/><polygon points="16.00,16.00 29.00,8.50 29.00,23.50 16.00,31.00" fill="#FF7A1A" stroke="#0B0C0F" stroke-width="0.9" stroke-linejoin="round"/><path d="M17.44 15.17L17.44 30.17M18.89 14.33L18.89 29.33M20.33 13.50L20.33 28.50M21.78 12.67L21.78 27.67M23.22 11.83L23.22 26.83M24.67 11.00L24.67 26.00M26.11 10.17L26.11 25.17M27.56 9.33L27.56 24.33M16.00 17.67L29.00 10.17M16.00 19.33L29.00 11.83M16.00 21.00L29.00 13.50M16.00 22.67L29.00 15.17M16.00 24.33L29.00 16.83M16.00 26.00L29.00 18.50M16.00 27.67L29.00 20.17M16.00 29.33L29.00 21.83" stroke="#0B0C0F" stroke-width="0.52" fill="none" stroke-linecap="round"/></svg><span>9x9</span></button><span class="sep" aria-hidden="true"></span><button data-puzzle="pyra" aria-label="Pyraminx (opens Learn)" title="Pyraminx: how to solve"><svg viewBox="0 0 32 34" aria-hidden="true"><polygon points="16.00,2.00 11.33,11.67 20.67,11.67" fill="#D0213B" stroke="#0B0C0F" stroke-width="0.8" stroke-linejoin="round"/><polygon points="11.33,11.67 6.67,21.33 16.00,21.33" fill="#D0213B" stroke="#0B0C0F" stroke-width="0.8" stroke-linejoin="round"/><polygon points="11.33,11.67 20.67,11.67 16.00,21.33" fill="#D0213B" stroke="#0B0C0F" stroke-width="0.8" stroke-linejoin="round"/><polygon points="20.67,11.67 16.00,21.33 25.33,21.33" fill="#D0213B" stroke="#0B0C0F" stroke-width="0.8" stroke-linejoin="round"/><polygon points="6.67,21.33 2.00,31.00 11.33,31.00" fill="#D0213B" stroke="#0B0C0F" stroke-width="0.8" stroke-linejoin="round"/><polygon points="6.67,21.33 16.00,21.33 11.33,31.00" fill="#D0213B" stroke="#0B0C0F" stroke-width="0.8" stroke-linejoin="round"/><polygon points="16.00,21.33 11.33,31.00 20.67,31.00" fill="#D0213B" stroke="#0B0C0F" stroke-width="0.8" stroke-linejoin="round"/><polygon points="16.00,21.33 25.33,21.33 20.67,31.00" fill="#D0213B" stroke="#0B0C0F" stroke-width="0.8" stroke-linejoin="round"/><polygon points="25.33,21.33 20.67,31.00 30.00,31.00" fill="#D0213B" stroke="#0B0C0F" stroke-width="0.8" stroke-linejoin="round"/></svg><span>Pyra</span></button><button data-puzzle="mega" aria-label="Megaminx (opens Learn)" title="Megaminx: how to solve"><svg viewBox="0 0 32 34" aria-hidden="true"><polygon points="16.00,3.00 30.27,13.36 24.82,30.14 7.18,30.14 1.73,13.36" fill="#11A35A" stroke="#0B0C0F" stroke-width="0.9" stroke-linejoin="round"/><path d="M16.00 11.50L16.00 3.00M22.18 15.99L30.27 13.36M19.82 23.26L24.82 30.14M12.18 23.26L7.18 30.14M9.82 15.99L1.73 13.36" stroke="#0B0C0F" stroke-width="0.9" fill="none" stroke-linecap="round"/><polygon points="16.00,11.50 22.18,15.99 19.82,23.26 12.18,23.26 9.82,15.99" fill="#11A35A" stroke="#0B0C0F" stroke-width="0.9" stroke-linejoin="round"/></svg><span>Mega</span></button><button data-puzzle="skewb" aria-label="Skewb (opens Learn)" title="Skewb: how to solve"><svg viewBox="0 0 32 34" aria-hidden="true"><polygon points="16.00,1.00 29.00,8.50 16.00,16.00 3.00,8.50" fill="#FFD500" stroke="#0B0C0F" stroke-width="0.9" stroke-linejoin="round"/><polygon points="22.50,4.75 22.50,12.25 9.50,12.25 9.50,4.75" fill="none" stroke="#0B0C0F" stroke-width="0.9" stroke-linejoin="round"/><polygon points="3.00,8.50 16.00,16.00 16.00,31.00 3.00,23.50" fill="#11A35A" stroke="#0B0C0F" stroke-width="0.9" stroke-linejoin="round"/><polygon points="9.50,12.25 16.00,23.50 9.50,27.25 3.00,16.00" fill="none" stroke="#0B0C0F" stroke-width="0.9" stroke-linejoin="round"/><polygon points="16.00,16.00 29.00,8.50 29.00,23.50 16.00,31.00" fill="#FF7A1A" stroke="#0B0C0F" stroke-width="0.9" stroke-linejoin="round"/><polygon points="22.50,12.25 29.00,16.00 22.50,27.25 16.00,23.50" fill="none" stroke="#0B0C0F" stroke-width="0.9" stroke-linejoin="round"/></svg><span>Skewb</span></button><button data-puzzle="sq1" aria-label="Square-1 (opens Learn)" title="Square-1: how to solve"><svg viewBox="0 0 32 34" aria-hidden="true"><polygon points="16.00,1.00 29.00,8.50 16.00,16.00 3.00,8.50" fill="#EEF0F4" stroke="#0B0C0F" stroke-width="0.9" stroke-linejoin="round"/><path d="M16.00 8.50L20.68 3.70M16.00 8.50L24.32 5.80M16.00 8.50L24.32 11.20M16.00 8.50L20.68 13.30M16.00 8.50L11.32 13.30M16.00 8.50L7.68 11.20M16.00 8.50L7.68 5.80M16.00 8.50L11.32 3.70" stroke="#0B0C0F" stroke-width="0.9" fill="none" stroke-linecap="round"/><polygon points="3.00,8.50 16.00,16.00 16.00,31.00 3.00,23.50" fill="#2F6BFF" stroke="#0B0C0F" stroke-width="0.9" stroke-linejoin="round"/><path d="M3.00 14.50L16.00 22.00M3.00 17.50L16.00 25.00" stroke="#0B0C0F" stroke-width="0.9" fill="none" stroke-linecap="round"/><path d="M7.68 11.20L7.68 17.20M11.32 13.30L11.32 19.30M7.68 20.20L7.68 26.20M11.32 22.30L11.32 28.30" stroke="#0B0C0F" stroke-width="0.9" fill="none" stroke-linecap="round"/><polygon points="16.00,16.00 29.00,8.50 29.00,23.50 16.00,31.00" fill="#D0213B" stroke="#0B0C0F" stroke-width="0.9" stroke-linejoin="round"/><path d="M16.00 22.00L29.00 14.50M16.00 25.00L29.00 17.50" stroke="#0B0C0F" stroke-width="0.9" fill="none" stroke-linecap="round"/><path d="M20.68 13.30L20.68 19.30M24.32 11.20L24.32 17.20M20.68 22.30L20.68 28.30M24.32 20.20L24.32 26.20" stroke="#0B0C0F" stroke-width="0.9" fill="none" stroke-linecap="round"/></svg><span>SQ-1</span></button><button data-puzzle="clock" aria-label="Clock (opens Learn)" title="Clock: how to solve"><svg viewBox="0 0 32 34" aria-hidden="true"><circle cx="16" cy="17" r="14.5" fill="#2F6BFF" stroke="#0B0C0F" stroke-width=".9"/><circle cx="8" cy="9" r="3.2" fill="#EEF0F4"/><path d="M8 9L8 6.6" stroke="#0B0C0F" stroke-width="1.1" stroke-linecap="round"/><circle cx="16" cy="9" r="3.2" fill="#EEF0F4"/><path d="M16 9L16 6.6" stroke="#0B0C0F" stroke-width="1.1" stroke-linecap="round"/><circle cx="24" cy="9" r="3.2" fill="#EEF0F4"/><path d="M24 9L24 6.6" stroke="#0B0C0F" stroke-width="1.1" stroke-linecap="round"/><circle cx="8" cy="17" r="3.2" fill="#EEF0F4"/><path d="M8 17L8 14.6" stroke="#0B0C0F" stroke-width="1.1" stroke-linecap="round"/><circle cx="16" cy="17" r="3.2" fill="#EEF0F4"/><path d="M16 17L16 14.6" stroke="#0B0C0F" stroke-width="1.1" stroke-linecap="round"/><circle cx="24" cy="17" r="3.2" fill="#EEF0F4"/><path d="M24 17L24 14.6" stroke="#0B0C0F" stroke-width="1.1" stroke-linecap="round"/><circle cx="8" cy="25" r="3.2" fill="#EEF0F4"/><path d="M8 25L8 22.6" stroke="#0B0C0F" stroke-width="1.1" stroke-linecap="round"/><circle cx="16" cy="25" r="3.2" fill="#EEF0F4"/><path d="M16 25L16 22.6" stroke="#0B0C0F" stroke-width="1.1" stroke-linecap="round"/><circle cx="24" cy="25" r="3.2" fill="#EEF0F4"/><path d="M24 25L24 22.6" stroke="#0B0C0F" stroke-width="1.1" stroke-linecap="round"/></svg><span>Clock</span></button><span class="sep" aria-hidden="true"></span><button class="more" data-puzzle="more" aria-label="More puzzles" title="All puzzles"><span class="quad"><svg viewBox="0 0 32 34" aria-hidden="true"><polygon points="16.00,1.00 29.00,8.50 16.00,16.00 3.00,8.50" fill="#FFD500" stroke="#0B0C0F" stroke-width="0.9" stroke-linejoin="round"/><polygon points="16.00,1.00 17.88,2.25 19.64,3.50 21.15,4.75 22.30,6.00 23.03,7.25 23.28,8.50 23.03,9.75 22.30,11.00 21.15,12.25 19.64,13.50 17.88,14.75 16.00,16.00 14.12,14.75 12.36,13.50 10.85,12.25 9.70,11.00 8.97,9.75 8.72,8.50 8.97,7.25 9.70,6.00 10.85,4.75 12.36,3.50 14.12,2.25" fill="none" stroke="#0B0C0F" stroke-width="0.9" stroke-linejoin="round"/><polygon points="3.00,8.50 16.00,16.00 16.00,31.00 3.00,23.50" fill="#11A35A" stroke="#0B0C0F" stroke-width="0.9" stroke-linejoin="round"/><polygon points="3.00,8.50 5.03,9.83 6.99,11.20 8.82,12.64 10.49,14.18 11.93,15.85 13.14,17.65 14.10,19.60 14.82,21.68 15.32,23.89 15.65,26.20 15.86,28.58 16.00,31.00 13.97,29.67 12.01,28.30 10.18,26.86 8.51,25.32 7.07,23.65 5.86,21.85 4.90,19.90 4.18,17.82 3.68,15.61 3.35,13.30 3.14,10.92" fill="none" stroke="#0B0C0F" stroke-width="0.9" stroke-linejoin="round"/><polygon points="16.00,16.00 29.00,8.50 29.00,23.50 16.00,31.00" fill="#FF7A1A" stroke="#0B0C0F" stroke-width="0.9" stroke-linejoin="round"/><polygon points="16.00,16.00 18.03,14.99 19.99,14.10 21.82,13.42 23.49,13.04 24.93,13.04 26.14,13.45 27.10,14.29 27.82,15.54 28.32,17.17 28.65,19.10 28.86,21.24 29.00,23.50 26.97,24.51 25.01,25.40 23.18,26.08 21.51,26.46 20.07,26.46 18.86,26.05 17.90,25.21 17.18,23.96 16.68,22.33 16.35,20.40 16.14,18.26" fill="none" stroke="#0B0C0F" stroke-width="0.9" stroke-linejoin="round"/></svg><svg viewBox="0 0 32 34" aria-hidden="true"><polygon points="16.00,1.00 29.00,8.50 16.00,16.00 3.00,8.50" fill="#FFD500" stroke="#0B0C0F" stroke-width="0.9" stroke-linejoin="round"/><path d="M20.33 3.50L7.33 11.00M24.67 6.00L11.67 13.50M11.67 3.50L24.67 11.00M7.33 6.00L20.33 13.50" stroke="#0B0C0F" stroke-width="1.2400000000000002" fill="none" stroke-linecap="round"/><polygon points="3.00,8.50 16.00,16.00 16.00,31.00 3.00,23.50" fill="#11A35A" stroke="#0B0C0F" stroke-width="0.9" stroke-linejoin="round"/><path d="M7.33 11.00L7.33 26.00M11.67 13.50L11.67 28.50M3.00 13.50L16.00 21.00M3.00 18.50L16.00 26.00" stroke="#0B0C0F" stroke-width="1.2400000000000002" fill="none" stroke-linecap="round"/><polygon points="16.00,16.00 29.00,8.50 29.00,23.50 16.00,31.00" fill="#FF7A1A" stroke="#0B0C0F" stroke-width="0.9" stroke-linejoin="round"/><path d="M20.33 13.50L20.33 28.50M24.67 11.00L24.67 26.00M16.00 21.00L29.00 13.50M16.00 26.00L29.00 18.50" stroke="#0B0C0F" stroke-width="1.2400000000000002" fill="none" stroke-linecap="round"/><ellipse cx="20.33" cy="6.00" rx="2.6" ry="1.5" fill="#0B0C0F" opacity=".55"/><ellipse cx="20.33" cy="11.00" rx="2.6" ry="1.5" fill="#0B0C0F" opacity=".55"/><ellipse cx="11.67" cy="11.00" rx="2.6" ry="1.5" fill="#0B0C0F" opacity=".55"/><ellipse cx="11.67" cy="6.00" rx="2.6" ry="1.5" fill="#0B0C0F" opacity=".55"/></svg><svg viewBox="0 0 32 34" aria-hidden="true"><polygon points="16.00,1.00 29.00,8.50 16.00,16.00 3.00,8.50" fill="#D7DCE3" stroke="#0B0C0F" stroke-width="0.9" stroke-linejoin="round"/><path d="M18.86 2.65L5.86 10.15M24.06 5.65L11.06 13.15M12.10 3.25L25.10 10.75M6.38 6.55L19.38 14.05" stroke="#0B0C0F" stroke-width="0.9" fill="none" stroke-linecap="round"/><polygon points="3.00,8.50 16.00,16.00 16.00,31.00 3.00,23.50" fill="#AEB5BF" stroke="#0B0C0F" stroke-width="0.9" stroke-linejoin="round"/><path d="M5.86 10.15L5.86 25.15M11.06 13.15L11.06 28.15M3.00 13.00L16.00 20.50M3.00 19.60L16.00 27.10" stroke="#0B0C0F" stroke-width="0.9" fill="none" stroke-linecap="round"/><polygon points="16.00,16.00 29.00,8.50 29.00,23.50 16.00,31.00" fill="#8E96A1" stroke="#0B0C0F" stroke-width="0.9" stroke-linejoin="round"/><path d="M18.86 14.35L18.86 29.35M24.06 11.35L24.06 26.35M16.00 20.50L29.00 13.00M16.00 27.10L29.00 19.60" stroke="#0B0C0F" stroke-width="0.9" fill="none" stroke-linecap="round"/></svg><svg viewBox="0 0 32 34" aria-hidden="true"><polygon points="16.00,3.00 30.27,13.36 24.82,30.14 7.18,30.14 1.73,13.36" fill="#FFD500" stroke="#0B0C0F" stroke-width="0.9" stroke-linejoin="round"/><path d="M16 18L23.13 8.18M16 18L27.54 21.75M16 18L16.00 30.14M16 18L4.46 21.75M16 18L8.87 8.18" stroke="#0B0C0F" stroke-width="0.9" fill="none" stroke-linecap="round"/></svg></span><span>More</span></button>
     </div>
     <div class="secchips" id="secChips" role="group" aria-label="What you're practicing"></div>
     <div class="look" role="group" aria-label="Cube look"><button data-look="stickered" aria-pressed="true">Stickered</button><button data-look="stickerless" aria-pressed="false">Stickerless</button></div>
   </div>
+
+  <!-- LEARN -->
+  <section id="view-learn" hidden>
+    <div id="lnLib" style="display:flex;flex-direction:column;gap:18px">
+      <div class="ln-head">
+        <div><div class="ln-kicker">LEARN</div><h2 class="ln-title">Learn to solve anything</h2></div>
+        <label class="ln-search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="lnSearch" placeholder="Search puzzles" aria-label="Search puzzles" autocomplete="off"></label>
+      </div>
+      <div class="ln-filters" id="lnFilters" role="group" aria-label="Filter puzzles"></div>
+      <div id="lnSections" style="display:flex;flex-direction:column;gap:22px"></div>
+    </div>
+    <div id="lnGuide" hidden style="display:flex;flex-direction:column;gap:16px">
+      <div class="top-row"><button class="btn" id="lnBack">← All puzzles</button><span class="ln-prog" id="lnTopProg" style="min-width:180px"></span></div>
+      <div class="gd">
+        <nav class="gd-steps" aria-label="Steps"><span class="label" id="lnStepsTitle" style="padding:0 10px 6px">Steps</span><ol id="lnSteps"></ol><div class="gd-tip" id="lnTip"></div></nav>
+        <div class="gd-main">
+          <div class="gd-hero"><span class="gd-num" id="lnNum" aria-hidden="true"></span>
+            <span class="ln-kicker" id="lnKicker"></span>
+            <h2 id="lnStepTitle"></h2>
+            <p id="lnText"></p>
+            <div class="gd-pats" id="lnPats"></div>
+          </div>
+          <div class="gd-row">
+            <div class="card2 gd-moves">
+              <span class="label" id="lnMovesLabel">The moves</span>
+              <div class="gd-algpick" id="lnAlgPick" role="group" aria-label="Which case"></div>
+              <div class="gd-big"><div class="alg-line" id="lnAlg"></div></div>
+              <p class="gd-how" id="lnHow"></p>
+              <div class="gd-legend" id="lnLegend"><b>R</b><span>Turn the right side away from you</span><b>U</b><span>Turn the top to the left</span><b>F</b><span>Turn the front clockwise</span><b>'</b><span>Same face, the other way · 2 means twice</span></div>
+            </div>
+            <div class="viewer"><div class="cube3d" id="ln3d"></div><span class="drag-hint">Watch it</span>
+              <div class="viewer-bar"><button class="btn" id="lnReset">Reset</button><button class="btn" id="lnStep">Step</button><button class="btn primary" id="lnPlay">▶ Show me</button>
+                <label class="speed" for="lnSpeed" hidden>Speed <input type="range" id="lnSpeed" min="120" max="900" value="520" style="direction:rtl"></label></div></div>
+          </div>
+          <div class="gd-nav"><button class="btn" id="lnPrev"></button><button class="btn go" id="lnNext"></button></div>
+        </div>
+      </div>
+    </div>
+    <div id="lnSoon" class="gd-soon" hidden></div>
+  </section>
 
   <!-- DRILL -->
   <section id="view-drill" class="split">
@@ -332,25 +474,29 @@ body.timing header,body.timing .secbar,body.timing #view-timer .side,body.timing
           <div class="case-head">
             <div class="mini" id="drillMini"></div>
             <div class="case-meta">
-              <span class="label"><span id="drillGroup">PLL</span> <span class="review" id="drillReview"></span></span>
+              <span class="case-num" id="drillNum" aria-hidden="true"></span>
+              <span class="label"><span id="drillGroup">PLL</span><span class="review" id="drillReview"></span></span>
               <h2 class="case-name" id="drillName">—</h2>
             </div>
           </div>
           <div class="block"><span class="label">Setup · yellow top, green front</span>
             <div class="setup" id="drillSetup">—</div>
             <div class="note" id="bigNote" hidden>2R = only the 2nd layer from the right · Rw = outer two layers</div></div>
-          <div class="block">
+          <div class="block card2">
             <div class="solve-head"><span class="label">Solution</span><label class="toggle"><input type="checkbox" id="optHideSolve"> Hide</label></div>
             <div class="alg-line concealed" id="drillAlg">Solution hidden.</div>
             <button class="btn" id="btnReveal" hidden style="align-self:flex-start">Show solution</button>
             <div class="alts" id="drillAlts" hidden></div>
           </div>
+          <div class="block card2" id="spark"><div class="top-row"><span class="label">This case · last 20</span><span class="sp-trend" id="spTrend"></span></div>
+            <svg id="spLine" viewBox="0 0 320 44" preserveAspectRatio="none" role="img" aria-label="Your recent times on this case"></svg>
+            <div class="stats"><div class="stat"><div class="label">Ao5</div><div class="v" id="spAo5">—</div></div><div class="stat"><div class="label">Best</div><div class="v sp-best" id="spBest">—</div></div><div class="stat"><div class="label">Reps</div><div class="v" id="spReps">0</div></div></div></div>
           <div class="block"><label class="label" for="drillNote">Notes</label>
             <textarea class="notes" id="drillNote" rows="2" placeholder="Fingertricks, recognition tips…"></textarea></div>
         </div>
       </div>
-      <div class="timer" id="timer"><div class="time" id="time">0.00</div>
-        <div class="hint" id="timerHint">Hold space (or press here), release to start. Any key stops.</div></div>
+      <div class="mat timer" id="timer"><span class="pad" aria-hidden="true"><i></i>LEFT</span><div class="lcdcol"><div class="lcd"><div class="time" id="time">0.00</div></div>
+        <div class="hint" id="timerHint">Hold space (or press here), release to start. Any key stops.</div></div><span class="pad" aria-hidden="true"><i></i>RIGHT</span></div>
       <div class="controls">
         <label class="toggle"><input type="checkbox" id="optHide"> Hide case name</label>
         <label class="toggle"><input type="checkbox" id="optSmart" checked> Smart review</label>
@@ -379,8 +525,8 @@ body.timing header,body.timing .secbar,body.timing #view-timer .side,body.timing
       <div class="top-row" id="tmTop"><span class="label"><span id="tmTitle">3x3 scramble</span> <span class="review" id="tmKind"></span></span><button class="btn" id="tmNew">New scramble</button></div>
       <div class="tm-scr" id="tmScr">—</div>
       <div class="tm-grid">
-        <div class="tm-timer" id="tmTimer"><div class="tm-time" id="tmTime">0.00</div><div class="tm-phase" id="tmPhase"></div><div class="hint" id="tmHint">Hold space (or press here), release to start. Any key stops.</div></div>
         <div class="tm-prev"><div class="cube3d" id="tm3d"></div><span class="label">Scrambled</span></div>
+        <div class="mat tm-timer" id="tmTimer"><span class="pad" aria-hidden="true"><i></i>LEFT</span><div class="lcdcol"><div class="lcd"><div class="tm-time" id="tmTime">0.00</div></div><div class="tm-phase" id="tmPhase"></div><div class="hint" id="tmHint">Hold space (or press here), release to start. Any key stops.</div></div><span class="pad" aria-hidden="true"><i></i>RIGHT</span></div>
       </div>
       <div class="controls" id="tmOpts">
         <label class="toggle"><input type="checkbox" id="tmInsp"> 15-second inspection</label>
@@ -536,6 +682,7 @@ body.timing header,body.timing .secbar,body.timing #view-timer .side,body.timing
       </div>
     </div>
   </section>
+</div>
 </div>
 <div class="toast" id="toast" hidden></div>
 <script type="text/plain" id="scrWorkerSrc">/*SCRW*/</script>
@@ -931,7 +1078,15 @@ function loadCase(){
   dp.load(st,current.mode,solveToks(current,currentAuf),'Solution hidden.',eng(current));
   if(!$('optHideSolve').checked)dp.reveal();$('btnReveal').hidden=!$('optHideSolve').checked;
   $('drillReview').textContent=$('optSmart').checked?dueLabel(current):'';
-  renderExtras();}
+  const grp=allCases().filter(c=>c.group===current.group),nm=/(\d+)\s*$/.exec(current.name);$('drillNum').textContent=$('optHide').checked?'':(nm?nm[1]:(grp.findIndex(c=>c.id===current.id)+1||''));
+  renderExtras();renderSpark();}
+function renderSpark(){if(!current)return;const h=(stats[statKey(current)]||[]).slice(-20),svg=$('spLine');
+  $('spReps').textContent=(stats[statKey(current)]||[]).length;$('spAo5').textContent=fmt(avg(h,5));$('spBest').textContent=h.length?fmt(Math.min(...h)):'—';
+  if(h.length<2){svg.innerHTML='<text class="sp-empty" x="0" y="26">Time this case a few times to see your trend.</text>';$('spTrend').textContent='';return;}
+  const mn=Math.min(...h),mx=Math.max(...h),r=mx-mn||1;
+  svg.innerHTML='<polyline points="'+h.map((t,i)=>(i*320/(h.length-1)).toFixed(1)+','+(4+36*(t-mn)/r).toFixed(1)).join(' ')+'"/>';
+  const half=Math.floor(h.length/2),a1=mean(h.slice(0,half)),a2=mean(h.slice(half));const d=(a1-a2)/1000;
+  $('spTrend').textContent=Math.abs(d)<.01?'':(d>0?'▼ '+d.toFixed(2)+'s faster':'▲ '+(-d).toFixed(2)+'s slower');$('spTrend').classList.toggle('up',d<0);}
 let dRevealed=false;
 // alternates + notes for the current case (stored against the right-hand case id)
 let alts=store.get('alts',{}),notes=store.get('notes',{});
@@ -991,7 +1146,8 @@ function setLook(v){look=v;store.set('look',v);for(const k in snapCache)delete s
   for(const P of [dp,tp])if(P.cube){P.cube.build(null,null);}if(tmCube)tmCube.build(null,null);
   loadCase();refreshView();if(!$('pickPanel').hidden)buildPicker();}
 document.querySelector('.look').addEventListener('click',e=>{const b=e.target.closest('[data-look]');if(b){b.blur();setLook(b.dataset.look);}});
-$('cubeSel').addEventListener('click',e=>{const b=e.target.closest('[data-cube]');if(!b)return;b.blur();setCube(+b.dataset.cube);});
+$('cubeSel').addEventListener('click',e=>{const p=e.target.closest('[data-puzzle]');if(p){p.blur();openLearn(p.dataset.puzzle==='more'?null:p.dataset.puzzle);return;}
+  const b=e.target.closest('[data-cube]');if(!b)return;b.blur();setCube(+b.dataset.cube);if(view()==='learn'){learnSel=String(cubeN);renderLearn();}});
 $('log').addEventListener('click',e=>{const b=e.target.closest('[data-del]');if(!b)return;
   const s=session[+b.dataset.del];session.splice(+b.dataset.del,1);
   const h=stats[s.id];if(h){const j=h.lastIndexOf(s.t);if(j>=0)h.splice(j,1);}
@@ -1003,7 +1159,7 @@ function record(ms){
   dlog.push({k:sk,t:ms,at:Date.now()});if(dlog.length>6000)dlog.splice(0,dlog.length-6000);store.set('dlog',dlog);
   if($('optSmart').checked){const q=gradeTime(current,ms,dRevealed&&$('optHideSolve').checked);grade(current,q);}
   if(session.length>200)session.shift();
-  store.set('session',session);store.set('stats',stats);renderSession();
+  store.set('session',session);store.set('stats',stats);renderSession();renderStreak();
   $('timerHint').textContent=`Last: ${nameLabel(current)} in ${fmt(ms)} · ${current.alg}`;
   loadCase();}
 let tState='idle',holdTimer=null,startT=0,raf=null;
@@ -1371,16 +1527,118 @@ $('csLoad').onchange=e=>readFile(e.target,txt=>{let o;try{o=JSON.parse(txt);}cat
 
 // ---- tabs ----
 let testStarted=false;
-document.querySelector('nav').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+document.querySelector('nav').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;showTab(b);});
+function showTab(b){
   document.querySelectorAll('nav button').forEach(x=>x.setAttribute('aria-selected',x===b));
-  ['drill','timer','progress','test','quiz','cases'].forEach(v=>$('view-'+v).hidden=v!==b.dataset.view);
-  $('secChips').hidden=b.dataset.view==='timer';if(b.dataset.view==='progress')renderProgress();if(b.dataset.view==='drill'){renderExtras();if(current)$('drillReview').textContent=$('optSmart').checked?dueLabel(current):'';}
+  ['learn','drill','timer','progress','test','quiz','cases'].forEach(v=>$('view-'+v).hidden=v!==b.dataset.view);
+  $('secChips').hidden=b.dataset.view==='timer'||b.dataset.view==='learn';document.querySelector('.look').hidden=b.dataset.view==='learn';if(b.dataset.view==='learn')renderLearn();if(b.dataset.view==='progress')renderProgress();if(b.dataset.view==='drill'){renderExtras();if(current)$('drillReview').textContent=$('optSmart').checked?dueLabel(current):'';}
   if(b.dataset.view==='timer'){if(!tmScr)newScramble();tmRender();}
   if(b.dataset.view==='cases')renderCases();if(b.dataset.view==='quiz')loadQuiz();
-  if(b.dataset.view==='test'&&!testStarted){testStarted=true;newTest();}b.blur();});
+  if(b.dataset.view==='test'&&!testStarted){testStarted=true;newTest();}b.blur();}
 
 $('optHide').checked=store.get('hide',false);$('optHideSolve').checked=store.get('hideSolve',false);$('optSmart').checked=store.get('smart',true);$('optLefty').checked=lefty;
 document.querySelectorAll('#cubeSel button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.cube===cubeN));
 document.querySelectorAll('[data-look]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.look===look));
-renderSecs();loadCase();renderSession();renderTScore();
+
+// ---- Learn: puzzle library + beginner guides ----
+const PZ_ICON={"2": "<polygon points=\"16.00,1.00 29.00,8.50 16.00,16.00 3.00,8.50\" fill=\"#FFD500\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M22.50 4.75L9.50 12.25M9.50 4.75L22.50 12.25\" stroke=\"#0B0C0F\" stroke-width=\"1.36\" fill=\"none\" stroke-linecap=\"round\"/><polygon points=\"3.00,8.50 16.00,16.00 16.00,31.00 3.00,23.50\" fill=\"#11A35A\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M9.50 12.25L9.50 27.25M3.00 16.00L16.00 23.50\" stroke=\"#0B0C0F\" stroke-width=\"1.36\" fill=\"none\" stroke-linecap=\"round\"/><polygon points=\"16.00,16.00 29.00,8.50 29.00,23.50 16.00,31.00\" fill=\"#FF7A1A\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M22.50 12.25L22.50 27.25M16.00 23.50L29.00 16.00\" stroke=\"#0B0C0F\" stroke-width=\"1.36\" fill=\"none\" stroke-linecap=\"round\"/>", "3": "<polygon points=\"16.00,1.00 29.00,8.50 16.00,16.00 3.00,8.50\" fill=\"#FFD500\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M20.33 3.50L7.33 11.00M24.67 6.00L11.67 13.50M11.67 3.50L24.67 11.00M7.33 6.00L20.33 13.50\" stroke=\"#0B0C0F\" stroke-width=\"1.2400000000000002\" fill=\"none\" stroke-linecap=\"round\"/><polygon points=\"3.00,8.50 16.00,16.00 16.00,31.00 3.00,23.50\" fill=\"#11A35A\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M7.33 11.00L7.33 26.00M11.67 13.50L11.67 28.50M3.00 13.50L16.00 21.00M3.00 18.50L16.00 26.00\" stroke=\"#0B0C0F\" stroke-width=\"1.2400000000000002\" fill=\"none\" stroke-linecap=\"round\"/><polygon points=\"16.00,16.00 29.00,8.50 29.00,23.50 16.00,31.00\" fill=\"#FF7A1A\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M20.33 13.50L20.33 28.50M24.67 11.00L24.67 26.00M16.00 21.00L29.00 13.50M16.00 26.00L29.00 18.50\" stroke=\"#0B0C0F\" stroke-width=\"1.2400000000000002\" fill=\"none\" stroke-linecap=\"round\"/>", "4": "<polygon points=\"16.00,1.00 29.00,8.50 16.00,16.00 3.00,8.50\" fill=\"#FFD500\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M19.25 2.88L6.25 10.38M22.50 4.75L9.50 12.25M25.75 6.62L12.75 14.12M12.75 2.88L25.75 10.38M9.50 4.75L22.50 12.25M6.25 6.62L19.25 14.12\" stroke=\"#0B0C0F\" stroke-width=\"1.12\" fill=\"none\" stroke-linecap=\"round\"/><polygon points=\"3.00,8.50 16.00,16.00 16.00,31.00 3.00,23.50\" fill=\"#11A35A\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M6.25 10.38L6.25 25.38M9.50 12.25L9.50 27.25M12.75 14.12L12.75 29.12M3.00 12.25L16.00 19.75M3.00 16.00L16.00 23.50M3.00 19.75L16.00 27.25\" stroke=\"#0B0C0F\" stroke-width=\"1.12\" fill=\"none\" stroke-linecap=\"round\"/><polygon points=\"16.00,16.00 29.00,8.50 29.00,23.50 16.00,31.00\" fill=\"#FF7A1A\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M19.25 14.12L19.25 29.12M22.50 12.25L22.50 27.25M25.75 10.38L25.75 25.38M16.00 19.75L29.00 12.25M16.00 23.50L29.00 16.00M16.00 27.25L29.00 19.75\" stroke=\"#0B0C0F\" stroke-width=\"1.12\" fill=\"none\" stroke-linecap=\"round\"/>", "5": "<polygon points=\"16.00,1.00 29.00,8.50 16.00,16.00 3.00,8.50\" fill=\"#FFD500\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M18.60 2.50L5.60 10.00M21.20 4.00L8.20 11.50M23.80 5.50L10.80 13.00M26.40 7.00L13.40 14.50M13.40 2.50L26.40 10.00M10.80 4.00L23.80 11.50M8.20 5.50L21.20 13.00M5.60 7.00L18.60 14.50\" stroke=\"#0B0C0F\" stroke-width=\"1.0\" fill=\"none\" stroke-linecap=\"round\"/><polygon points=\"3.00,8.50 16.00,16.00 16.00,31.00 3.00,23.50\" fill=\"#11A35A\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M5.60 10.00L5.60 25.00M8.20 11.50L8.20 26.50M10.80 13.00L10.80 28.00M13.40 14.50L13.40 29.50M3.00 11.50L16.00 19.00M3.00 14.50L16.00 22.00M3.00 17.50L16.00 25.00M3.00 20.50L16.00 28.00\" stroke=\"#0B0C0F\" stroke-width=\"1.0\" fill=\"none\" stroke-linecap=\"round\"/><polygon points=\"16.00,16.00 29.00,8.50 29.00,23.50 16.00,31.00\" fill=\"#FF7A1A\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M18.60 14.50L18.60 29.50M21.20 13.00L21.20 28.00M23.80 11.50L23.80 26.50M26.40 10.00L26.40 25.00M16.00 19.00L29.00 11.50M16.00 22.00L29.00 14.50M16.00 25.00L29.00 17.50M16.00 28.00L29.00 20.50\" stroke=\"#0B0C0F\" stroke-width=\"1.0\" fill=\"none\" stroke-linecap=\"round\"/>", "6": "<polygon points=\"16.00,1.00 29.00,8.50 16.00,16.00 3.00,8.50\" fill=\"#FFD500\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M18.17 2.25L5.17 9.75M20.33 3.50L7.33 11.00M22.50 4.75L9.50 12.25M24.67 6.00L11.67 13.50M26.83 7.25L13.83 14.75M13.83 2.25L26.83 9.75M11.67 3.50L24.67 11.00M9.50 4.75L22.50 12.25M7.33 6.00L20.33 13.50M5.17 7.25L18.17 14.75\" stroke=\"#0B0C0F\" stroke-width=\"0.8800000000000001\" fill=\"none\" stroke-linecap=\"round\"/><polygon points=\"3.00,8.50 16.00,16.00 16.00,31.00 3.00,23.50\" fill=\"#11A35A\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M5.17 9.75L5.17 24.75M7.33 11.00L7.33 26.00M9.50 12.25L9.50 27.25M11.67 13.50L11.67 28.50M13.83 14.75L13.83 29.75M3.00 11.00L16.00 18.50M3.00 13.50L16.00 21.00M3.00 16.00L16.00 23.50M3.00 18.50L16.00 26.00M3.00 21.00L16.00 28.50\" stroke=\"#0B0C0F\" stroke-width=\"0.8800000000000001\" fill=\"none\" stroke-linecap=\"round\"/><polygon points=\"16.00,16.00 29.00,8.50 29.00,23.50 16.00,31.00\" fill=\"#FF7A1A\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M18.17 14.75L18.17 29.75M20.33 13.50L20.33 28.50M22.50 12.25L22.50 27.25M24.67 11.00L24.67 26.00M26.83 9.75L26.83 24.75M16.00 18.50L29.00 11.00M16.00 21.00L29.00 13.50M16.00 23.50L29.00 16.00M16.00 26.00L29.00 18.50M16.00 28.50L29.00 21.00\" stroke=\"#0B0C0F\" stroke-width=\"0.8800000000000001\" fill=\"none\" stroke-linecap=\"round\"/>", "7": "<polygon points=\"16.00,1.00 29.00,8.50 16.00,16.00 3.00,8.50\" fill=\"#FFD500\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M17.86 2.07L4.86 9.57M19.71 3.14L6.71 10.64M21.57 4.21L8.57 11.71M23.43 5.29L10.43 12.79M25.29 6.36L12.29 13.86M27.14 7.43L14.14 14.93M14.14 2.07L27.14 9.57M12.29 3.14L25.29 10.64M10.43 4.21L23.43 11.71M8.57 5.29L21.57 12.79M6.71 6.36L19.71 13.86M4.86 7.43L17.86 14.93\" stroke=\"#0B0C0F\" stroke-width=\"0.7600000000000001\" fill=\"none\" stroke-linecap=\"round\"/><polygon points=\"3.00,8.50 16.00,16.00 16.00,31.00 3.00,23.50\" fill=\"#11A35A\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M4.86 9.57L4.86 24.57M6.71 10.64L6.71 25.64M8.57 11.71L8.57 26.71M10.43 12.79L10.43 27.79M12.29 13.86L12.29 28.86M14.14 14.93L14.14 29.93M3.00 10.64L16.00 18.14M3.00 12.79L16.00 20.29M3.00 14.93L16.00 22.43M3.00 17.07L16.00 24.57M3.00 19.21L16.00 26.71M3.00 21.36L16.00 28.86\" stroke=\"#0B0C0F\" stroke-width=\"0.7600000000000001\" fill=\"none\" stroke-linecap=\"round\"/><polygon points=\"16.00,16.00 29.00,8.50 29.00,23.50 16.00,31.00\" fill=\"#FF7A1A\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M17.86 14.93L17.86 29.93M19.71 13.86L19.71 28.86M21.57 12.79L21.57 27.79M23.43 11.71L23.43 26.71M25.29 10.64L25.29 25.64M27.14 9.57L27.14 24.57M16.00 18.14L29.00 10.64M16.00 20.29L29.00 12.79M16.00 22.43L29.00 14.93M16.00 24.57L29.00 17.07M16.00 26.71L29.00 19.21M16.00 28.86L29.00 21.36\" stroke=\"#0B0C0F\" stroke-width=\"0.7600000000000001\" fill=\"none\" stroke-linecap=\"round\"/>", "9": "<polygon points=\"16.00,1.00 29.00,8.50 16.00,16.00 3.00,8.50\" fill=\"#FFD500\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M17.44 1.83L4.44 9.33M18.89 2.67L5.89 10.17M20.33 3.50L7.33 11.00M21.78 4.33L8.78 11.83M23.22 5.17L10.22 12.67M24.67 6.00L11.67 13.50M26.11 6.83L13.11 14.33M27.56 7.67L14.56 15.17M14.56 1.83L27.56 9.33M13.11 2.67L26.11 10.17M11.67 3.50L24.67 11.00M10.22 4.33L23.22 11.83M8.78 5.17L21.78 12.67M7.33 6.00L20.33 13.50M5.89 6.83L18.89 14.33M4.44 7.67L17.44 15.17\" stroke=\"#0B0C0F\" stroke-width=\"0.52\" fill=\"none\" stroke-linecap=\"round\"/><polygon points=\"3.00,8.50 16.00,16.00 16.00,31.00 3.00,23.50\" fill=\"#11A35A\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M4.44 9.33L4.44 24.33M5.89 10.17L5.89 25.17M7.33 11.00L7.33 26.00M8.78 11.83L8.78 26.83M10.22 12.67L10.22 27.67M11.67 13.50L11.67 28.50M13.11 14.33L13.11 29.33M14.56 15.17L14.56 30.17M3.00 10.17L16.00 17.67M3.00 11.83L16.00 19.33M3.00 13.50L16.00 21.00M3.00 15.17L16.00 22.67M3.00 16.83L16.00 24.33M3.00 18.50L16.00 26.00M3.00 20.17L16.00 27.67M3.00 21.83L16.00 29.33\" stroke=\"#0B0C0F\" stroke-width=\"0.52\" fill=\"none\" stroke-linecap=\"round\"/><polygon points=\"16.00,16.00 29.00,8.50 29.00,23.50 16.00,31.00\" fill=\"#FF7A1A\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M17.44 15.17L17.44 30.17M18.89 14.33L18.89 29.33M20.33 13.50L20.33 28.50M21.78 12.67L21.78 27.67M23.22 11.83L23.22 26.83M24.67 11.00L24.67 26.00M26.11 10.17L26.11 25.17M27.56 9.33L27.56 24.33M16.00 17.67L29.00 10.17M16.00 19.33L29.00 11.83M16.00 21.00L29.00 13.50M16.00 22.67L29.00 15.17M16.00 24.33L29.00 16.83M16.00 26.00L29.00 18.50M16.00 27.67L29.00 20.17M16.00 29.33L29.00 21.83\" stroke=\"#0B0C0F\" stroke-width=\"0.52\" fill=\"none\" stroke-linecap=\"round\"/>", "pyra": "<polygon points=\"16.00,2.00 11.33,11.67 20.67,11.67\" fill=\"#D0213B\" stroke=\"#0B0C0F\" stroke-width=\"0.8\" stroke-linejoin=\"round\"/><polygon points=\"11.33,11.67 6.67,21.33 16.00,21.33\" fill=\"#D0213B\" stroke=\"#0B0C0F\" stroke-width=\"0.8\" stroke-linejoin=\"round\"/><polygon points=\"11.33,11.67 20.67,11.67 16.00,21.33\" fill=\"#D0213B\" stroke=\"#0B0C0F\" stroke-width=\"0.8\" stroke-linejoin=\"round\"/><polygon points=\"20.67,11.67 16.00,21.33 25.33,21.33\" fill=\"#D0213B\" stroke=\"#0B0C0F\" stroke-width=\"0.8\" stroke-linejoin=\"round\"/><polygon points=\"6.67,21.33 2.00,31.00 11.33,31.00\" fill=\"#D0213B\" stroke=\"#0B0C0F\" stroke-width=\"0.8\" stroke-linejoin=\"round\"/><polygon points=\"6.67,21.33 16.00,21.33 11.33,31.00\" fill=\"#D0213B\" stroke=\"#0B0C0F\" stroke-width=\"0.8\" stroke-linejoin=\"round\"/><polygon points=\"16.00,21.33 11.33,31.00 20.67,31.00\" fill=\"#D0213B\" stroke=\"#0B0C0F\" stroke-width=\"0.8\" stroke-linejoin=\"round\"/><polygon points=\"16.00,21.33 25.33,21.33 20.67,31.00\" fill=\"#D0213B\" stroke=\"#0B0C0F\" stroke-width=\"0.8\" stroke-linejoin=\"round\"/><polygon points=\"25.33,21.33 20.67,31.00 30.00,31.00\" fill=\"#D0213B\" stroke=\"#0B0C0F\" stroke-width=\"0.8\" stroke-linejoin=\"round\"/>", "mega": "<polygon points=\"16.00,3.00 30.27,13.36 24.82,30.14 7.18,30.14 1.73,13.36\" fill=\"#11A35A\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M16.00 11.50L16.00 3.00M22.18 15.99L30.27 13.36M19.82 23.26L24.82 30.14M12.18 23.26L7.18 30.14M9.82 15.99L1.73 13.36\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\"/><polygon points=\"16.00,11.50 22.18,15.99 19.82,23.26 12.18,23.26 9.82,15.99\" fill=\"#11A35A\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/>", "skewb": "<polygon points=\"16.00,1.00 29.00,8.50 16.00,16.00 3.00,8.50\" fill=\"#FFD500\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><polygon points=\"22.50,4.75 22.50,12.25 9.50,12.25 9.50,4.75\" fill=\"none\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><polygon points=\"3.00,8.50 16.00,16.00 16.00,31.00 3.00,23.50\" fill=\"#11A35A\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><polygon points=\"9.50,12.25 16.00,23.50 9.50,27.25 3.00,16.00\" fill=\"none\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><polygon points=\"16.00,16.00 29.00,8.50 29.00,23.50 16.00,31.00\" fill=\"#FF7A1A\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><polygon points=\"22.50,12.25 29.00,16.00 22.50,27.25 16.00,23.50\" fill=\"none\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/>", "sq1": "<polygon points=\"16.00,1.00 29.00,8.50 16.00,16.00 3.00,8.50\" fill=\"#EEF0F4\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M16.00 8.50L20.68 3.70M16.00 8.50L24.32 5.80M16.00 8.50L24.32 11.20M16.00 8.50L20.68 13.30M16.00 8.50L11.32 13.30M16.00 8.50L7.68 11.20M16.00 8.50L7.68 5.80M16.00 8.50L11.32 3.70\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\"/><polygon points=\"3.00,8.50 16.00,16.00 16.00,31.00 3.00,23.50\" fill=\"#2F6BFF\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M3.00 14.50L16.00 22.00M3.00 17.50L16.00 25.00\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\"/><path d=\"M7.68 11.20L7.68 17.20M11.32 13.30L11.32 19.30M7.68 20.20L7.68 26.20M11.32 22.30L11.32 28.30\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\"/><polygon points=\"16.00,16.00 29.00,8.50 29.00,23.50 16.00,31.00\" fill=\"#D0213B\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M16.00 22.00L29.00 14.50M16.00 25.00L29.00 17.50\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\"/><path d=\"M20.68 13.30L20.68 19.30M24.32 11.20L24.32 17.20M20.68 22.30L20.68 28.30M24.32 20.20L24.32 26.20\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\"/>", "clock": "<circle cx=\"16\" cy=\"17\" r=\"14.5\" fill=\"#2F6BFF\" stroke=\"#0B0C0F\" stroke-width=\".9\"/><circle cx=\"8\" cy=\"9\" r=\"3.2\" fill=\"#EEF0F4\"/><path d=\"M8 9L8 6.6\" stroke=\"#0B0C0F\" stroke-width=\"1.1\" stroke-linecap=\"round\"/><circle cx=\"16\" cy=\"9\" r=\"3.2\" fill=\"#EEF0F4\"/><path d=\"M16 9L16 6.6\" stroke=\"#0B0C0F\" stroke-width=\"1.1\" stroke-linecap=\"round\"/><circle cx=\"24\" cy=\"9\" r=\"3.2\" fill=\"#EEF0F4\"/><path d=\"M24 9L24 6.6\" stroke=\"#0B0C0F\" stroke-width=\"1.1\" stroke-linecap=\"round\"/><circle cx=\"8\" cy=\"17\" r=\"3.2\" fill=\"#EEF0F4\"/><path d=\"M8 17L8 14.6\" stroke=\"#0B0C0F\" stroke-width=\"1.1\" stroke-linecap=\"round\"/><circle cx=\"16\" cy=\"17\" r=\"3.2\" fill=\"#EEF0F4\"/><path d=\"M16 17L16 14.6\" stroke=\"#0B0C0F\" stroke-width=\"1.1\" stroke-linecap=\"round\"/><circle cx=\"24\" cy=\"17\" r=\"3.2\" fill=\"#EEF0F4\"/><path d=\"M24 17L24 14.6\" stroke=\"#0B0C0F\" stroke-width=\"1.1\" stroke-linecap=\"round\"/><circle cx=\"8\" cy=\"25\" r=\"3.2\" fill=\"#EEF0F4\"/><path d=\"M8 25L8 22.6\" stroke=\"#0B0C0F\" stroke-width=\"1.1\" stroke-linecap=\"round\"/><circle cx=\"16\" cy=\"25\" r=\"3.2\" fill=\"#EEF0F4\"/><path d=\"M16 25L16 22.6\" stroke=\"#0B0C0F\" stroke-width=\"1.1\" stroke-linecap=\"round\"/><circle cx=\"24\" cy=\"25\" r=\"3.2\" fill=\"#EEF0F4\"/><path d=\"M24 25L24 22.6\" stroke=\"#0B0C0F\" stroke-width=\"1.1\" stroke-linecap=\"round\"/>", "mirror": "<polygon points=\"16.00,1.00 29.00,8.50 16.00,16.00 3.00,8.50\" fill=\"#D7DCE3\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M18.86 2.65L5.86 10.15M24.06 5.65L11.06 13.15M12.10 3.25L25.10 10.75M6.38 6.55L19.38 14.05\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\"/><polygon points=\"3.00,8.50 16.00,16.00 16.00,31.00 3.00,23.50\" fill=\"#AEB5BF\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M5.86 10.15L5.86 25.15M11.06 13.15L11.06 28.15M3.00 13.00L16.00 20.50M3.00 19.60L16.00 27.10\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\"/><polygon points=\"16.00,16.00 29.00,8.50 29.00,23.50 16.00,31.00\" fill=\"#8E96A1\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M18.86 14.35L18.86 29.35M24.06 11.35L24.06 26.35M16.00 20.50L29.00 13.00M16.00 27.10L29.00 19.60\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\"/>", "gear": "<polygon points=\"16.00,1.00 29.00,8.50 16.00,16.00 3.00,8.50\" fill=\"#FFD500\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M20.33 3.50L7.33 11.00M24.67 6.00L11.67 13.50M11.67 3.50L24.67 11.00M7.33 6.00L20.33 13.50\" stroke=\"#0B0C0F\" stroke-width=\"1.2400000000000002\" fill=\"none\" stroke-linecap=\"round\"/><polygon points=\"3.00,8.50 16.00,16.00 16.00,31.00 3.00,23.50\" fill=\"#11A35A\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M7.33 11.00L7.33 26.00M11.67 13.50L11.67 28.50M3.00 13.50L16.00 21.00M3.00 18.50L16.00 26.00\" stroke=\"#0B0C0F\" stroke-width=\"1.2400000000000002\" fill=\"none\" stroke-linecap=\"round\"/><polygon points=\"16.00,16.00 29.00,8.50 29.00,23.50 16.00,31.00\" fill=\"#FF7A1A\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M20.33 13.50L20.33 28.50M24.67 11.00L24.67 26.00M16.00 21.00L29.00 13.50M16.00 26.00L29.00 18.50\" stroke=\"#0B0C0F\" stroke-width=\"1.2400000000000002\" fill=\"none\" stroke-linecap=\"round\"/><ellipse cx=\"20.33\" cy=\"6.00\" rx=\"2.6\" ry=\"1.5\" fill=\"#0B0C0F\" opacity=\".55\"/><ellipse cx=\"20.33\" cy=\"11.00\" rx=\"2.6\" ry=\"1.5\" fill=\"#0B0C0F\" opacity=\".55\"/><ellipse cx=\"11.67\" cy=\"11.00\" rx=\"2.6\" ry=\"1.5\" fill=\"#0B0C0F\" opacity=\".55\"/><ellipse cx=\"11.67\" cy=\"6.00\" rx=\"2.6\" ry=\"1.5\" fill=\"#0B0C0F\" opacity=\".55\"/>", "ivy": "<polygon points=\"16.00,1.00 29.00,8.50 16.00,16.00 3.00,8.50\" fill=\"#FFD500\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><polygon points=\"16.00,1.00 17.88,2.25 19.64,3.50 21.15,4.75 22.30,6.00 23.03,7.25 23.28,8.50 23.03,9.75 22.30,11.00 21.15,12.25 19.64,13.50 17.88,14.75 16.00,16.00 14.12,14.75 12.36,13.50 10.85,12.25 9.70,11.00 8.97,9.75 8.72,8.50 8.97,7.25 9.70,6.00 10.85,4.75 12.36,3.50 14.12,2.25\" fill=\"none\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><polygon points=\"3.00,8.50 16.00,16.00 16.00,31.00 3.00,23.50\" fill=\"#11A35A\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><polygon points=\"3.00,8.50 5.03,9.83 6.99,11.20 8.82,12.64 10.49,14.18 11.93,15.85 13.14,17.65 14.10,19.60 14.82,21.68 15.32,23.89 15.65,26.20 15.86,28.58 16.00,31.00 13.97,29.67 12.01,28.30 10.18,26.86 8.51,25.32 7.07,23.65 5.86,21.85 4.90,19.90 4.18,17.82 3.68,15.61 3.35,13.30 3.14,10.92\" fill=\"none\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><polygon points=\"16.00,16.00 29.00,8.50 29.00,23.50 16.00,31.00\" fill=\"#FF7A1A\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><polygon points=\"16.00,16.00 18.03,14.99 19.99,14.10 21.82,13.42 23.49,13.04 24.93,13.04 26.14,13.45 27.10,14.29 27.82,15.54 28.32,17.17 28.65,19.10 28.86,21.24 29.00,23.50 26.97,24.51 25.01,25.40 23.18,26.08 21.51,26.46 20.07,26.46 18.86,26.05 17.90,25.21 17.18,23.96 16.68,22.33 16.35,20.40 16.14,18.26\" fill=\"none\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/>", "dino": "<polygon points=\"16.00,1.00 29.00,8.50 16.00,16.00 3.00,8.50\" fill=\"#FFD500\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M16.00 1.00L16.00 16.00M29.00 8.50L3.00 8.50\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\"/><polygon points=\"3.00,8.50 16.00,16.00 16.00,31.00 3.00,23.50\" fill=\"#11A35A\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M3.00 8.50L16.00 31.00M16.00 16.00L3.00 23.50\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\"/><polygon points=\"16.00,16.00 29.00,8.50 29.00,23.50 16.00,31.00\" fill=\"#FF7A1A\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M16.00 16.00L29.00 23.50M29.00 8.50L16.00 31.00\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\"/>", "redi": "<polygon points=\"16.00,1.00 29.00,8.50 16.00,16.00 3.00,8.50\" fill=\"#FFD500\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M20.94 3.85L11.06 3.85M24.06 5.65L24.06 11.35M20.94 13.15L11.06 13.15M7.94 11.35L7.94 5.65\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\"/><polygon points=\"3.00,8.50 16.00,16.00 16.00,31.00 3.00,23.50\" fill=\"#11A35A\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M7.94 11.35L3.00 14.20M11.06 13.15L16.00 21.70M16.00 25.30L11.06 28.15M7.94 26.35L3.00 17.80\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\"/><polygon points=\"16.00,16.00 29.00,8.50 29.00,23.50 16.00,31.00\" fill=\"#FF7A1A\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M20.94 13.15L16.00 21.70M24.06 11.35L29.00 14.20M29.00 17.80L24.06 26.35M20.94 28.15L16.00 25.30\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\"/>", "kilo": "<polygon points=\"16.00,3.00 30.27,13.36 24.82,30.14 7.18,30.14 1.73,13.36\" fill=\"#FFD500\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M16 18L23.13 8.18M16 18L27.54 21.75M16 18L16.00 30.14M16 18L4.46 21.75M16 18L8.87 8.18\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\"/>", "mpyra": "<polygon points=\"16.00,2.00 12.50,9.25 19.50,9.25\" fill=\"#2F6BFF\" stroke=\"#0B0C0F\" stroke-width=\"0.8\" stroke-linejoin=\"round\"/><polygon points=\"12.50,9.25 9.00,16.50 16.00,16.50\" fill=\"#2F6BFF\" stroke=\"#0B0C0F\" stroke-width=\"0.8\" stroke-linejoin=\"round\"/><polygon points=\"12.50,9.25 19.50,9.25 16.00,16.50\" fill=\"#2F6BFF\" stroke=\"#0B0C0F\" stroke-width=\"0.8\" stroke-linejoin=\"round\"/><polygon points=\"19.50,9.25 16.00,16.50 23.00,16.50\" fill=\"#2F6BFF\" stroke=\"#0B0C0F\" stroke-width=\"0.8\" stroke-linejoin=\"round\"/><polygon points=\"9.00,16.50 5.50,23.75 12.50,23.75\" fill=\"#2F6BFF\" stroke=\"#0B0C0F\" stroke-width=\"0.8\" stroke-linejoin=\"round\"/><polygon points=\"9.00,16.50 16.00,16.50 12.50,23.75\" fill=\"#2F6BFF\" stroke=\"#0B0C0F\" stroke-width=\"0.8\" stroke-linejoin=\"round\"/><polygon points=\"16.00,16.50 12.50,23.75 19.50,23.75\" fill=\"#2F6BFF\" stroke=\"#0B0C0F\" stroke-width=\"0.8\" stroke-linejoin=\"round\"/><polygon points=\"16.00,16.50 23.00,16.50 19.50,23.75\" fill=\"#2F6BFF\" stroke=\"#0B0C0F\" stroke-width=\"0.8\" stroke-linejoin=\"round\"/><polygon points=\"23.00,16.50 19.50,23.75 26.50,23.75\" fill=\"#2F6BFF\" stroke=\"#0B0C0F\" stroke-width=\"0.8\" stroke-linejoin=\"round\"/><polygon points=\"5.50,23.75 2.00,31.00 9.00,31.00\" fill=\"#2F6BFF\" stroke=\"#0B0C0F\" stroke-width=\"0.8\" stroke-linejoin=\"round\"/><polygon points=\"5.50,23.75 12.50,23.75 9.00,31.00\" fill=\"#2F6BFF\" stroke=\"#0B0C0F\" stroke-width=\"0.8\" stroke-linejoin=\"round\"/><polygon points=\"12.50,23.75 9.00,31.00 16.00,31.00\" fill=\"#2F6BFF\" stroke=\"#0B0C0F\" stroke-width=\"0.8\" stroke-linejoin=\"round\"/><polygon points=\"12.50,23.75 19.50,23.75 16.00,31.00\" fill=\"#2F6BFF\" stroke=\"#0B0C0F\" stroke-width=\"0.8\" stroke-linejoin=\"round\"/><polygon points=\"19.50,23.75 16.00,31.00 23.00,31.00\" fill=\"#2F6BFF\" stroke=\"#0B0C0F\" stroke-width=\"0.8\" stroke-linejoin=\"round\"/><polygon points=\"19.50,23.75 26.50,23.75 23.00,31.00\" fill=\"#2F6BFF\" stroke=\"#0B0C0F\" stroke-width=\"0.8\" stroke-linejoin=\"round\"/><polygon points=\"26.50,23.75 23.00,31.00 30.00,31.00\" fill=\"#2F6BFF\" stroke=\"#0B0C0F\" stroke-width=\"0.8\" stroke-linejoin=\"round\"/>", "morphix": "<polygon points=\"16.00,2.00 11.33,11.67 20.67,11.67\" fill=\"#D9A93A\" stroke=\"#0B0C0F\" stroke-width=\"0.8\" stroke-linejoin=\"round\"/><polygon points=\"11.33,11.67 6.67,21.33 16.00,21.33\" fill=\"#D9A93A\" stroke=\"#0B0C0F\" stroke-width=\"0.8\" stroke-linejoin=\"round\"/><polygon points=\"11.33,11.67 20.67,11.67 16.00,21.33\" fill=\"#D9A93A\" stroke=\"#0B0C0F\" stroke-width=\"0.8\" stroke-linejoin=\"round\"/><polygon points=\"20.67,11.67 16.00,21.33 25.33,21.33\" fill=\"#D9A93A\" stroke=\"#0B0C0F\" stroke-width=\"0.8\" stroke-linejoin=\"round\"/><polygon points=\"6.67,21.33 2.00,31.00 11.33,31.00\" fill=\"#D9A93A\" stroke=\"#0B0C0F\" stroke-width=\"0.8\" stroke-linejoin=\"round\"/><polygon points=\"6.67,21.33 16.00,21.33 11.33,31.00\" fill=\"#D9A93A\" stroke=\"#0B0C0F\" stroke-width=\"0.8\" stroke-linejoin=\"round\"/><polygon points=\"16.00,21.33 11.33,31.00 20.67,31.00\" fill=\"#D9A93A\" stroke=\"#0B0C0F\" stroke-width=\"0.8\" stroke-linejoin=\"round\"/><polygon points=\"16.00,21.33 25.33,21.33 20.67,31.00\" fill=\"#D9A93A\" stroke=\"#0B0C0F\" stroke-width=\"0.8\" stroke-linejoin=\"round\"/><polygon points=\"25.33,21.33 20.67,31.00 30.00,31.00\" fill=\"#D9A93A\" stroke=\"#0B0C0F\" stroke-width=\"0.8\" stroke-linejoin=\"round\"/>", "axis": "<polygon points=\"16.00,1.00 29.00,8.50 16.00,16.00 3.00,8.50\" fill=\"#D9A93A\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M17.95 2.12L8.85 11.88M23.80 5.50L14.70 15.25M10.80 4.00L26.40 10.00M4.95 7.38L21.20 13.00\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\"/><polygon points=\"3.00,8.50 16.00,16.00 16.00,31.00 3.00,23.50\" fill=\"#B88A2A\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M4.95 9.62L8.85 26.88M10.80 13.00L14.70 30.25M3.00 14.50L16.00 19.00M3.00 21.25L16.00 25.00\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\"/><polygon points=\"16.00,16.00 29.00,8.50 29.00,23.50 16.00,31.00\" fill=\"#9A7322\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M17.95 14.88L21.85 27.62M23.80 11.50L27.70 24.25M16.00 22.00L29.00 11.50M16.00 28.75L29.00 17.50\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\"/>", "fisher": "<polygon points=\"16.00,1.00 29.00,8.50 16.00,16.00 3.00,8.50\" fill=\"#FFD500\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M10.15 4.38L10.15 12.62M21.85 4.38L21.85 12.62M4.30 7.75L4.30 9.25M27.70 7.75L27.70 9.25M18.60 2.50L13.40 2.50M13.40 14.50L18.60 14.50\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\"/><polygon points=\"3.00,8.50 16.00,16.00 16.00,31.00 3.00,23.50\" fill=\"#11A35A\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M7.94 11.35L7.94 26.35M12.10 13.75L12.10 28.75M3.00 13.50L16.00 21.00M3.00 18.50L16.00 26.00\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\"/><polygon points=\"16.00,16.00 29.00,8.50 29.00,23.50 16.00,31.00\" fill=\"#FF7A1A\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M19.90 13.75L19.90 28.75M24.06 11.35L24.06 26.35M16.00 21.00L29.00 13.50M16.00 26.00L29.00 18.50\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\"/>", "windmill": "<polygon points=\"16.00,1.00 29.00,8.50 16.00,16.00 3.00,8.50\" fill=\"#FFD500\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M19.64 3.10L8.20 11.50M23.80 5.50L12.36 13.90M11.06 3.85L25.36 10.60M6.64 6.40L21.20 13.00\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\"/><polygon points=\"3.00,8.50 16.00,16.00 16.00,31.00 3.00,23.50\" fill=\"#11A35A\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M6.90 10.75L6.90 25.75M12.10 13.75L12.10 28.75M3.00 13.50L16.00 21.00M3.00 18.50L16.00 26.00\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\"/><polygon points=\"16.00,16.00 29.00,8.50 29.00,23.50 16.00,31.00\" fill=\"#FF7A1A\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M20.55 13.38L20.55 28.38M24.45 11.12L24.45 26.12M16.00 21.00L29.00 13.50M16.00 26.00L29.00 18.50\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\"/>", "ghost": "<polygon points=\"16.00,1.00 29.00,8.50 16.00,16.00 3.00,8.50\" fill=\"#D7DCE3\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M19.90 3.25L5.60 10.00M25.10 6.25L10.80 13.00M11.45 3.62L25.75 10.38M6.25 6.62L20.94 13.15\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\"/><polygon points=\"3.00,8.50 16.00,16.00 16.00,31.00 3.00,23.50\" fill=\"#AEB5BF\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M6.90 10.75L5.60 25.00M12.10 13.75L10.80 28.00M3.00 13.75L16.00 19.75M3.00 19.75L16.00 25.30\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\"/><polygon points=\"16.00,16.00 29.00,8.50 29.00,23.50 16.00,31.00\" fill=\"#8E96A1\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M19.90 13.75L18.60 29.50M25.10 10.75L23.80 26.50M16.00 21.25L29.00 12.25M16.00 27.25L29.00 17.80\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\"/>", "floppy": "<polygon points=\"16.00,1.00 29.00,8.50 16.00,16.00 3.00,8.50\" fill=\"#FFD500\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M20.33 3.50L7.33 11.00M24.67 6.00L11.67 13.50M11.67 3.50L24.67 11.00M7.33 6.00L20.33 13.50\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\"/><polygon points=\"3.00,8.50 16.00,16.00 16.00,21.00 3.00,13.50\" fill=\"#11A35A\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M7.33 11.00L7.33 16.00M11.67 13.50L11.67 18.50\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\"/><polygon points=\"16.00,16.00 29.00,8.50 29.00,13.50 16.00,21.00\" fill=\"#FF7A1A\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M20.33 13.50L20.33 18.50M24.67 11.00L24.67 16.00\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\"/>", "domino": "<polygon points=\"16.00,1.00 29.00,8.50 16.00,16.00 3.00,8.50\" fill=\"#FFD500\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M20.33 3.50L7.33 11.00M24.67 6.00L11.67 13.50M11.67 3.50L24.67 11.00M7.33 6.00L20.33 13.50\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\"/><polygon points=\"3.00,8.50 16.00,16.00 16.00,26.00 3.00,18.50\" fill=\"#11A35A\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M7.33 11.00L7.33 21.00M11.67 13.50L11.67 23.50M3.00 13.50L16.00 21.00\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\"/><polygon points=\"16.00,16.00 29.00,8.50 29.00,18.50 16.00,26.00\" fill=\"#FF7A1A\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M20.33 13.50L20.33 23.50M24.67 11.00L24.67 21.00M16.00 21.00L29.00 13.50\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\"/>", "tower": "<polygon points=\"16.00,1.00 29.00,8.50 16.00,16.00 3.00,8.50\" fill=\"#FFD500\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M22.50 4.75L9.50 12.25M9.50 4.75L22.50 12.25\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\"/><polygon points=\"3.00,8.50 16.00,16.00 16.00,33.00 3.00,25.50\" fill=\"#11A35A\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M9.50 12.25L9.50 29.25M3.00 14.17L16.00 21.67M3.00 19.83L16.00 27.33\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\"/><polygon points=\"16.00,16.00 29.00,8.50 29.00,25.50 16.00,33.00\" fill=\"#FF7A1A\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><path d=\"M22.50 12.25L22.50 29.25M16.00 21.67L29.00 14.17M16.00 27.33L29.00 19.83\" stroke=\"#0B0C0F\" stroke-width=\"0.9\" fill=\"none\" stroke-linecap=\"round\"/>"};
+const pzSvg=(id,cls='pz')=>`<svg class="${cls}" viewBox="0 0 32 34" aria-hidden="true">${PZ_ICON[id]||''}</svg>`;
+// id, name, group, difficulty 1-5, rough time to learn
+const PUZ=[['3','3x3','wca',2,'an afternoon'],['2','2x2','wca',1,'about an hour'],['pyra','Pyraminx','wca',1,'about 30 min'],['skewb','Skewb','wca',2,'about an hour'],
+ ['4','4x4','wca',3,'a weekend'],['5','5x5','wca',3,'a weekend'],['6','6x6','wca',4,'a week'],['7','7x7','wca',4,'a week'],['mega','Megaminx','wca',3,'a weekend'],
+ ['sq1','Square-1','wca',4,'a week'],['clock','Clock','wca',2,'about an hour'],['9','9x9','big',5,'a week or more'],
+ ['mirror','Mirror Cube','shape',2,'3x3 plus a day'],['ghost','Ghost Cube','shape',5,'a week or more'],['axis','Axis Cube','shape',3,'a weekend'],['fisher','Fisher Cube','shape',2,'3x3 plus a day'],
+ ['windmill','Windmill Cube','shape',3,'a weekend'],['morphix','Mastermorphix','shape',3,'a weekend'],['gear','Gear Cube','fun',2,'about an hour'],['ivy','Ivy Cube','fun',1,'about 20 min'],
+ ['dino','Dino Cube','fun',2,'about an hour'],['redi','Redi Cube','fun',2,'about an hour'],['kilo','Kilominx','fun',3,'a day'],['mpyra','Master Pyraminx','fun',3,'a day'],
+ ['floppy','Floppy 3x3x1','cuboid',1,'about 15 min'],['domino','Domino 3x3x2','cuboid',2,'about an hour'],['tower','Tower 2x2x3','cuboid',2,'about an hour']];
+const PZ_GROUPS=[['wca','Official WCA puzzles','The ones you can compete with',['wca','big']],['shape','Shape mods','Change shape when scrambled, but solve like a 3x3',['shape']],
+ ['fun','Twisty & fun','Different cuts, mostly beginner-friendly',['fun']],['cuboid','Cuboids','Not every side is square',['cuboid']]];
+const Y='#FFD500',_='#2A2E37';
+const GUIDES={
+ '3':{title:'Solve a 3x3',tip:'Finish all 7 and you can solve it from any scramble. Most people get their first solve in an afternoon.',steps:[
+  {t:'White cross',sub:'No moves to learn',k:'FIRST LAYER',text:'Hold the cube with yellow on top. Bring the four white edges up around the yellow center (a "daisy"), then turn each one down when its side color lines up with the center below it. Finish with white on the bottom.',
+   how:'There are no moves to memorize here. Take your time and watch how each turn moves the pieces. Play the example to see one edge drop into place.',algs:[['Example edge',"F2"]]},
+  {t:'White corners',sub:"R U R' U'",k:'FIRST LAYER',text:'Keep white on the bottom. Find a white corner on top and turn the top until it sits right above where it belongs, at the front-right. Repeat the moves until it drops in with white facing down.',
+   how:'Hold the corner at <b>front-right, top</b>. Repeat the moves (up to 6 times) until it is solved. Do the same for the other three corners.',algs:[['Corner trick',"R U R' U'"]]},
+  {t:'Middle layer edges',sub:'2 move sets',k:'SECOND LAYER',text:'Find an edge on top without yellow on it. Turn the top until its front color matches the front center. Then check its top color: does it belong on the right or the left?',
+   how:'Edge goes <b>right</b> → use "Right". Edge goes <b>left</b> → use "Left". If an edge is stuck in the middle layer the wrong way, do either one to pop it out, then insert it again.',algs:[['Right',"U R U' R' U' F' U F"],['Left',"U' L' U L U F U' F'"]]},
+  {t:'Yellow cross',sub:"F R U R' U' F'",k:'LAST LAYER',text:'Yellow stays on top. Ignore the corners. You only care about the four yellow edge pieces, and one move set walks you through these shapes:',
+   pats:[['Dot',[_,_,_,_,Y,_,_,_,_]],['L shape',[_,Y,_,Y,Y,_,_,_,_],1],['Line',[_,_,_,Y,Y,Y,_,_,_]],['Cross',[_,Y,_,Y,Y,Y,_,Y,_],'goal']],
+   how:'Hold the <b>L</b> at the back-left, or the <b>line</b> going left to right, then do the moves. Dot? Do it once, then treat it as an L.',algs:[['Yellow cross',"F R U R' U' F'"]]},
+  {t:'Yellow edges',sub:"R U R' U R U2 R' U",k:'LAST LAYER',text:'Turn the top until at least two yellow edges match the centers below them. Then swap the other two into place.',
+   how:'If the two matching edges are next to each other, hold them at the <b>back and right</b> and do the moves. If they are opposite, do the moves once from anywhere and check again.',algs:[['Swap edges',"R U R' U R U2 R' U"]]},
+  {t:'Place yellow corners',sub:"U R U' L' U R' U' L",k:'LAST LAYER',text:'Get each corner into its correct spot, even if it is twisted. A corner is in the right spot when it has the same three colors as the sides around it.',
+   how:'Find a corner that is already in its spot and hold it at <b>front-right</b>. Do the moves until all four are in place. None in place? Do it once from anywhere first.',algs:[['Cycle corners',"U R U' L' U R' U' L"]]},
+  {t:'Twist yellow corners',sub:"R' D' R D",k:'LAST LAYER',text:'The last step. Hold the cube with an unsolved corner at the front-right, top. Repeat the moves until yellow faces up on that corner.',
+   how:'Do the moves <b>2 or 4 times</b> until that corner shows yellow on top. Then turn only the top (U) to bring the next unsolved corner to front-right. Never turn the whole cube. The rest looks scrambled until the last corner is done.',algs:[['Twist',"R' D' R D"]]}]},
+ '2':{title:'Solve a 2x2',tip:'Already know the 3x3? Steps 2 and 3 use moves you\'ve seen. Most people get their first 2x2 solve in under an hour.',steps:[
+  {t:'White layer',sub:"R U R' U'",k:'FIRST LAYER',text:'Build one full white side with the colors on the sides matching. Put one white corner on the bottom, then add the others: hold each one on top above its spot at the front-right and repeat the moves until it drops in.',
+   how:'Hold the corner at <b>front-right, top</b>, above where it goes. Repeat the moves until it is in with white facing down.',algs:[['Corner trick',"R U R' U'"]]},
+  {t:'Make the top yellow',sub:'Sune',k:'TOP LAYER',text:'White layer down, yellow up. Count how many yellow stickers face up, hold the cube as shown, and repeat one move set until the whole top is yellow:',
+   pats:[['1 yellow up',[_,_,Y,_],1],['0 yellow up',[_,_,_,_]],['2 yellow up',[Y,Y,_,_]],['All yellow!',[Y,Y,Y,Y],'goal']],
+   how:'With <b>1 up</b>, put that corner front-left. With <b>0 or 2</b>, turn the top until a yellow sticker faces left on the front-left corner. Do the moves, look again, repeat.',algs:[['Sune',"R U R' U R U2 R'"]]},
+  {t:'Swap top corners',sub:'T perm',k:'TOP LAYER',text:'Look at the sides of the top layer. Two corners with the same color next to each other ("headlights") are already right relative to each other.',
+   how:'Put the headlights on the <b>left</b> side and do the moves. No headlights? Do it once from anywhere, and you\'ll get some.',algs:[['T perm',"R U R' U' R' F R2 U' R' U' R U R' F'"]]},
+  {t:'Line it up',sub:'U turns',k:'DONE',text:'Turn the top until every side is one color. That\'s a solved 2x2!',how:'Just turn the top layer (U) until it matches.',algs:[['Finish',"U"]]}]},
+};
+const ENG_FOR={'2':()=>engN(2),'3':()=>E3};
+let learnSel=null,learnStep=0,learnFilter='all',lnAlgIdx=0,lp=null;
+let learnDone=store.get('learn',{});
+const pzInfo=id=>PUZ.find(p=>p[0]===id);
+function dotsHtml(n){return '<span class="dots" aria-label="Difficulty '+n+' of 5">'+[0,1,2,3,4].map(i=>`<i class="${i<n?'on':''}"></i>`).join('')+'</span>';}
+function openLearn(id){learnSel=id;learnStep=0;const b=$('tab-learn');showTab(b);}
+function renderLearn(){
+  const g=learnSel&&GUIDES[learnSel];
+  $('lnLib').hidden=!!learnSel;$('lnGuide').hidden=!g;$('lnSoon').hidden=!(learnSel&&!g);
+  if(!learnSel){renderLib();return;}
+  if(!g){const p=pzInfo(learnSel)||[learnSel,learnSel];
+    $('lnSoon').innerHTML=`${pzSvg(learnSel,'pz')}<h2 class="ln-title" style="font-size:2rem">${p[1]}</h2><p class="gd-how" style="max-width:560px">The step-by-step guide for the ${p[1]} is on the way. Guides are being added a few puzzles at a time, and the 2x2 and 3x3 are ready now.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-ln-back>← All puzzles</button><button class="btn primary" data-ln-open="3">Learn the 3x3</button></div>`;
+    $('lnSoon').querySelector('svg').style.cssText='width:80px;height:85px';return;}
+  renderGuide();}
+function renderLib(){
+  const counts={all:PUZ.length};for(const[k,,,gs]of PZ_GROUPS)counts[k]=PUZ.filter(p=>gs.includes(p[2])).length;
+  $('lnFilters').innerHTML=[['all','All'],...PZ_GROUPS.map(g=>[g[0],g[0]==='wca'?'WCA':g[1]])].map(([k,l])=>`<button data-lnf="${k}" aria-pressed="${learnFilter===k}">${l} ${counts[k]}</button>`).join('');
+  const q=$('lnSearch').value.trim().toLowerCase();
+  const card=p=>{const[id,name,,diff,time]=p;const G=GUIDES[id];const done=(learnDone[id]||[]).length;
+    let foot;if(!G)foot=`<span class="meta">${time}</span>`;else if(done>=G.steps.length)foot='<span class="done">✓ Solved it</span>';
+    else if(done)foot=`<span class="ln-prog"><span><b style="width:${done/G.steps.length*100}%"></b></span>${done}/${G.steps.length}</span>`;else foot=`<span class="meta">${G.steps.length} steps · ${time}</span>`;
+    const tag=!G?'<span class="tag soon">SOON</span>':'';
+    return `<button class="ln-card${G&&done&&done<G.steps.length?' started':''}" data-ln-open="${id}">${tag}${pzSvg(id)}<span class="nm">${name}</span>${dotsHtml(diff)}${foot}</button>`;};
+  let html='';
+  for(const[k,title,sub,gs]of PZ_GROUPS){if(learnFilter!=='all'&&learnFilter!==k)continue;
+    const items=PUZ.filter(p=>gs.includes(p[2])&&(!q||p[1].toLowerCase().includes(q)));if(!items.length)continue;
+    html+=`<section class="ln-sec"><h2>${title}<small>${sub}</small></h2><div class="ln-grid">${items.map(card).join('')}</div></section>`;}
+  $('lnSections').innerHTML=html||'<p class="ln-empty">No puzzles match that search.</p>';}
+function patSvg(cells){const n=Math.round(Math.sqrt(cells.length)),sz=60,c=sz/n;
+  return `<svg width="${sz}" height="${sz}" viewBox="0 0 ${sz} ${sz}" aria-hidden="true">`+cells.map((col,k)=>`<rect x="${(k%n)*c+1.5}" y="${Math.floor(k/n)*c+1.5}" width="${c-3}" height="${c-3}" rx="4" fill="${col}"/>`).join('')+'</svg>';}
+function renderGuide(){const G=GUIDES[learnSel],st=G.steps[learnStep],done=learnDone[learnSel]||[],nS=G.steps.length;
+  $('lnStepsTitle').textContent=G.title+' · '+nS+' steps';$('lnTip').textContent=G.tip;
+  $('lnSteps').innerHTML=G.steps.map((x,i)=>`<li><button data-ln-step="${i}" class="${done.includes(i)?'ok':''}" ${i===learnStep?'aria-current="step"':''}><span class="dot">${done.includes(i)&&i!==learnStep?'✓':i+1}</span><span class="t"><b>${x.t}</b><small>${x.sub}</small></span></button></li>`).join('');
+  $('lnTopProg').innerHTML=`<span><b style="width:${done.length/nS*100}%"></b></span>${done.length} of ${nS} done`;
+  $('lnNum').textContent=learnStep+1;$('lnKicker').textContent=`STEP ${learnStep+1} OF ${nS} · ${st.k}`;$('lnStepTitle').textContent=st.t;$('lnText').textContent=st.text;
+  $('lnPats').innerHTML=(st.pats||[]).map((p,i)=>(i?`<span class="gd-arrow" aria-hidden="true">${p[2]==='goal'?'→':(learnSel==='2'?'or':'→')}</span>`:'')+`<div class="gd-pat${p[2]==='goal'?' goal':''}"${p[2]===1?' style="border-color:var(--accent);box-shadow:0 0 18px -6px var(--accent)"':''}>${patSvg(p[1])}<span>${p[0]}</span></div>`).join('');
+  $('lnHow').innerHTML=st.how;if(lnAlgIdx>=st.algs.length)lnAlgIdx=0;
+  $('lnAlgPick').innerHTML=st.algs.length>1?st.algs.map((a,i)=>`<button data-ln-alg="${i}" aria-pressed="${i===lnAlgIdx}">${a[0]}</button>`).join(''):'';
+  $('lnMovesLabel').textContent=st.algs.length>1?'The moves':'The moves · '+st.algs[0][0];
+  $('lnPrev').textContent=learnStep?'← '+G.steps[learnStep-1].t:'← All puzzles';
+  $('lnNext').textContent=learnStep<nS-1?'Got it · next: '+G.steps[learnStep+1].t+' →':'Got it · I solved it! ✓';
+  loadLnAlg();}
+function loadLnAlg(){const st=GUIDES[learnSel].steps[learnStep],alg=st.algs[lnAlgIdx][1],e=(ENG_FOR[learnSel]||(()=>E3))();
+  if(!lp)lp=makePlayer('ln3d','lnAlg',{reset:'lnReset',step:'lnStep',play:'lnPlay',speed:'lnSpeed'});
+  const toks=e.parse(alg);const start=e.apply(e.solved(),e.inv(toks));lp.load(start,'full',toks,'',e);lp.reveal();}
+function markDone(){const d=learnDone[learnSel]=learnDone[learnSel]||[];if(!d.includes(learnStep))d.push(learnStep);store.set('learn',learnDone);}
+$('view-learn').addEventListener('click',e=>{const t=e.target;
+  const o=t.closest('[data-ln-open]');if(o){learnSel=o.dataset.lnOpen;learnStep=Math.min((learnDone[learnSel]||[]).length,GUIDES[learnSel]?GUIDES[learnSel].steps.length-1:0);lnAlgIdx=0;renderLearn();window.scrollTo(0,0);return;}
+  if(t.closest('[data-ln-back]')||t.closest('#lnBack')){learnSel=null;renderLearn();return;}
+  const f=t.closest('[data-lnf]');if(f){learnFilter=f.dataset.lnf;renderLib();return;}
+  const s=t.closest('[data-ln-step]');if(s){learnStep=+s.dataset.lnStep;lnAlgIdx=0;renderGuide();return;}
+  const a=t.closest('[data-ln-alg]');if(a){lnAlgIdx=+a.dataset.lnAlg;renderGuide();return;}
+  if(t.closest('#lnPrev')){if(learnStep){learnStep--;lnAlgIdx=0;renderGuide();}else{learnSel=null;renderLearn();}return;}
+  if(t.closest('#lnNext')){markDone();const n=GUIDES[learnSel].steps.length;if(learnStep<n-1){learnStep++;lnAlgIdx=0;renderGuide();}else{toast('Nice! '+GUIDES[learnSel].title.replace('Solve','You can solve')+' now.');learnSel=null;renderLearn();}return;}});
+$('lnSearch').addEventListener('input',renderLib);
+
+function renderStreak(){const days=new Set();const k=t=>{const d=new Date(t);return d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate();};
+  for(const r of dlog)if(r.at)days.add(k(r.at));for(const n in solves)for(const r of solves[n]||[])if(r.at)days.add(k(r.at));
+  let n=0,d=new Date();if(!days.has(k(d)))d.setDate(d.getDate()-1);while(days.has(k(d))){n++;d.setDate(d.getDate()-1);}$('streakN').textContent=n;}
+renderSecs();loadCase();renderSession();renderTScore();renderStreak();
 </script>
