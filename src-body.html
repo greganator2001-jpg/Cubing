@@ -335,6 +335,8 @@ body.timing .rail,body.timing .secbar,body.timing #view-timer .side,body.timing 
 .ln-card .meta{font-size:.78rem;color:#6E7580}
 .ln-card .tag{position:absolute;top:10px;right:10px;font:700 .6rem var(--f-body);letter-spacing:.08em;color:#9AA1AD;background:#1F232B;padding:2px 6px;border-radius:4px}
 .ln-card .tag.soon{color:var(--warn);background:rgba(255,176,32,.1)}
+.ln-card .tag.sp{color:var(--accent-soft);background:rgba(47,107,255,.16)}
+.ln-card.speed{background:linear-gradient(160deg,rgba(47,107,255,.10),transparent 60%),var(--surface)}
 .ln-card .done{font-size:.78rem;font-weight:700;color:var(--good)}
 .dots{display:flex;gap:4px}.dots i{width:7px;height:7px;border-radius:50%;background:#2E323A}.dots i.on{background:var(--warn)}
 .ln-prog{display:flex;align-items:center;gap:8px;font-size:.78rem;font-weight:700;color:var(--accent-soft)}
@@ -418,7 +420,7 @@ body.timing .rail,body.timing .secbar,body.timing #view-timer .side,body.timing 
       <div id="lnSections" style="display:flex;flex-direction:column;gap:22px"></div>
     </div>
     <div id="lnGuide" hidden style="display:flex;flex-direction:column;gap:16px">
-      <div class="top-row"><button class="btn" id="lnBack">← All puzzles</button><span class="ln-prog" id="lnTopProg" style="min-width:180px"></span></div>
+      <div class="top-row"><button class="btn" id="lnBack">← All puzzles</button><div class="ln-filters" id="lnMode" role="group" aria-label="Method" hidden></div><span class="ln-prog" id="lnTopProg" style="min-width:180px"></span></div>
       <div class="gd">
         <nav class="gd-steps" aria-label="Steps"><span class="label" id="lnStepsTitle" style="padding:0 10px 6px">Steps</span><ol id="lnSteps"></ol><div class="gd-tip" id="lnTip"></div></nav>
         <div class="gd-main">
@@ -434,6 +436,7 @@ body.timing .rail,body.timing .secbar,body.timing #view-timer .side,body.timing 
               <div class="gd-algpick" id="lnAlgPick" role="group" aria-label="Which case"></div>
               <div class="gd-big"><div class="alg-line" id="lnAlg"></div></div>
               <p class="gd-how" id="lnHow"></p>
+              <button class="btn go" id="lnDrill" hidden style="align-self:flex-start"></button>
               <div class="gd-legend" id="lnLegend"><b>R</b><span>Turn the right side away from you</span><b>U</b><span>Turn the top to the left</span><b>F</b><span>Turn the front clockwise</span><b>'</b><span>Same face, the other way · 2 means twice</span></div>
             </div>
             <div class="viewer"><div class="cube3d" id="ln3d"></div><span class="drag-hint" id="lnDemoNote">Watch it</span>
@@ -1618,13 +1621,17 @@ const GUIDES={
 /*GUIDES*/
 Object.assign(GUIDES,GUIDES_MORE);GUIDES['3'].legend=LEG_CUBE;GUIDES['2'].legend=LEG_CUBE;GUIDES['3'].demo='3';GUIDES['2'].demo='2';
 const engFor=d=>d==='3'?E3:engN(+d);
+/*SPEED*/
+let learnMode='beg';
+const curGuide=()=>learnMode==='speed'&&GUIDES_SPEED[learnSel]?GUIDES_SPEED[learnSel]:GUIDES[learnSel];
+const doneKey=()=>learnSel+(learnMode==='speed'&&GUIDES_SPEED[learnSel]?':speed':'');
 let learnSel=null,learnStep=0,learnFilter='all',lnAlgIdx=0,lp=null;
 let learnDone=store.get('learn',{});
 const pzInfo=id=>PUZ.find(p=>p[0]===id);
 function dotsHtml(n){return '<span class="dots" aria-label="Difficulty '+n+' of 5">'+[0,1,2,3,4].map(i=>`<i class="${i<n?'on':''}"></i>`).join('')+'</span>';}
 function openLearn(id){learnSel=id;learnStep=0;const b=$('tab-learn');showTab(b);}
 function renderLearn(){
-  const g=learnSel&&GUIDES[learnSel];
+  const g=learnSel&&curGuide();
   $('lnLib').hidden=!!learnSel;$('lnGuide').hidden=!g;$('lnSoon').hidden=!(learnSel&&!g);
   if(!learnSel){renderLib();return;}
   if(!g){const p=pzInfo(learnSel)||[learnSel,learnSel];
@@ -1641,13 +1648,20 @@ function renderLib(){
     const tag=!G?'<span class="tag soon">SOON</span>':'';
     return `<button class="ln-card${G&&done&&done<G.steps.length?' started':''}" data-ln-open="${id}">${tag}${pzSvg(id)}<span class="nm">${name}</span>${dotsHtml(diff)}${foot}</button>`;};
   let html='';
+  const spItems=Object.keys(GUIDES_SPEED).map(id=>PUZ.find(p=>p[0]===id)).filter(p=>p&&(!q||p[1].toLowerCase().includes(q)||'speed'.includes(q)));
+  if(learnFilter==='all'&&spItems.length)html+=`<section class="ln-sec"><h2>Learn the speed method<small>What fast solvers use, once you can already solve it</small></h2><div class="ln-grid">${spItems.map(p=>{const id=p[0],G=GUIDES_SPEED[id],done=(learnDone[id+':speed']||[]).length;
+    const foot=done>=G.steps.length?'<span class="done">✓ Learned</span>':done?`<span class="ln-prog"><span><b style="width:${done/G.steps.length*100}%"></b></span>${done}/${G.steps.length}</span>`:`<span class="meta">${G.steps.length} steps</span>`;
+    return `<button class="ln-card speed${done&&done<G.steps.length?' started':''}" data-ln-open="${id}" data-ln-speed="1"><span class="tag sp">SPEED</span>${pzSvg(id)}<span class="nm">${G.title.split(' · ')[0]}</span><span class="meta">${p[1]}</span>${foot}</button>`;}).join('')}</div></section>`;
   for(const[k,title,sub,gs]of PZ_GROUPS){if(learnFilter!=='all'&&learnFilter!==k)continue;
     const items=PUZ.filter(p=>gs.includes(p[2])&&(!q||p[1].toLowerCase().includes(q)));if(!items.length)continue;
     html+=`<section class="ln-sec"><h2>${title}<small>${sub}</small></h2><div class="ln-grid">${items.map(card).join('')}</div></section>`;}
   $('lnSections').innerHTML=html||'<p class="ln-empty">No puzzles match that search.</p>';}
 function patSvg(cells){const n=Math.round(Math.sqrt(cells.length)),sz=60,c=sz/n;
   return `<svg width="${sz}" height="${sz}" viewBox="0 0 ${sz} ${sz}" aria-hidden="true">`+cells.map((col,k)=>`<rect x="${(k%n)*c+1.5}" y="${Math.floor(k/n)*c+1.5}" width="${c-3}" height="${c-3}" rx="4" fill="${col}"/>`).join('')+'</svg>';}
-function renderGuide(){const G=GUIDES[learnSel],st=G.steps[learnStep],done=learnDone[learnSel]||[],nS=G.steps.length;
+function renderGuide(){const G=curGuide(),st=G.steps[learnStep],done=learnDone[doneKey()]||[],nS=G.steps.length;
+  const hasSp=!!GUIDES_SPEED[learnSel];$('lnMode').hidden=!hasSp;
+  if(hasSp)$('lnMode').innerHTML=`<button data-ln-mode="beg" aria-pressed="${learnMode!=='speed'}">Beginner method</button><button data-ln-mode="speed" aria-pressed="${learnMode==='speed'}">Speed method</button>`;
+  $('lnDrill').hidden=!st.drill;if(st.drill)$('lnDrill').textContent='Practice in Drill: '+st.drill[0]+'x'+st.drill[0]+' '+SEC_LABEL[st.drill[1]]+' →';
   $('lnStepsTitle').textContent=G.title+' · '+nS+' steps';$('lnTip').textContent=G.tip;
   $('lnSteps').innerHTML=G.steps.map((x,i)=>`<li><button data-ln-step="${i}" class="${done.includes(i)?'ok':''}" ${i===learnStep?'aria-current="step"':''}><span class="dot">${done.includes(i)&&i!==learnStep?'✓':i+1}</span><span class="t"><b>${x.t}</b><small>${x.sub}</small></span></button></li>`).join('');
   $('lnTopProg').innerHTML=`<span><b style="width:${done.length/nS*100}%"></b></span>${done.length} of ${nS} done`;
@@ -1661,7 +1675,7 @@ function renderGuide(){const G=GUIDES[learnSel],st=G.steps[learnStep],done=learn
   $('lnPrev').textContent=learnStep?'← '+G.steps[learnStep-1].t:'← All puzzles';
   $('lnNext').textContent=learnStep<nS-1?'Got it · next: '+G.steps[learnStep+1].t+' →':'Got it · I solved it! ✓';
   loadLnAlg();}
-function loadLnAlg(){const G=GUIDES[learnSel],st=G.steps[learnStep];
+function loadLnAlg(){const G=curGuide(),st=G.steps[learnStep];
   if(lp&&(!G.demo||!st.algs.length))lp.load(E3.solved(),'full',[],'',E3);
   $('lnAlg').parentElement.hidden=!st.algs.length;
   if(!st.algs.length){$('lnAlg').className='alg-line';$('lnAlg').innerHTML='';return;}
@@ -1670,15 +1684,17 @@ function loadLnAlg(){const G=GUIDES[learnSel],st=G.steps[learnStep];
   const e=engFor(G.demo);
   if(!lp)lp=makePlayer('ln3d','lnAlg',{reset:'lnReset',step:'lnStep',play:'lnPlay',speed:'lnSpeed'});
   const toks=e.parse(alg);const start=e.apply(e.solved(),e.inv(toks));lp.load(start,'full',toks,'',e);lp.reveal();}
-function markDone(){const d=learnDone[learnSel]=learnDone[learnSel]||[];if(!d.includes(learnStep))d.push(learnStep);store.set('learn',learnDone);}
+function markDone(){const k=doneKey();const d=learnDone[k]=learnDone[k]||[];if(!d.includes(learnStep))d.push(learnStep);store.set('learn',learnDone);}
 $('view-learn').addEventListener('click',e=>{const t=e.target;
-  const o=t.closest('[data-ln-open]');if(o){learnSel=o.dataset.lnOpen;learnStep=Math.min((learnDone[learnSel]||[]).length,GUIDES[learnSel]?GUIDES[learnSel].steps.length-1:0);lnAlgIdx=0;renderLearn();window.scrollTo(0,0);return;}
+  const o=t.closest('[data-ln-open]');if(o){learnSel=o.dataset.lnOpen;learnMode=o.dataset.lnSpeed?'speed':'beg';const G=curGuide();learnStep=Math.min((learnDone[doneKey()]||[]).length,G?G.steps.length-1:0);lnAlgIdx=0;renderLearn();window.scrollTo(0,0);return;}
+  const md=t.closest('[data-ln-mode]');if(md){learnMode=md.dataset.lnMode;learnStep=Math.min((learnDone[doneKey()]||[]).length,curGuide().steps.length-1);lnAlgIdx=0;renderGuide();return;}
+  if(t.closest('#lnDrill')){const st=curGuide().steps[learnStep];if(!st.drill)return;const[N,sec]=st.drill;(secOn[N]=secOn[N]||{})[sec]=true;store.set('secs',secOn);setCube(N);$('tab-drill').click();return;}
   if(t.closest('[data-ln-back]')||t.closest('#lnBack')){learnSel=null;renderLearn();return;}
   const f=t.closest('[data-lnf]');if(f){learnFilter=f.dataset.lnf;renderLib();return;}
   const s=t.closest('[data-ln-step]');if(s){learnStep=+s.dataset.lnStep;lnAlgIdx=0;renderGuide();return;}
   const a=t.closest('[data-ln-alg]');if(a){lnAlgIdx=+a.dataset.lnAlg;renderGuide();return;}
   if(t.closest('#lnPrev')){if(learnStep){learnStep--;lnAlgIdx=0;renderGuide();}else{learnSel=null;renderLearn();}return;}
-  if(t.closest('#lnNext')){markDone();const n=GUIDES[learnSel].steps.length;if(learnStep<n-1){learnStep++;lnAlgIdx=0;renderGuide();}else{toast('Nice! '+GUIDES[learnSel].title.replace('Solve','You can solve')+' now.');learnSel=null;renderLearn();}return;}});
+  if(t.closest('#lnNext')){markDone();const G=curGuide(),n=G.steps.length;if(learnStep<n-1){learnStep++;lnAlgIdx=0;renderGuide();}else{toast(learnMode==='speed'?'Nice! Now drill it until it\'s automatic.':'Nice! '+G.title.replace('Solve','You can solve')+' now.');learnSel=null;renderLearn();}return;}});
 $('lnSearch').addEventListener('input',renderLib);
 
 function renderStreak(){const days=new Set();const k=t=>{const d=new Date(t);return d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate();};

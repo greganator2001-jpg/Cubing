@@ -349,6 +349,8 @@ body.timing .rail,body.timing .secbar,body.timing #view-timer .side,body.timing 
 .ln-card .meta{font-size:.78rem;color:#6E7580}
 .ln-card .tag{position:absolute;top:10px;right:10px;font:700 .6rem var(--f-body);letter-spacing:.08em;color:#9AA1AD;background:#1F232B;padding:2px 6px;border-radius:4px}
 .ln-card .tag.soon{color:var(--warn);background:rgba(255,176,32,.1)}
+.ln-card .tag.sp{color:var(--accent-soft);background:rgba(47,107,255,.16)}
+.ln-card.speed{background:linear-gradient(160deg,rgba(47,107,255,.10),transparent 60%),var(--surface)}
 .ln-card .done{font-size:.78rem;font-weight:700;color:var(--good)}
 .dots{display:flex;gap:4px}.dots i{width:7px;height:7px;border-radius:50%;background:#2E323A}.dots i.on{background:var(--warn)}
 .ln-prog{display:flex;align-items:center;gap:8px;font-size:.78rem;font-weight:700;color:var(--accent-soft)}
@@ -440,7 +442,7 @@ html,body{margin:0}
       <div id="lnSections" style="display:flex;flex-direction:column;gap:22px"></div>
     </div>
     <div id="lnGuide" hidden style="display:flex;flex-direction:column;gap:16px">
-      <div class="top-row"><button class="btn" id="lnBack">← All puzzles</button><span class="ln-prog" id="lnTopProg" style="min-width:180px"></span></div>
+      <div class="top-row"><button class="btn" id="lnBack">← All puzzles</button><div class="ln-filters" id="lnMode" role="group" aria-label="Method" hidden></div><span class="ln-prog" id="lnTopProg" style="min-width:180px"></span></div>
       <div class="gd">
         <nav class="gd-steps" aria-label="Steps"><span class="label" id="lnStepsTitle" style="padding:0 10px 6px">Steps</span><ol id="lnSteps"></ol><div class="gd-tip" id="lnTip"></div></nav>
         <div class="gd-main">
@@ -456,6 +458,7 @@ html,body{margin:0}
               <div class="gd-algpick" id="lnAlgPick" role="group" aria-label="Which case"></div>
               <div class="gd-big"><div class="alg-line" id="lnAlg"></div></div>
               <p class="gd-how" id="lnHow"></p>
+              <button class="btn go" id="lnDrill" hidden style="align-self:flex-start"></button>
               <div class="gd-legend" id="lnLegend"><b>R</b><span>Turn the right side away from you</span><b>U</b><span>Turn the top to the left</span><b>F</b><span>Turn the front clockwise</span><b>'</b><span>Same face, the other way · 2 means twice</span></div>
             </div>
             <div class="viewer"><div class="cube3d" id="ln3d"></div><span class="drag-hint" id="lnDemoNote">Watch it</span>
@@ -1895,13 +1898,50 @@ const GUIDES_MORE={
 
 Object.assign(GUIDES,GUIDES_MORE);GUIDES['3'].legend=LEG_CUBE;GUIDES['2'].legend=LEG_CUBE;GUIDES['3'].demo='3';GUIDES['2'].demo='2';
 const engFor=d=>d==='3'?E3:engN(+d);
+// ---- Speed methods (Learn tab → "Speed method") ----
+// drill:[N,section] adds a "Practice in Drill" button that switches to that cube and turns the set on.
+const SP_YAU_TIP='Look ahead: while you finish one piece, find the next one so you never stop turning.';
+const G_SPEED_BIG=(N)=>{
+  const odd=N%2===1,big=N>5;
+  const steps=[
+   {t:'First two centers',sub:'Opposite centers, in bars',k:'CENTERS',text:`Build the first center, then the one opposite it. Make whole ${N-2}-piece bars and slide them in with one wide turn instead of placing single pieces.`,
+    how:`Aim for bars, not single pieces: a ${N-2}-long bar goes in with Rw U Rw'-style moves (one wide turn in, one out). Do this on the left and right so the next steps happen in front of you.`,algs:[['Slide a bar in',"Rw U Rw'"]],drill:[N,'centers']},
+   {t:'Three cross edges',sub:'Yau'+(odd?'5':'')+' trick',k:'EDGES',text:`Before the last four centers, pair three edges of your cross color and put them on the first center (now on the bottom). The last four centers are still free to move, so pairing is easy here.`,
+    how:'Pair each cross edge with the slice trick, then drop it into place on the bottom. Leave one cross slot open on the left side.',algs:[['Pair an edge',"Uw' R U R' F R' F' R Uw"]]},
+   {t:'Last four centers',sub:'R, U and wide turns',k:'CENTERS',text:'Finish the four side centers using only turns that keep your three cross edges in place: R, U and wide R/L.',
+    how:big?'Build bars again and use the commutators from the Centers set for the last few pieces.':'Use Rw/Lw with U to build the last centers; the X-center commutator fixes single pieces.',algs:[['X-center swap',"2R U 2L' U' 2R' U 2L U'"]],drill:[N,'centers']},
+   {t:'Last cross edge',sub:'Finish the cross',k:'EDGES',text:'Pair and place the fourth cross edge. You now have a full cross on the bottom and every center done.',how:'Same pairing trick as step 2.',algs:[['Pair an edge',"Uw' R U R' F R' F' R Uw"]]},
+   {t:odd?'Pair the rest (free slice)':'3-2-3 edge pairing',sub:odd?'8 edges':'8 edges',k:'EDGES',text:odd?'Pair the remaining eight edges with a free slice: keep one wide slice open and pair edges on the left and right while the slice is out, then close it once you have stored enough paired edges.':'Hold three unpaired pieces on the left, two in front-right/back-right, three on the right. Use one Uw/Dw slice to pair, swap finished edges out with R U R\' F R\' F\' R, and slice back.',
+    how:'Keep paired edges in the top or bottom where the slice doesn\'t touch them. With practice you pair two edges per slice.'+(big?' Do the outer pieces first, then the inner ones with 3Uw.':''),algs:[['Pair an edge',"Uw' R U R' F R' F' R Uw"]].concat(big?[['Inner ring',"3Uw' R U R' F R' F' R 3Uw"]]:[])},
+   {t:odd?'Last two edges':'Last edges',sub:'Parity fix',k:'EDGES',text:'The last two edges sometimes show one edge flipped. Fix it with the flipped-edge alg instead of re-pairing.',how:'Bad edge at the front of the top layer, then the moves.',algs:[['Fix flipped edge',"2R2 B2 U2 2L U2 2R' U2 2R U2 F2 2R F2 2L' B2 2R2"]],drill:[N===7||N===9?5:N,'parity']},
+   {t:'3x3 stage with CFOP',sub:'F2L, OLL, PLL',k:'3x3 STAGE',text:'Your cross is already done, so go straight into F2L, then OLL and PLL like a 3x3 speed solve.',how:'Practice F2L, OLL and PLL in Drill on the 3x3 or on this cube (they are in the 3x3 stage sets).',algs:[['F2L example',"U R U' R'"]],drill:[3,'f2l']}];
+  if(!odd)steps.push({t:'Parity',sub:'OLL and PLL parity',k:'LAST STEP',text:'Even cubes can show a flipped edge at OLL or two swapped edges at PLL. Learn to spot them during the 3x3 stage and do the fix right away.',
+    how:'<b>OLL parity:</b> one edge flipped. <b>PLL parity:</b> two edges swapped. Both are in the Parity set.',algs:[['OLL parity',N===4?"2R2 B2 U2 2L U2 2R' U2 2R U2 F2 2R F2 2L' B2 2R2":"3R2 B2 U2 3L U2 3R' U2 3R U2 F2 3R F2 3L' B2 3R2"],['PLL parity',N===4?"2R2 U2 2R2 Uw2 2R2 Uw2":"3R2 U2 3R2 3Uw2 3R2 3Uw2"]],drill:[N,'parity']});
+  return {title:(N===4?'Yau method':N===5?'Yau5 method':'Speed reduction')+' · '+N+'x'+N,demo:String(N),legend:LEG_BIG,
+    tip:`The speed method most fast ${N}x${N} solvers use: centers in bars, the cross early, fast edge pairing, then CFOP. ${SP_YAU_TIP}`,steps};};
+const GUIDES_SPEED={
+ '2':{title:'CLL method · 2x2',demo:'2',legend:LEG_CUBE,tip:'Solve one face, then finish the whole cube with one CLL algorithm. Two looks and done: most good 2x2 solvers use CLL or something like it.',steps:[
+  {t:'First face, planned',sub:'In inspection',k:'FIRST LAYER',text:'During the 15 seconds of inspection, plan the whole first face (4-6 moves) so you can do it without stopping.',how:'Pick the side that is easiest, not always white. The sides of the layer must match each other.',algs:[['Corner trick',"R U R' U'"]]},
+  {t:'Recognize the CLL',sub:'Top shape + side colors',k:'LAST LAYER',text:'Look at the top: which of the 7 yellow shapes it is (like OLL), then the side colors to tell the 6 cases of that shape apart.',how:'There are 42 CLL cases. Learn them shape by shape, starting with Sune and Anti-Sune.',algs:[['Sune 1',"R' U2 R U R' U R"]],drill:[2,'cll']},
+  {t:'One alg to finish',sub:'Then AUF',k:'LAST STEP',text:'Do the CLL and the cube is solved, apart from maybe one last U turn.',how:'Drill the CLL set until recognition takes under a second.',algs:[['Oriented 1',"R2 F2 R' U' R F2 R' U R'"]],drill:[2,'cll']}]},
+ '3':{title:'CFOP · 3x3',demo:'3',legend:LEG_CUBE,tip:'CFOP (Fridrich) is what almost every fast 3x3 solver uses: Cross, F2L, OLL, PLL. Learn it in this order, and use the 2-look versions first.',steps:[
+  {t:'Cross on the bottom',sub:'Plan it in inspection',k:'CROSS',text:'Solve the white cross with white on the bottom, planned during inspection. Aim for 8 moves or fewer.',how:'Practice planning the full cross before you turn. Solving it on the bottom saves a cube rotation and lets you see F2L pieces.',algs:[['Example',"F2"]]},
+  {t:'F2L',sub:'41 cases',k:'F2L',text:'Solve the first two layers together: pair a corner with its edge in the top layer, then insert the pair into its slot in one go.',how:'Start intuitively, then learn the 41 cases. The basic inserts below show the idea.',algs:[['Basic insert',"U R U' R'"],['Right pair',"R U R'"],['F2L 1',"R U2 R' U' R U R'"]],drill:[3,'f2l']},
+  {t:'2-look OLL',sub:'Then full OLL',k:'OLL',text:'Make the top yellow in two steps: orient the edges (yellow cross), then orient the corners. Later, learn all 57 OLLs to do it in one step.',how:'Edges: F R U R\' U\' F\' and its wide version. Corners: the 7 OCLL cases like Sune.',algs:[['Edges',"F R U R' U' F'"],['Sune',"R U R' U R U2 R'"]],drill:[3,'oll']},
+  {t:'PLL',sub:'21 cases',k:'PLL',text:'Move the last layer pieces into place with one algorithm. Start with 2-look PLL (corners, then edges), then learn all 21.',how:'T perm is a great first PLL: it swaps two corners and two edges.',algs:[['T perm',"R U R' U' R' F R2 U' R' U' R U R' F'"]],drill:[3,'pll']},
+  {t:'Speed habits',sub:'Look ahead + finger tricks',k:'GETTING FASTER',text:'Turn slower and stop pausing. While you insert one F2L pair, find the next one. Use your fingers (index flicks for U) instead of regripping.',how:'Use the Timer with the Splits option to see which step is slowest, and the Drill to drill only the cases you\'re slow on.',algs:[['Finger trick drill',"R U R' U'"]]}]},
+ '4':G_SPEED_BIG(4),'5':G_SPEED_BIG(5),'6':G_SPEED_BIG(6),'7':G_SPEED_BIG(7),'9':G_SPEED_BIG(9)};
+
+let learnMode='beg';
+const curGuide=()=>learnMode==='speed'&&GUIDES_SPEED[learnSel]?GUIDES_SPEED[learnSel]:GUIDES[learnSel];
+const doneKey=()=>learnSel+(learnMode==='speed'&&GUIDES_SPEED[learnSel]?':speed':'');
 let learnSel=null,learnStep=0,learnFilter='all',lnAlgIdx=0,lp=null;
 let learnDone=store.get('learn',{});
 const pzInfo=id=>PUZ.find(p=>p[0]===id);
 function dotsHtml(n){return '<span class="dots" aria-label="Difficulty '+n+' of 5">'+[0,1,2,3,4].map(i=>`<i class="${i<n?'on':''}"></i>`).join('')+'</span>';}
 function openLearn(id){learnSel=id;learnStep=0;const b=$('tab-learn');showTab(b);}
 function renderLearn(){
-  const g=learnSel&&GUIDES[learnSel];
+  const g=learnSel&&curGuide();
   $('lnLib').hidden=!!learnSel;$('lnGuide').hidden=!g;$('lnSoon').hidden=!(learnSel&&!g);
   if(!learnSel){renderLib();return;}
   if(!g){const p=pzInfo(learnSel)||[learnSel,learnSel];
@@ -1918,13 +1958,20 @@ function renderLib(){
     const tag=!G?'<span class="tag soon">SOON</span>':'';
     return `<button class="ln-card${G&&done&&done<G.steps.length?' started':''}" data-ln-open="${id}">${tag}${pzSvg(id)}<span class="nm">${name}</span>${dotsHtml(diff)}${foot}</button>`;};
   let html='';
+  const spItems=Object.keys(GUIDES_SPEED).map(id=>PUZ.find(p=>p[0]===id)).filter(p=>p&&(!q||p[1].toLowerCase().includes(q)||'speed'.includes(q)));
+  if(learnFilter==='all'&&spItems.length)html+=`<section class="ln-sec"><h2>Learn the speed method<small>What fast solvers use, once you can already solve it</small></h2><div class="ln-grid">${spItems.map(p=>{const id=p[0],G=GUIDES_SPEED[id],done=(learnDone[id+':speed']||[]).length;
+    const foot=done>=G.steps.length?'<span class="done">✓ Learned</span>':done?`<span class="ln-prog"><span><b style="width:${done/G.steps.length*100}%"></b></span>${done}/${G.steps.length}</span>`:`<span class="meta">${G.steps.length} steps</span>`;
+    return `<button class="ln-card speed${done&&done<G.steps.length?' started':''}" data-ln-open="${id}" data-ln-speed="1"><span class="tag sp">SPEED</span>${pzSvg(id)}<span class="nm">${G.title.split(' · ')[0]}</span><span class="meta">${p[1]}</span>${foot}</button>`;}).join('')}</div></section>`;
   for(const[k,title,sub,gs]of PZ_GROUPS){if(learnFilter!=='all'&&learnFilter!==k)continue;
     const items=PUZ.filter(p=>gs.includes(p[2])&&(!q||p[1].toLowerCase().includes(q)));if(!items.length)continue;
     html+=`<section class="ln-sec"><h2>${title}<small>${sub}</small></h2><div class="ln-grid">${items.map(card).join('')}</div></section>`;}
   $('lnSections').innerHTML=html||'<p class="ln-empty">No puzzles match that search.</p>';}
 function patSvg(cells){const n=Math.round(Math.sqrt(cells.length)),sz=60,c=sz/n;
   return `<svg width="${sz}" height="${sz}" viewBox="0 0 ${sz} ${sz}" aria-hidden="true">`+cells.map((col,k)=>`<rect x="${(k%n)*c+1.5}" y="${Math.floor(k/n)*c+1.5}" width="${c-3}" height="${c-3}" rx="4" fill="${col}"/>`).join('')+'</svg>';}
-function renderGuide(){const G=GUIDES[learnSel],st=G.steps[learnStep],done=learnDone[learnSel]||[],nS=G.steps.length;
+function renderGuide(){const G=curGuide(),st=G.steps[learnStep],done=learnDone[doneKey()]||[],nS=G.steps.length;
+  const hasSp=!!GUIDES_SPEED[learnSel];$('lnMode').hidden=!hasSp;
+  if(hasSp)$('lnMode').innerHTML=`<button data-ln-mode="beg" aria-pressed="${learnMode!=='speed'}">Beginner method</button><button data-ln-mode="speed" aria-pressed="${learnMode==='speed'}">Speed method</button>`;
+  $('lnDrill').hidden=!st.drill;if(st.drill)$('lnDrill').textContent='Practice in Drill: '+st.drill[0]+'x'+st.drill[0]+' '+SEC_LABEL[st.drill[1]]+' →';
   $('lnStepsTitle').textContent=G.title+' · '+nS+' steps';$('lnTip').textContent=G.tip;
   $('lnSteps').innerHTML=G.steps.map((x,i)=>`<li><button data-ln-step="${i}" class="${done.includes(i)?'ok':''}" ${i===learnStep?'aria-current="step"':''}><span class="dot">${done.includes(i)&&i!==learnStep?'✓':i+1}</span><span class="t"><b>${x.t}</b><small>${x.sub}</small></span></button></li>`).join('');
   $('lnTopProg').innerHTML=`<span><b style="width:${done.length/nS*100}%"></b></span>${done.length} of ${nS} done`;
@@ -1938,7 +1985,7 @@ function renderGuide(){const G=GUIDES[learnSel],st=G.steps[learnStep],done=learn
   $('lnPrev').textContent=learnStep?'← '+G.steps[learnStep-1].t:'← All puzzles';
   $('lnNext').textContent=learnStep<nS-1?'Got it · next: '+G.steps[learnStep+1].t+' →':'Got it · I solved it! ✓';
   loadLnAlg();}
-function loadLnAlg(){const G=GUIDES[learnSel],st=G.steps[learnStep];
+function loadLnAlg(){const G=curGuide(),st=G.steps[learnStep];
   if(lp&&(!G.demo||!st.algs.length))lp.load(E3.solved(),'full',[],'',E3);
   $('lnAlg').parentElement.hidden=!st.algs.length;
   if(!st.algs.length){$('lnAlg').className='alg-line';$('lnAlg').innerHTML='';return;}
@@ -1947,15 +1994,17 @@ function loadLnAlg(){const G=GUIDES[learnSel],st=G.steps[learnStep];
   const e=engFor(G.demo);
   if(!lp)lp=makePlayer('ln3d','lnAlg',{reset:'lnReset',step:'lnStep',play:'lnPlay',speed:'lnSpeed'});
   const toks=e.parse(alg);const start=e.apply(e.solved(),e.inv(toks));lp.load(start,'full',toks,'',e);lp.reveal();}
-function markDone(){const d=learnDone[learnSel]=learnDone[learnSel]||[];if(!d.includes(learnStep))d.push(learnStep);store.set('learn',learnDone);}
+function markDone(){const k=doneKey();const d=learnDone[k]=learnDone[k]||[];if(!d.includes(learnStep))d.push(learnStep);store.set('learn',learnDone);}
 $('view-learn').addEventListener('click',e=>{const t=e.target;
-  const o=t.closest('[data-ln-open]');if(o){learnSel=o.dataset.lnOpen;learnStep=Math.min((learnDone[learnSel]||[]).length,GUIDES[learnSel]?GUIDES[learnSel].steps.length-1:0);lnAlgIdx=0;renderLearn();window.scrollTo(0,0);return;}
+  const o=t.closest('[data-ln-open]');if(o){learnSel=o.dataset.lnOpen;learnMode=o.dataset.lnSpeed?'speed':'beg';const G=curGuide();learnStep=Math.min((learnDone[doneKey()]||[]).length,G?G.steps.length-1:0);lnAlgIdx=0;renderLearn();window.scrollTo(0,0);return;}
+  const md=t.closest('[data-ln-mode]');if(md){learnMode=md.dataset.lnMode;learnStep=Math.min((learnDone[doneKey()]||[]).length,curGuide().steps.length-1);lnAlgIdx=0;renderGuide();return;}
+  if(t.closest('#lnDrill')){const st=curGuide().steps[learnStep];if(!st.drill)return;const[N,sec]=st.drill;(secOn[N]=secOn[N]||{})[sec]=true;store.set('secs',secOn);setCube(N);$('tab-drill').click();return;}
   if(t.closest('[data-ln-back]')||t.closest('#lnBack')){learnSel=null;renderLearn();return;}
   const f=t.closest('[data-lnf]');if(f){learnFilter=f.dataset.lnf;renderLib();return;}
   const s=t.closest('[data-ln-step]');if(s){learnStep=+s.dataset.lnStep;lnAlgIdx=0;renderGuide();return;}
   const a=t.closest('[data-ln-alg]');if(a){lnAlgIdx=+a.dataset.lnAlg;renderGuide();return;}
   if(t.closest('#lnPrev')){if(learnStep){learnStep--;lnAlgIdx=0;renderGuide();}else{learnSel=null;renderLearn();}return;}
-  if(t.closest('#lnNext')){markDone();const n=GUIDES[learnSel].steps.length;if(learnStep<n-1){learnStep++;lnAlgIdx=0;renderGuide();}else{toast('Nice! '+GUIDES[learnSel].title.replace('Solve','You can solve')+' now.');learnSel=null;renderLearn();}return;}});
+  if(t.closest('#lnNext')){markDone();const G=curGuide(),n=G.steps.length;if(learnStep<n-1){learnStep++;lnAlgIdx=0;renderGuide();}else{toast(learnMode==='speed'?'Nice! Now drill it until it\'s automatic.':'Nice! '+G.title.replace('Solve','You can solve')+' now.');learnSel=null;renderLearn();}return;}});
 $('lnSearch').addEventListener('input',renderLib);
 
 function renderStreak(){const days=new Set();const k=t=>{const d=new Date(t);return d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate();};
