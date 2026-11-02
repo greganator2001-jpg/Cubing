@@ -73,6 +73,10 @@ class PolyView{
   view(){this.root.rotation.set(this.pitch,this.yaw,0,'XYZ');this.dirty=true;}
   center(h){return h.userData.c.clone().applyMatrix4(h.matrix);}
   parse(alg){return alg.replace(/[()]/g,' ').trim().split(/\s+/).filter(Boolean).map(t=>{const m=/^([A-Za-z]+)(\d*)('?)$/.exec(t);if(!m||!this.moves[m[1]])return null;let k=m[2]?+m[2]:1;if(m[3])k=-k;return[m[1],k];}).filter(Boolean);}
+  // dim every sticker that is already home, so the ones the demo moves stand out
+  setFocus(on){const any=this.stickers.some(h=>this.center(h).distanceTo(h.userData.c)>1e-3);
+    for(const h of this.stickers){const m=h.children[1].material;if(!h.userData.col)h.userData.col=m.color.clone();
+      const moved=this.center(h).distanceTo(h.userData.c)>1e-3;m.color.copy(h.userData.col);if(on&&any&&!moved){const o=m.color.clone(),l=o.r*.3+o.g*.59+o.b*.11;m.color.setRGB(l,l,l).lerp(o,.22).multiplyScalar(.3);}}this.dirty=true;}
   reset(){this.stop();this.stickers.forEach((h,i)=>{h.matrix.identity();h.matrix.decompose(h.position,h.quaternion,h.scale);});this.dirty=true;}
   applyNow(toks){for(const t of toks)this.turn(t,1);this.dirty=true;}
   turn([name,k],frac){const mv=this.moves[name];const sel=this.stickers.filter(h=>this.center(h).dot(mv.axis)>mv.cut);const q=new THREE.Quaternion().setFromAxisAngle(mv.axis,mv.ang*k*frac);

@@ -126,6 +126,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 .cube3d{position:relative;z-index:1;height:340px;width:100%;cursor:grab;touch-action:none}
 .cube3d:active{cursor:grabbing}
 .cube3d canvas{display:block;width:100%!important;height:100%!important}
+.viewer-bar .focus-t[aria-pressed]{background:var(--sunk);color:var(--muted);border-color:var(--line)}.viewer-bar .focus-t[aria-pressed="true"]{background:rgba(47,107,255,.16);border-color:var(--accent);color:#fff}
 .viewer .drag-hint{position:absolute;z-index:2;top:14px;left:16px;font:700 .7rem var(--f-body);letter-spacing:.12em;text-transform:uppercase;color:var(--accent-soft);pointer-events:none}
 .viewer-bar{position:relative;z-index:2;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;padding:6px 14px 16px}
 .viewer-bar .speed{display:flex;align-items:center;gap:6px;font-size:.8rem;color:var(--muted)}
@@ -483,10 +484,10 @@ html,body{margin:0}
               <button class="btn go" id="lnDrill" hidden style="align-self:flex-start"></button>
               <div class="gd-legend" id="lnLegend"><b>R</b><span>Turn the right side away from you</span><b>U</b><span>Turn the top to the left</span><b>F</b><span>Turn the front clockwise</span><b>'</b><span>Same face, the other way · 2 means twice</span></div>
             </div>
-            <div class="viewer" id="lnPolyBox" hidden><div class="cube3d" id="lnPoly"></div><span class="drag-hint">Watch it</span>
-              <div class="viewer-bar"><button class="btn" id="lpReset">Reset</button><button class="btn" id="lpStep">Step</button><button class="btn primary" id="lpPlay">▶ Show me</button></div></div>
+            <div class="viewer" id="lnPolyBox" hidden><div class="cube3d" id="lnPoly"></div><span class="drag-hint" id="lpNote">Watch it</span>
+              <div class="viewer-bar"><button class="btn" id="lpReset">Reset</button><button class="btn" id="lpStep">Step</button><button class="btn primary" id="lpPlay">▶ Show me</button><button class="btn focus-t" data-focus aria-pressed="true" title="Dim the pieces this step leaves alone">◐ Focus</button></div></div>
             <div class="viewer" id="lnCubeBox"><div class="cube3d" id="ln3d"></div><span class="drag-hint" id="lnDemoNote">Watch it</span>
-              <div class="viewer-bar"><button class="btn" id="lnReset">Reset</button><button class="btn" id="lnStep">Step</button><button class="btn primary" id="lnPlay">▶ Show me</button>
+              <div class="viewer-bar"><button class="btn" id="lnReset">Reset</button><button class="btn" id="lnStep">Step</button><button class="btn primary" id="lnPlay">▶ Show me</button><button class="btn focus-t" data-focus aria-pressed="true" title="Dim the pieces this step leaves alone">◐ Focus</button>
                 <label class="speed" for="lnSpeed" hidden>Speed <input type="range" id="lnSpeed" min="120" max="900" value="520" style="direction:rtl"></label></div></div>
           </div>
           <div class="gd-nav"><button class="btn" id="lnPrev"></button><button class="btn go" id="lnNext"></button></div>
@@ -996,6 +997,10 @@ class PolyView{
   view(){this.root.rotation.set(this.pitch,this.yaw,0,'XYZ');this.dirty=true;}
   center(h){return h.userData.c.clone().applyMatrix4(h.matrix);}
   parse(alg){return alg.replace(/[()]/g,' ').trim().split(/\s+/).filter(Boolean).map(t=>{const m=/^([A-Za-z]+)(\d*)('?)$/.exec(t);if(!m||!this.moves[m[1]])return null;let k=m[2]?+m[2]:1;if(m[3])k=-k;return[m[1],k];}).filter(Boolean);}
+  // dim every sticker that is already home, so the ones the demo moves stand out
+  setFocus(on){const any=this.stickers.some(h=>this.center(h).distanceTo(h.userData.c)>1e-3);
+    for(const h of this.stickers){const m=h.children[1].material;if(!h.userData.col)h.userData.col=m.color.clone();
+      const moved=this.center(h).distanceTo(h.userData.c)>1e-3;m.color.copy(h.userData.col);if(on&&any&&!moved){const o=m.color.clone(),l=o.r*.3+o.g*.59+o.b*.11;m.color.setRGB(l,l,l).lerp(o,.22).multiplyScalar(.3);}}this.dirty=true;}
   reset(){this.stop();this.stickers.forEach((h,i)=>{h.matrix.identity();h.matrix.decompose(h.position,h.quaternion,h.scale);});this.dirty=true;}
   applyNow(toks){for(const t of toks)this.turn(t,1);this.dirty=true;}
   turn([name,k],frac){const mv=this.moves[name];const sel=this.stickers.filter(h=>this.center(h).dot(mv.axis)>mv.cut);const q=new THREE.Quaternion().setFromAxisAngle(mv.axis,mv.ang*k*frac);
@@ -1290,6 +1295,10 @@ function geos(){if(GEOS[look])return GEOS[look];const less=look==='stickerless';
   return GEOS[look]={box:new THREE.BoxGeometry(.97,.97,.97),st:new THREE.ShapeGeometry(s),body:new THREE.MeshLambertMaterial({color:less?0x2b2d2a:0x121212})};}
 const mat=hex=>MAT[hex]||(MAT[hex]=new THREE.MeshLambertMaterial({color:hex}));
 const Z=()=>new THREE.Vector3(0,0,1);
+// pieces a demo leaves alone are drawn dark, so the ones it moves stand out
+const DIMC={};function dimCol(c){const k=String(c);if(DIMC[k])return DIMC[k];const o=new THREE.Color(c),l=o.r*.3+o.g*.59+o.b*.11;return DIMC[k]='#'+new THREE.Color(l,l,l).lerp(o,.22).multiplyScalar(.3).getHexString();}
+// every piece that is out of place (or twisted) in this state, by its home position
+function movedPieces(st,e){const home={};for(const s of e.solved())home[s.p.join()+'|'+s.n.join()]=s.c;const out=new Set();for(const s of st)if(home[s.p.join()+'|'+s.n.join()]!==s.c)out.add(s.h);return out;}
 class Cube3D{
   constructor(el,interactive=true){
     this.el=el;this.interactive=interactive;
@@ -1317,7 +1326,7 @@ class Cube3D{
     const by={};for(const s of this.state){const k=s.p.join(',');(by[k]=by[k]||[]).push(s);}
     for(const k in by){const p=k.split(',').map(Number);if(!p.some(v=>v))continue;
       const g=new THREE.Group();g.position.set(p[0]*u,p[1]*u,p[2]*u);g.userData.p=p;g.add(new THREE.Mesh(G.box,G.body));
-      for(const s of by[k]){const m=new THREE.Mesh(G.st,mat(stickerColor(s,this.mode,this.eng.N)));const n=new THREE.Vector3(s.n[0],s.n[1],s.n[2]);
+      for(const s of by[k]){let col=stickerColor(s,this.mode,this.eng.N);if(this.focus&&!this.focus.has(s.h))col=dimCol(col);const m=new THREE.Mesh(G.st,mat(col));const n=new THREE.Vector3(s.n[0],s.n[1],s.n[2]);
         m.position.copy(n).multiplyScalar(.493);m.quaternion.setFromUnitVectors(Z(),n);g.add(m);}
       this.root.add(g);}
     this.dirty=true;}
@@ -1352,7 +1361,7 @@ function makePlayer(elId,algElId,ids){
   const speed=document.getElementById(ids.speed);
   const paint=()=>{if(!P.shown){algEl.className='alg-line concealed';algEl.textContent=P.hiddenText||'Hidden.';return;}
     algEl.className='alg-line';algEl.innerHTML=P.tokens.length?P.tokens.map((t,i)=>`<span class="${i<P.idx?'done':i===P.idx&&P.playing?'now':''}">${P.eng.tok(t)}</span>`).join(''):'<span>Already solved</span>';};
-  P.load=(state,mode,tokens,hiddenText,e)=>{P.start=cloneSt(state);P.mode=mode;P.eng=e||E3;P.tokens=tokens;P.idx=0;P.shown=false;P.playing=false;P.hiddenText=hiddenText;
+  P.load=(state,mode,tokens,hiddenText,e,focus)=>{if(cube)cube.focus=focus||null;P.start=cloneSt(state);P.mode=mode;P.eng=e||E3;P.tokens=tokens;P.idx=0;P.shown=false;P.playing=false;P.hiddenText=hiddenText;
     if(cube){cube.stop();cube.build(cloneSt(state),mode,P.eng);}paint();};
   P.reveal=()=>{P.shown=true;paint();};
   P.hide=()=>{P.shown=false;paint();};
@@ -2389,7 +2398,7 @@ function renderGuide(){const G=curGuide(),st=G.steps[learnStep],done=learnDone[d
   $('lnAlgPick').innerHTML=st.algs.length>1?st.algs.map((a,i)=>`<button data-ln-alg="${i}" aria-pressed="${i===lnAlgIdx}">${a[0]}</button>`).join(''):'';
   $('lnMovesLabel').textContent=!st.algs.length?'How to do it':st.algs.length>1?'The moves':'The moves · '+st.algs[0][0];
   $('lnLegend').innerHTML=(G.legend||LEG_CUBE).map(([k,v])=>`<b>${k}</b><span>${v}</span>`).join('');
-  $('lnRow').classList.toggle('nodemo',!G.demo||!st.algs.length);$('lnDemoNote').textContent=G.demoNote||'Watch it';
+  $('lnRow').classList.toggle('nodemo',!G.demo||!st.algs.length);
   $('lnPrev').textContent=learnStep?'← '+G.steps[learnStep-1].t:'← All puzzles';
   $('lnNext').textContent=learnStep<nS-1?'Got it · next: '+G.steps[learnStep+1].t+' →':'Got it · I solved it! ✓';
   loadLnAlg();}
@@ -2403,13 +2412,17 @@ function loadLnAlg(){const G=curGuide(),st=G.steps[learnStep];
   if(!G.demo){$('lnAlg').className='alg-line';$('lnAlg').innerHTML=alg.split(/\s+|(?<=\/)(?=\()|(?<=\))(?=\/)/).filter(Boolean).map(t=>`<span>${t}</span>`).join('');return;}
   const e=engFor(G.demo);
   if(!lp)lp=makePlayer('ln3d','lnAlg',{reset:'lnReset',step:'lnStep',play:'lnPlay',speed:'lnSpeed'});
-  const toks=e.parse(alg);const start=e.apply(e.solved(),e.inv(toks));lp.load(start,'full',toks,'',e);lp.reveal();}
+  const toks=e.parse(alg);const start=e.apply(e.solved(),e.inv(toks));const fs=lnFocus?movedPieces(start,e):null;
+  lp.load(start,'full',toks,'',e,fs&&fs.size?fs:null);lp.reveal();lnNote();}
+let lnFocus=store.get('lnFocus',true);
+function lnNote(){const G=curGuide();const t=lnFocus?'Bright pieces = the ones this step moves':(G&&G.demoNote)||'Watch it';$('lnDemoNote').textContent=t;$('lpNote').textContent=t;document.querySelectorAll('[data-focus]').forEach(b=>b.setAttribute('aria-pressed',lnFocus));}
+document.querySelectorAll('[data-focus]').forEach(b=>b.onclick=e=>{e.currentTarget.blur();lnFocus=!lnFocus;store.set('lnFocus',lnFocus);loadLnAlg();});
 
 // ---- non-cube demo player (Pyraminx, Skewb, Megaminx, Kilominx, Dino) ----
 const polyViews={};let pp={kind:null,toks:[],idx:0,playing:false};
 function polyView(kind){const el=$('lnPoly');if(pp.kind!==kind){if(pp.view){pp.view.dead=true;el.innerHTML='';}pp.view=new PolyView(el,kind);pp.kind=kind;}return pp.view;}
 function polyPaint(){$('lnAlg').className='alg-line';$('lnAlg').innerHTML=pp.toks.map((t,i)=>`<span class="${i<pp.idx?'done':i===pp.idx&&pp.playing?'now':''}">${t[0]}${Math.abs(t[1])===2?'2':''}${t[1]<0?"'":''}</span>`).join('');}
-function polyLoad(kind,alg){const v=polyView(kind);if(!HAS3D)return;pp.toks=v.parse(alg);pp.idx=0;pp.playing=false;v.reset();v.applyNow(pp.toks.slice().reverse().map(([n,k])=>[n,-k]));polyPaint();}
+function polyLoad(kind,alg){const v=polyView(kind);if(!HAS3D)return;pp.toks=v.parse(alg);pp.idx=0;pp.playing=false;v.reset();v.applyNow(pp.toks.slice().reverse().map(([n,k])=>[n,-k]));v.setFocus(lnFocus);polyPaint();lnNote();}
 function polyRun(n){const v=pp.view;if(!v)return;if(pp.idx>=pp.toks.length){v.reset();v.applyNow(pp.toks.slice().reverse().map(([a,k])=>[a,-k]));pp.idx=0;}
   pp.playing=true;const todo=pp.toks.slice(pp.idx,n?pp.idx+n:undefined);polyPaint();v.play(todo,()=>{pp.idx++;polyPaint();},()=>{pp.playing=false;polyPaint();});}
 $('lpPlay').onclick=e=>{e.currentTarget.blur();if(pp.view&&!pp.view.anim)polyRun(0);};
