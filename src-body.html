@@ -205,6 +205,11 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 .plate-box{display:flex;flex-direction:column;gap:10px;margin-top:6px;padding-top:14px;border-top:1px solid #23262E}
 .pl-in{font:600 .9rem var(--f-body);background:#15171C;color:var(--fg);border:1px solid #2E323A;border-radius:8px;padding:6px 8px;width:70px}
 #plPrev{width:100%;max-width:640px;height:auto;border-radius:10px;background:#0F1116}
+.modal{position:fixed;inset:0;z-index:40;background:rgba(5,6,8,.7);display:grid;place-items:center;padding:16px}
+.modal-card{background:var(--surface);border:1px solid #2E323A;border-radius:16px;padding:20px;max-width:440px;width:100%;display:flex;flex-direction:column;gap:10px}
+.modal-card h3{margin:0;font:700 1.15rem var(--f-display)}
+.sm-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:260px;overflow:auto}
+.sm-list button{width:100%;text-align:left}
 .sess-sel{font:600 .92rem var(--f-body);background:#15171C;color:var(--fg);border:1px solid #2E323A;border-radius:9px;padding:7px 10px;width:100%}
 .tm-list{list-style:none;margin:0;padding:0;max-height:380px;overflow:auto}
 .tm-list li{display:grid;grid-template-columns:2.4em 1fr auto;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--line);font-size:.9rem}
@@ -545,7 +550,7 @@ body.timing .rail,body.timing .secbar,body.timing #view-timer .side,body.timing 
   <!-- TIMER -->
   <section id="view-timer" class="split" hidden>
     <div class="stage">
-      <div class="top-row" id="tmTop"><span class="label"><span id="tmTitle">3x3 scramble</span> <span class="review" id="tmKind"></span></span><span style="display:flex;gap:8px"><button class="btn" id="tmComp" aria-pressed="false" title="Average of 5 with WCA rules">🏆 Competition Ao5</button><button class="btn" id="tmNew">New scramble</button></span></div>
+      <div class="top-row" id="tmTop"><span class="label"><span id="tmTitle">3x3 scramble</span> <span class="review" id="tmKind"></span></span><span style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><span class="review" id="smChip" hidden style="border-color:rgba(95,224,160,.5);color:var(--good)"></span><button class="btn" id="smConnect" title="Connect a GAN or MoYu AI smart cube">🔗 Smart cube</button><button class="btn" id="tmComp" aria-pressed="false" title="Average of 5 with WCA rules">🏆 Competition Ao5</button><button class="btn" id="tmNew">New scramble</button></span></div>
       <div class="tm-scr" id="tmScr">—</div>
       <div class="tm-grid">
         <div class="tm-prev"><div class="cube3d" id="tm3d"></div><div class="cube3d" id="tmPoly" hidden></div><span class="label">Scrambled</span></div>
@@ -648,6 +653,20 @@ body.timing .rail,body.timing .secbar,body.timing #view-timer .side,body.timing 
         <p class="note" style="margin:0">Your day streak then only counts days you hit the goal. Progress shows under the streak in the sidebar.</p>
       </div>
       <div class="pcard wide">
+        <h2 class="ph">Sync with your phone</h2>
+        <div id="syncPc">
+          <p class="note" style="margin:0 0 8px">Pick a folder that your phone can also reach (OneDrive, Google Drive, Dropbox, iCloud Drive). The app keeps <b>LastLayerLab-sync.json</b> in it up to date, and picks up anything your phone saves there.</p>
+          <div class="data-row"><button class="btn primary" id="syncChoose">Choose sync folder</button><button class="btn" id="syncNow">Sync now</button><button class="linkbtn" id="syncOff">Turn off</button></div>
+          <p class="note" style="margin:6px 0 0">Folder: <span id="syncDir">No folder chosen yet</span></p>
+          <p class="note" style="margin:4px 0 0">On your phone, open <b>greganator2001-jpg.github.io/Cubing</b>, then Stats → Sync.</p>
+        </div>
+        <div id="syncWeb" hidden>
+          <p class="note" style="margin:0 0 8px">Open <b>LastLayerLab-sync.json</b> from the cloud folder your PC syncs to. When you're done practicing, save the file back to that folder (replace the old one), and the PC picks it up.</p>
+          <div class="data-row"><label class="btn primary filebtn">Open sync file…<input type="file" id="syncOpen" accept=".json,application/json" hidden></label><button class="btn" id="syncSave">Save sync file</button></div>
+        </div>
+        <p class="note" id="syncMsg" style="margin:6px 0 0"></p>
+      </div>
+      <div class="pcard wide">
         <h2 class="ph">Back up and import</h2>
         <div class="data-row">
           <button class="btn" id="bkSave">Back up everything</button>
@@ -748,6 +767,9 @@ body.timing .rail,body.timing .secbar,body.timing #view-timer .side,body.timing 
 </div>
 </div>
 <div class="toast" id="toast" hidden></div>
+<div class="modal" id="smPick" hidden><div class="modal-card"><h3>Pick your smart cube</h3><ul id="smList" class="sm-list"></ul><p class="note" id="smStatus">Supports GAN cubes (356 i, 12 ui, 13/14 MagLev, i Carry) and the MoYu AI 2023.</p><button class="btn" id="smCancel">Cancel</button></div></div>
+<div class="modal" id="smMac" hidden><div class="modal-card"><h3>One-time setup for <span id="smMacName"></span></h3><p class="note">GAN cubes need their Bluetooth address to unlock the data. Find it in the GAN app (cube settings) or your PC's Bluetooth settings. It looks like AB:12:CD:34:EF:56. You only enter it once.</p>
+  <input id="smMacIn" class="pl-in" style="width:100%" placeholder="AB:12:CD:34:EF:56" aria-label="Cube address"><div style="display:flex;gap:8px;margin-top:10px"><button class="btn primary" id="smMacOk">Connect</button><button class="btn" id="smMacNo">Cancel</button></div></div></div>
 <script type="text/plain" id="scrWorkerSrc">/*SCRW*/</script>
 <script type="text/plain" id="plFontSrc">/*PLFONT*/</script>
 
@@ -1453,7 +1475,7 @@ function tmRender(){const L=tmSess(),fin=L.map(tval).filter(v=>v!==Infinity);con
   $('tmMean').textContent=fin.length?fmtT(fin.reduce((a,b)=>a+b,0)/fin.length):'—';
   $('tmAo5').textContent=fmtT(aoN(L,5));$('tmAo12').textContent=fmtT(aoN(L,12));$('tmAo50').textContent=fmtT(aoN(L,50));
   const spLine=s=>s.splits?'<span class="sp">'+s.splits.map((t,k)=>SPLITS[s.sp][k]+' '+fmtT(t-(k?s.splits[k-1]:0))).join(' · ')+'</span>':'';
-  $('tmList').innerHTML=L.length?L.map((s,i)=>`<li title="${s.scr}"><span class="i">${i+1}</span><span class="t">${s.pen==='DNF'?'DNF <span class="i">('+fmtT(s.t)+')</span>':fmtT(tval(s))+(s.pen==='+2'?'+':'')}</span><span class="acts"><button data-pen="+2" data-i="${i}" aria-pressed="${s.pen==='+2'}">+2</button><button data-pen="DNF" data-i="${i}" aria-pressed="${s.pen==='DNF'}">DNF</button><button data-del="${i}" aria-label="Delete solve">✕</button></span>${spLine(s)}</li>`).reverse().join('')
+  $('tmList').innerHTML=L.length?L.map((s,i)=>`<li title="${s.scr}"><span class="i">${i+1}</span><span class="t">${s.pen==='DNF'?'DNF <span class="i">('+fmtT(s.t)+')</span>':fmtT(tval(s))+(s.pen==='+2'?'+':'')}</span><span class="acts"><button data-pen="+2" data-i="${i}" aria-pressed="${s.pen==='+2'}">+2</button><button data-pen="DNF" data-i="${i}" aria-pressed="${s.pen==='DNF'}">DNF</button>${s.moves?`<button data-replay="${i}" title="Replay this solve">▶</button>`:''}<button data-del="${i}" aria-label="Delete solve">✕</button></span>${spLine(s)}</li>`).reverse().join('')
     :'<li class="empty" style="display:block">No solves yet for this cube.</li>';
   $('tmSessChartPanel').hidden=L.length<3;if(L.length>=3)$('tmSessChart').innerHTML=timerChart(L,{w:360,h:150,a12:false});
   // split averages over the last 12 solves that used the current split mode
@@ -1462,6 +1484,7 @@ function tmRender(){const L=tmSess(),fin=L.map(tval).filter(v=>v!==Infinity);con
   if(ph.length&&withS.length){const avgs=ph.map((_,k)=>withS.reduce((a,s)=>a+(s.splits[k]-(k?s.splits[k-1]:0)),0)/withS.length);const mx=Math.max(...avgs);
     $('tmSplitAvg').innerHTML=avgs.map((v,k)=>`<div class="sbar"><span>${ph[k]}</span><span class="trk"><i style="width:${(v/mx*100).toFixed(1)}%"></i></span><span class="v">${fmtT(v)}</span></div>`).join('');}}
 $('tmList').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const S=tmSess(),A=tmList();
+  if(b.dataset.replay!==undefined){replaySolve(S[+b.dataset.replay]);return;}
   if(b.dataset.del!==undefined){const o=S[+b.dataset.del];if($('tmHardDel').checked){const j=A.indexOf(o);if(j>=0)A.splice(j,1);}else o.hid=true;}else{const s=S[+b.dataset.i];s.pen=s.pen===b.dataset.pen?'':b.dataset.pen;}
   store.set('solves',solves);tmRender();});
 $('tmClear').onclick=()=>{$('tmClear').hidden=true;$('tmClearYes').hidden=false;$('tmClearNote').hidden=false;setTimeout(()=>{$('tmClear').hidden=false;$('tmClearYes').hidden=true;$('tmClearNote').hidden=true;},5000);};
@@ -1487,7 +1510,7 @@ function newScramble(){
   if(cubeN===3){initRS();if(rsQ.length){tmScr=rsQ.shift();tmFallback=false;if(scrW)scrW.postMessage({type:'scramble'});$('tmKind').textContent='Random-state';}
     else{tmScr=genScramble(3);tmFallback=!!scrW;$('tmKind').textContent=scrW?'Random-move · random-state warming up':'Random-move';}}
   else{tmScr=genScramble(cubeN);tmFallback=false;$('tmKind').textContent='Random-move';}
-  $('tmScr').textContent=tmScr;$('tmScr').classList.toggle('long',cubeN>=7);
+  $('tmScr').textContent=tmScr;$('tmScr').classList.toggle('long',cubeN>=7);if(typeof smart!=='undefined'&&smart.conn)setTimeout(()=>{smartArm();smartShow();},0);
   if(HAS3D){try{if(!tmCube)tmCube=new Cube3D($('tm3d'));const e=engN(cubeN);tmCube.stop();tmCube.build(e.apply(e.solved(),e.parse(tmScr)),'full',e);}catch(err){}}}
 $('tmNew').onclick=e=>{e.currentTarget.blur();if(tm.state==='idle'||tm.state==='stopped')newScramble();};
 $('tmInsp').checked=store.get('insp',false);$('tmInsp').onchange=e=>{e.target.blur();store.set('insp',e.target.checked);};
@@ -1610,6 +1633,15 @@ function plSTL(){if(!plFont)plFont=new THREE.Font(JSON.parse($('plFontSrc').text
 ['plPz','plKind'].forEach(id=>$(id).addEventListener('change',plFill));['plName','plW','plH','plT','plR'].forEach(id=>$(id).addEventListener('input',plPreview));
 $('plSave').onclick=e=>{e.currentTarget.blur();const d=plData();if(d.v==null){$('dataMsg').textContent='Set a PB in the Timer first.';return;}
   const name=`PB plate ${keyLabel(isNaN(+d.k)?d.k:+d.k)} ${d.kind} ${fmtT(d.v)}.stl`.replace(/[:]/g,'-');saveText(name,plSTL());};
+
+
+/*SMART*/
+/*SYNC*/
+$('smConnect').onclick=e=>{e.currentTarget.blur();smartConnect();};
+$('smCancel').onclick=()=>{$('smPick').hidden=true;if(window.desktop&&window.desktop.chooseBt)window.desktop.chooseBt('');};
+if(window.desktop&&window.desktop.onBtDevices)window.desktop.onBtDevices(list=>{$('smPick').hidden=false;
+  $('smList').innerHTML=list.length?list.map(d=>`<li><button class="btn" data-bt="${d.id}">${d.name}</button></li>`).join(''):'<li class="note">Looking for cubes… turn yours to wake it up.</li>';});
+$('smList').addEventListener('click',e=>{const b=e.target.closest('[data-bt]');if(!b)return;smartStatus('Connecting…');if(window.desktop&&window.desktop.chooseBt)window.desktop.chooseBt(b.dataset.bt);});
 
 // ---- progress ----
 function niceTicks(lo,hi,n=4){const span=hi-lo||1,raw=span/n,mag=Math.pow(10,Math.floor(Math.log10(raw))),st=[1,2,2.5,5,10].map(m=>m*mag).find(x=>x>=raw);

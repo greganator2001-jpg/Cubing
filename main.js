@@ -5,6 +5,9 @@ const path = require('path');
 const { autoUpdater } = require('electron-updater');
 
 let win;
+// Web Bluetooth (smart cubes): read the MAC from advertisements so GAN cubes can be decrypted
+app.commandLine.appendSwitch('enable-experimental-web-platform-features');
+let btPick = null;
 let busy = false, pendingReload = false, reloadNow = () => {}, blocker = null;
 const send = (ch, data) => { if (win && !win.isDestroyed()) win.webContents.send(ch, data); };
 
@@ -32,6 +35,15 @@ function createWindow() {
   try {
     fs.watch(path.join(__dirname, '..', 'app'), { recursive: true }, () => { clearTimeout(t); t = setTimeout(maybeReload, 800); });
   } catch (e) {}
+  // Bluetooth device chooser: Electron has no built-in picker, so the page shows its own list
+  win.webContents.on('select-bluetooth-device', (event, devices, callback) => {
+    event.preventDefault();
+    btPick = callback;
+    send('bt:devices', devices.map(d => ({ id: d.deviceId, name: d.deviceName || 'Unknown device' })));
+  });
+  try {
+    win.webContents.session.setBluetoothPairingHandler((details, cb) => cb({ confirmed: true }));
+  } catch (e) {}
   win.webContents.setWindowOpenHandler(({ url }) => { if (/^https:/.test(url)) shell.openExternal(url); return { action: 'deny' }; });
   win.webContents.on('before-input-event', (e, input) => {
     if (input.type === 'keyDown' && (input.key === 'F11')) { win.setFullScreen(!win.isFullScreen()); e.preventDefault(); }
@@ -51,6 +63,26 @@ autoUpdater.on('error', err => send('update', { state: 'error', message: String(
 function check() { if (app.isPackaged) autoUpdater.checkForUpdates().catch(() => {}); else send('update', { state: 'dev' }); }
 
 ipcMain.handle('app:version', () => app.getVersion());
+// ---- shared-folder sync: one JSON file the phone and PC both read and write ----
+let syncWatcher = null;
+ipcMain.handle('sync:pick', async () => {
+  const r = await dialog.showOpenDialog(win, { title: 'Choose a folder to sync through (OneDrive, Google Drive, Dropbox…)', properties: ['openDirectory', 'createDirectory'] });
+  return r.canceled || !r.filePaths[0] ? null : r.filePaths[0];
+});
+ipcMain.handle('sync:read', async (_e, dir) => {
+  try { return await fs.promises.readFile(path.join(dir, 'LastLayerLab-sync.json'), 'utf8'); } catch (e) { return null; }
+});
+ipcMain.handle('sync:write', async (_e, { dir, text }) => {
+  try { const f = path.join(dir, 'LastLayerLab-sync.json'); await fs.promises.writeFile(f + '.tmp', text, 'utf8'); await fs.promises.rename(f + '.tmp', f); return true; } catch (e) { return false; }
+});
+ipcMain.handle('sync:watch', (_e, dir) => {
+  try { if (syncWatcher) syncWatcher.close(); } catch (e) {}
+  syncWatcher = null; if (!dir) return true;
+  let t = null;
+  try { syncWatcher = fs.watch(dir, (ev, name) => { if (name && String(name).startsWith('LastLayerLab-sync.json') && !String(name).endsWith('.tmp')) { clearTimeout(t); t = setTimeout(() => send('sync:changed', true), 1500); } }); } catch (e) {}
+  return true;
+});
+ipcMain.handle('bt:choose', (_e, id) => { if (btPick) { const cb = btPick; btPick = null; cb(id || ''); } return true; });
 // while a solve is being timed: keep the PC and screen awake, and hold off live reloads
 ipcMain.handle('timer:busy', (_e, on) => {
   busy = !!on;
