@@ -1,0 +1,32 @@
+<!doctype html><html><head><style>html,body{margin:0;background:transparent}canvas{display:block}</style></head><body>
+<script src="three.min.js"></script>
+<script>
+const S=1024;
+const r=new THREE.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true});r.setPixelRatio(1);r.setSize(S,S);r.setClearColor(0,0);document.body.appendChild(r.domElement);
+const scene=new THREE.Scene();
+const cam=new THREE.PerspectiveCamera(22,1,.1,100);cam.position.set(4.8,5.4,10.8);cam.lookAt(0,-.12,0);
+scene.add(new THREE.HemisphereLight(0xffffff,0x3a3a44,.62));
+const key=new THREE.DirectionalLight(0xffffff,.55);key.position.set(-2,9,8);scene.add(key);
+const fill=new THREE.DirectionalLight(0xffffff,.42);fill.position.set(9,3,4);scene.add(fill);
+const rim=new THREE.DirectionalLight(0xffffff,.18);rim.position.set(0,2,10);scene.add(rim);
+const black=new THREE.MeshStandardMaterial({color:0x08080a,roughness:.7});
+scene.add(new THREE.Mesh(new THREE.BoxGeometry(2.84,2.84,2.84),black));
+// rounded tile with a different radius per corner (big ones point at the center piece)
+function shape(w,rs){const s=new THREE.Shape(),h=w/2,[a,b,c,d]=rs;
+  s.moveTo(-h+c,-h);s.lineTo(h-d,-h);s.quadraticCurveTo(h,-h,h,-h+d);s.lineTo(h,h-a);s.quadraticCurveTo(h,h,h-a,h);
+  s.lineTo(-h+b,h);s.quadraticCurveTo(-h,h,-h,h-b);s.lineTo(-h,-h+c);s.quadraticCurveTo(-h,-h,-h+c,-h);return s;}
+const cache={};
+function tile(rs){const k=rs.join();if(!cache[k]){const g=new THREE.ExtrudeGeometry(shape(.86,rs),{depth:.02,bevelEnabled:true,bevelThickness:.06,bevelSize:.04,bevelSegments:8,curveSegments:16});g.translate(0,0,-.02);cache[k]=g;}return cache[k];}
+const capG=new THREE.ExtrudeGeometry((()=>{const s=new THREE.Shape();s.absarc(0,0,.4,0,Math.PI*2,false);return s;})(),{depth:.02,bevelEnabled:true,bevelThickness:.06,bevelSize:.04,bevelSegments:8,curveSegments:64});capG.translate(0,0,-.02);
+const COL={U:0x2563f2,F:0xf5f6f8,R:0xec1c14};
+for(const [f,n] of [['F',[0,0,1]],['U',[0,1,0]],['R',[1,0,0]]]){
+  const m=new THREE.MeshStandardMaterial({color:COL[f],roughness:.32,metalness:0});
+  const q=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,0,1),new THREE.Vector3(...n));
+  for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++){
+    let mesh;
+    if(!i&&!j){mesh=new THREE.Mesh(capG,m);mesh.position.copy(new THREE.Vector3(0,0,1.42).applyQuaternion(q));}
+    else{const rs=[[1,1],[-1,1],[-1,-1],[1,-1]].map(([sx,sy])=>((i===0||sx===-i)&&(j===0||sy===-j))?(i&&j?.14:.2):.06);
+      mesh=new THREE.Mesh(tile(rs),m);mesh.position.copy(new THREE.Vector3(i*.95,j*.95,1.42).applyQuaternion(q));}
+    mesh.quaternion.copy(q);scene.add(mesh);}}
+r.render(scene,cam);window.done=true;
+</script></body></html>
