@@ -145,6 +145,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 .lcdcol{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:8px}
 .lcd{background:#0A1A10;border:2px solid #1B2A20;border-radius:12px;padding:4px 28px;box-shadow:inset 0 0 24px rgba(0,0,0,.8);max-width:100%}
 .time,.tm-time{font-family:var(--f-display);font-weight:700;font-size:clamp(2.8rem,8vw,5.6rem);line-height:1;letter-spacing:.04em;font-variant-numeric:tabular-nums;color:#7CFFB2;text-shadow:0 0 18px rgba(124,255,178,.5)}
+.mat.cool .pad{opacity:.35;transition:opacity .2s}
 .mat.hold .time,.mat.hold .tm-time{color:#FF8A8A;text-shadow:0 0 18px rgba(255,90,90,.5)}
 .mat.warn .tm-time{color:#FFC861;text-shadow:0 0 18px rgba(255,176,32,.5)}
 .mat .hint{color:#6E7580;font:600 .74rem var(--f-body);letter-spacing:.08em;text-transform:uppercase;text-align:center;word-break:break-word}
@@ -573,6 +574,7 @@ body.timing .rail,body.timing .secbar,body.timing #view-timer .side,body.timing 
         <label class="toggle"><input type="checkbox" id="tmInsp"> 15-second inspection</label>
         <label class="toggle">Calls at 8s/12s <select id="tmCalls"><option value="off">Off</option><option value="beep">Beep</option><option value="voice">Voice</option></select></label>
         <label class="toggle">Splits <select id="tmSplits"><option value="off">Off</option><option value="cfop">Cross · F2L · OLL · PLL</option><option value="red">Centers · Edges · 3x3</option><option value="roux">Roux: FB · SB · CMLL · LSE</option></select></label>
+        <label class="toggle">Pause after a solve <select id="tmCool"><option value="0">Off</option><option value="1000">1s</option><option value="2000">2s</option><option value="3000">3s</option><option value="5000">5s</option></select></label>
         <label class="toggle"><input type="checkbox" id="tmHardDel"> ✕ also deletes from Stats</label>
         <span class="note">Scramble with yellow on top and green in front.</span>
       </div>
@@ -1485,11 +1487,16 @@ function record(ms){
   store.set('session',session);store.set('stats',stats);renderSession();renderStreak();
   $('timerHint').textContent=`Last: ${nameLabel(current)} in ${fmt(ms)} · ${current.alg}`;
   loadCase();}
-let tState='idle',holdTimer=null,startT=0,raf=null;
+// after a solve, ignore the start key for a moment so a late press doesn't start the next solve by accident
+const coolMs=()=>+store.get('cool',2000);
+function coolStart(el,hintEl,msg){const ms=coolMs();if(!ms)return 0;const until=performance.now()+ms;el.classList.add('cool');
+  clearTimeout(el._cool);el._cool=setTimeout(()=>{el.classList.remove('cool');if(hintEl&&hintEl._coolMsg)hintEl.textContent=hintEl._coolMsg;},ms);return until;}
+let tState='idle',holdTimer=null,startT=0,raf=null,dCoolUntil=0;
 const timerEl=$('timer'),timeEl=$('time');
 function setT(s){tState=s;timerEl.classList.toggle('hold',s==='hold');timerEl.classList.toggle('ready',s==='ready');try{window.desktop&&window.desktop.setBusy&&window.desktop.setBusy(s==='running'||s==='hold'||s==='ready');}catch(e){}}
 function press(){
-  if(tState==='running'){cancelAnimationFrame(raf);const ms=performance.now()-startT;timeEl.textContent=fmt(ms);setT('stopped');record(ms);return;}
+  if(tState==='running'){cancelAnimationFrame(raf);const ms=performance.now()-startT;timeEl.textContent=fmt(ms);setT('stopped');record(ms);dCoolUntil=coolStart(timerEl);return;}
+  if(performance.now()<dCoolUntil)return;
   if(tState==='idle'||tState==='stopped'){setT('hold');timeEl.textContent='0.00';holdTimer=setTimeout(()=>setT('ready'),300);}}
 function release(){
   if(tState==='hold'){clearTimeout(holdTimer);setT('idle');}
@@ -1749,6 +1756,7 @@ function newScramble(){
   $('tmScr').textContent=tmScr;$('tmScr').classList.toggle('long',cubeN>=7);if(typeof smart!=='undefined'&&smart.conn)setTimeout(()=>{smartArm();smartShow();},0);
   if(HAS3D){try{if(!tmCube)tmCube=new Cube3D($('tm3d'));const e=engN(cubeN);tmCube.stop();tmCube.build(e.apply(e.solved(),e.parse(tmScr)),'full',e);}catch(err){}}}
 $('tmNew').onclick=e=>{e.currentTarget.blur();if(tm.state==='idle'||tm.state==='stopped')newScramble();};
+$('tmCool').value=String(coolMs());$('tmCool').onchange=e=>{e.target.blur();store.set('cool',+e.target.value);};
 $('tmInsp').checked=store.get('insp',false);$('tmInsp').onchange=e=>{e.target.blur();store.set('insp',e.target.checked);};
 $('tmCalls').value=store.get('calls','off');$('tmCalls').onchange=e=>{e.target.blur();store.set('calls',e.target.value);};
 $('tmSplits').value=store.get('splits','off');$('tmSplits').onchange=e=>{e.target.blur();store.set('splits',e.target.value);tmRender();};
@@ -1788,10 +1796,11 @@ function tmPress(){
     const L=tmList(),pS=bestSingle(L),p5=bestAo(L,5),p12=bestAo(L,12);
     const s={t,pen:tm.pen,scr:tmScr,at:Date.now(),ses:sessInfo().cur};if(ph.length){s.splits=[...tm.splits,t];s.sp=$('tmSplits').value;}
     L.push(s);compAdd(s);store.set('solves',solves);renderStreak();tmTimeEl.textContent=s.pen==='DNF'?'DNF':fmtT(tval(s))+(s.pen==='+2'?'+':'');
-    $('tmHint').textContent='Saved. New scramble below.';tmRender();newScramble();
+    $('tmHint').textContent=coolMs()?'Saved. Take a breath…':'Saved. New scramble below.';$('tmHint')._coolMsg='Saved. Hold space for the next solve.';tm.coolUntil=coolStart(tmEl,$('tmHint'));tmRender();newScramble();
     const nS=bestSingle(L),n5=bestAo(L,5),n12=bestAo(L,12);const pb=[];
     if(pS!==null&&nS!==null&&nS<pS)pb.push('single '+fmtT(nS));if(p5!==null&&n5!==null&&n5<p5)pb.push('Ao5 '+fmtT(n5));if(p12!==null&&n12!==null&&n12<p12)pb.push('Ao12 '+fmtT(n12));
     if(pb.length)celebrate('New PB! '+pb.join(' · '));return;}
+  if((tm.state==='idle'||tm.state==='stopped')&&performance.now()<(tm.coolUntil||0))return; // short pause after a solve
   if((tm.state==='idle'||tm.state==='stopped')&&$('tmInsp').checked){tm.inspecting=true;tm.insp0=performance.now();tm.armed=false;tm.c8=tm.c12=0;tmSet('insp');
     $('tmHint').textContent='Inspecting. Hold space when ready, release to start.';cancelAnimationFrame(tm.raf);tmLoop();return;}
   if(tm.state==='insp'&&!tm.armed)return; // ignore the key-repeat of the press that started inspection
