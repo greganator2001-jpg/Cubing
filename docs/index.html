@@ -2294,24 +2294,74 @@ const engFor=d=>d==='3'?E3:engN(+d);
 // ---- Speed methods (Learn tab → "Speed method") ----
 // drill:[N,section] adds a "Practice in Drill" button that switches to that cube and turns the set on.
 const SP_YAU_TIP='Look ahead: while you finish one piece, find the next one so you never stop turning.';
+// ---- flat pictures for the big-cube speed guide (drawn from the same cube engine as the 3D demos) ----
+const SP_DARK='#2A2E37',SP_W=COLORS.D,SP_Y=COLORS.U;
+// one face as a grid; fn(r,c) gives the colour of each cell
+function spFace(N,fn,sz=74){const c=sz/N;let o=`<svg width="${sz}" height="${sz}" viewBox="0 0 ${sz} ${sz}" aria-hidden="true">`;
+  for(let r=0;r<N;r++)for(let k=0;k<N;k++)o+=`<rect x="${k*c+1}" y="${r*c+1}" width="${c-2}" height="${c-2}" rx="${Math.max(1.5,c*.18)}" fill="${fn(r,k)||SP_DARK}"/>`;return o+'</svg>';}
+// front view: top row of U above the front face, with the touching column of L and R on the sides.
+// Only the pieces at the given positions are coloured; the rest are dark.
+function spFront(N,alg,keep,sz=96){const m=N-1;const st=nxApply(nxSolved(N),alg?nxInvert(nxParse(alg,N)):[],N);const at={},home={};for(const s of st){at[s.p.join()+'|'+s.n.join()]=s.c;home[s.p.join()]=s.h.split(',').map(Number);}
+  const c=sz/(N+2),W=sz,H=c*(N+1)+c*.4;let o=`<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-hidden="true">`;
+  const cell=(x,y,w,h,p,n)=>{const show=keep(p,home[p.join()]);const col=show?COLORS[at[p.join()+'|'+n.join()]]:SP_DARK;o+=`<rect x="${x+1}" y="${y+1}" width="${w-2}" height="${h-2}" rx="${Math.max(1.5,c*.16)}" fill="${col}"/>`;};
+  for(let k=0;k<N;k++)cell(c+k*c,0,c,c*.7,[-m+2*k,m,m],[0,1,0]);                 // U, front row (squashed = seen from the front)
+  for(let r=0;r<N;r++){const y=c*.7+c*.4+r*c,yy=m-2*r;
+    cell(c*.3,y,c*.7,c,[-m,yy,m],[-1,0,0]);                                        // L, column next to the front
+    for(let k=0;k<N;k++)cell(c+k*c,y,c,c,[-m+2*k,yy,m],[0,0,1]);
+    cell(c+N*c,y,c*.7,c,[m,yy,m],[1,0,0]);}                                         // R, column next to the front
+  return o+'</svg>';}
+const SP_ORDER='with green in front: orange on the right, blue at the back, red on the left';
 const G_SPEED_BIG=(N)=>{
-  const odd=N%2===1,big=N>5;
+  const odd=N%2===1,big=N>5,m=N-1,c=N-2,inn=(r,k)=>r>0&&r<N-1&&k>0&&k<N-1;
+  const nm=N===4?'Yau':N===5?'Yau5':'Yau (big cube)';
+  const isEdge=p=>p.filter(v=>Math.abs(v)===m).length===2;
   const steps=[
-   {t:'First two centers',sub:'Opposite centers, in bars',k:'CENTERS',text:`Build the first center, then the one opposite it. Make whole ${N-2}-piece bars and slide them in with one wide turn instead of placing single pieces.`,
-    how:`Aim for bars, not single pieces: a ${N-2}-long bar goes in with Rw U Rw'-style moves (one wide turn in, one out). Do this on the left and right so the next steps happen in front of you.`,algs:[['Slide a bar in',"Rw U Rw'"]],drill:[N,'centers']},
-   {t:'Three cross edges',sub:'Yau'+(odd?'5':'')+' trick',k:'EDGES',text:`Before the last four centers, pair three edges of your cross color and put them on the first center (now on the bottom). The last four centers are still free to move, so pairing is easy here.`,
-    how:'Pair each cross edge with the slice trick, then drop it into place on the bottom. Leave one cross slot open on the left side.',algs:[['Pair an edge',"Uw' R U R' F R' F' R Uw"]]},
-   {t:'Last four centers',sub:'R, U and wide turns',k:'CENTERS',text:'Finish the four side centers using only turns that keep your three cross edges in place: R, U and wide R/L.',
-    how:big?'Build bars again and use the commutators from the Centers set for the last few pieces.':'Use Rw/Lw with U to build the last centers; the X-center commutator fixes single pieces.',algs:[['X-center swap',"2R U 2L' U' 2R' U 2L U'"]],drill:[N,'centers']},
-   {t:'Last cross edge',sub:'Finish the cross',k:'EDGES',text:'Pair and place the fourth cross edge. You now have a full cross on the bottom and every center done.',how:'Same pairing trick as step 2.',algs:[['Pair an edge',"Uw' R U R' F R' F' R Uw"]]},
-   {t:odd?'Pair the rest (free slice)':'3-2-3 edge pairing',sub:odd?'8 edges':'8 edges',k:'EDGES',text:odd?'Pair the remaining eight edges with a free slice: keep one wide slice open and pair edges on the left and right while the slice is out, then close it once you have stored enough paired edges.':'Hold three unpaired pieces on the left, two in front-right/back-right, three on the right. Use one Uw/Dw slice to pair, swap finished edges out with R U R\' F R\' F\' R, and slice back.',
-    how:'Keep paired edges in the top or bottom where the slice doesn\'t touch them. With practice you pair two edges per slice.'+(big?' Do the outer pieces first, then the inner ones with 3Uw.':''),algs:[['Pair an edge',"Uw' R U R' F R' F' R Uw"]].concat(big?[['Inner ring',"3Uw' R U R' F R' F' R 3Uw"]]:[])},
-   {t:odd?'Last two edges':'Last edges',sub:'Parity fix',k:'EDGES',text:'The last two edges sometimes show one edge flipped. Fix it with the flipped-edge alg instead of re-pairing.',how:'Bad edge at the front of the top layer, then the moves.',algs:[['Fix flipped edge',"2R2 B2 U2 2L U2 2R' U2 2R U2 F2 2R F2 2L' B2 2R2"]],drill:[N===7||N===9?5:N,'parity']},
-   {t:'3x3 stage with CFOP',sub:'F2L, OLL, PLL',k:'3x3 STAGE',text:'Your cross is already done, so go straight into F2L, then OLL and PLL like a 3x3 speed solve.',how:'Practice F2L, OLL and PLL in Drill on the 3x3 or on this cube (they are in the 3x3 stage sets).',algs:[['F2L example',"U R U' R'"]],drill:[3,'f2l']}];
-  if(!odd)steps.push({t:'Parity',sub:'OLL and PLL parity',k:'LAST STEP',text:'Even cubes can show a flipped edge at OLL or two swapped edges at PLL. Learn to spot them during the 3x3 stage and do the fix right away.',
+   {t:'Know the pieces',sub:'Centers, edges, corners',k:'BEFORE YOU START',
+    text:`A ${N}x${N} has the same three kinds of pieces as a 3x3, there are just more of them. The trick of every big-cube method is to group them so the cube can be solved like a 3x3.`,
+    how:`<p><b>Center</b> = the ${c}x${c} block in the middle of each face. It's made of loose pieces you have to gather into one color.</p><p><b>Edge</b> = the row of ${c} pieces between two corners. They're loose too, and you join them into finished edges.</p><p><b>Corners</b> = the same 8 corners as a 3x3. Nothing new.</p>`+(odd?`<p>On a ${N}x${N} the very middle center piece never moves, so it tells you which color that face is. The middle piece of each edge works the same way: it decides which edge the others join.</p>`:`<p>An even cube has no fixed middle piece, so you choose where each center goes. Use the normal color scheme (white opposite yellow, green opposite blue, red opposite orange).</p>`)+`<p><b>The speed plan:</b> 2 centers → 3 cross edges → last 4 centers → last cross edge → the other 8 edges → solve it like a 3x3. Doing the cross early means you skip it at the end.</p>`,
+    pics:[['Center',spFace(N,(r,k)=>inn(r,k)?SP_Y:null)],['Edge',spFace(N,(r,k)=>r===N-1&&k>0&&k<N-1?COLORS.F:null)],['Corners',spFace(N,(r,k)=>(r===0||r===N-1)&&(k===0||k===N-1)?COLORS.R:null)]],algs:[]},
+   {t:'White center',sub:'Build it in rows',k:'CENTERS 1',
+    text:`Build the white center on top. Don't place single pieces one by one: make a line of ${c} white pieces (a "bar") on a side face, then move the whole bar in at once.`,
+    how:`<ol><li>Gather white pieces on the front face into one column, the one just inside the right edge.</li><li>Turn the top so the empty column of the white center is on the left.</li><li>Do <b>2R U2 2R'</b>: the bar goes up, the top spins it into the gap, and the slice comes back down.</li><li>Repeat until the center is done. The first few pieces you can put in any way you like.</li></ol>`,
+    pics:[['Start',spFace(N,(r,k)=>inn(r,k)&&k===1?null:inn(r,k)?SP_W:null)],['Bar on front',spFace(N,(r,k)=>inn(r,k)&&k===N-2?SP_W:null)],['Done',spFace(N,(r,k)=>inn(r,k)?SP_W:null),'goal']],
+    algs:[['Put a bar in',"2R U2 2R'"]],drill:[N,'centers']},
+   {t:'Yellow center',sub:'Opposite white',k:'CENTERS 2',
+    text:'Turn the cube over so white is on the bottom, and build yellow on top the same way.',
+    how:`<ol><li>Make a yellow bar on the front, in the column just inside the right edge.</li><li>Turn the top so yellow's empty column is on the left.</li><li><b>2R U2 2R'</b>. The first 2R moves a column of the white center away, and the 2R' at the end brings it back, so white stays solved.</li></ol><p>The demo starts with yellow missing one column and the bar ready on the front. Watch the white center: it leaves and comes back.</p>`,
+    pics:[['Top',spFace(N,(r,k)=>inn(r,k)&&k===1?null:inn(r,k)?SP_Y:null)],['Front',spFace(N,(r,k)=>inn(r,k)&&k===N-2?SP_Y:null)],['Bottom stays',spFace(N,(r,k)=>inn(r,k)?SP_W:null)],['Done',spFace(N,(r,k)=>inn(r,k)?SP_Y:null),'goal']],
+    algs:[['Put a bar in',"2R U2 2R'"]],drill:[N,'centers']},
+   {t:'Three cross edges',sub:nm+' trick',k:'EDGES',
+    text:'Now, before the side centers, join three white edges and put them on the bottom next to the white center. The side centers are still mixed up, so you can turn freely while you join pieces.',
+    how:`<ol><li>Find the pieces of one white edge, like white-green.</li><li>Set them up like the picture: ${odd?'on the front-right edge the top piece and the middle piece (the middle one flipped), and the last piece on the front-left edge, top spot':'one piece on the front-right edge (top spot) and its partner on the front-left edge (top spot)'}. Looking at the front, ${odd?'both side pieces show the same color, and the middle piece shows the other color':'both show the same color'}.</li><li>Do <b>Uw' R U R' F R' F' R Uw</b>. The edge comes out finished on the front-right.</li><li>Put it on the bottom. Place the three edges in color order (${SP_ORDER}). Leave the gap on the left.</li></ol>`,
+    pics:[['Set up like this',spFront(N,"Uw' R U R' F R' F' R Uw",(p,h)=>isEdge(p)&&h[0]===m&&h[2]===m&&Math.abs(h[1])<m)],['Joined',spFront(N,'',p=>isEdge(p)&&p[2]===m&&p[0]===m&&Math.abs(p[1])<m),'goal']],
+    algs:[['Join an edge',"Uw' R U R' F R' F' R Uw"]]},
+   {t:'Last four centers',sub:'Without touching the cross',k:'CENTERS 3',
+    text:'Turn the cube so white is on the left and the gap in the cross is at the top-left. Now build the four side centers using only U, R, Rw and inner slices like 2R and 2L. None of those turns touch your three cross edges.',
+    how:`<ol><li>Build each center to match its cross edge: the green center goes next to the white-green edge, and so on.</li><li>Use bars and <b>2R U2 2R'</b> again. It never touches the left side, so the cross is safe.</li><li>For the last one or two pieces, use the swap below. It trades one top center piece with one front center piece and leaves everything else alone.</li></ol>`,
+    pics:[['White side, on the left',spFace(N,(r,k)=>inn(r,k)?SP_W:(r>0&&r<N-1&&(k===0||k===N-1))||(r===N-1&&k>0&&k<N-1)?SP_W:null)],['Then these 4 centers',spFace(N,(r,k)=>inn(r,k)?COLORS.F:null)]],
+    algs:[['Swap two center pieces',"2R U 2L' U' 2R' U 2L U'"]],drill:[N,'centers']},
+   {t:'Last cross edge',sub:'Fill the gap',k:'EDGES',
+    text:'Join the fourth white edge the same way as before and put it in the gap. You now have every center and a full white cross.',
+    how:'Same setup and same moves as the three cross edges. Then turn the cube so white is on the bottom again.',
+    pics:[['Set up like this',spFront(N,"Uw' R U R' F R' F' R Uw",(p,h)=>isEdge(p)&&h[0]===m&&h[2]===m&&Math.abs(h[1])<m)]],
+    algs:[['Join an edge',"Uw' R U R' F R' F' R Uw"]]},
+   {t:'Join the other 8 edges',sub:'Same trick, over and over',k:'EDGES',
+    text:`Join the 8 edges that aren't white. You use the same moves as the cross edges; the only rule is to keep your finished edges out of the way.`,
+    how:`<ol><li>Hold the cross on the bottom. Set up two matching pieces on the front-left and front-right like before.</li><li><b>Uw'</b> joins them, <b>R U R' F R' F' R</b> swaps the finished edge out of the middle, and <b>Uw</b> puts the centers back.</li><li>Keep finished edges in the top layer, where the moves don't break them.</li></ol>`+(big?'<p>Do the pieces next to the corners first. Then the next ring in, using 3Uw instead of Uw.</p>':'')+'<p>With practice you\'ll spot the next pair while finishing this one.</p>',
+    pics:[['Set up like this',spFront(N,"Uw' R U R' F R' F' R Uw",(p,h)=>isEdge(p)&&h[0]===m&&h[2]===m&&Math.abs(h[1])<m)],['Joined',spFront(N,'',p=>isEdge(p)&&p[2]===m&&p[0]===m&&Math.abs(p[1])<m),'goal']],
+    algs:[['Join an edge',"Uw' R U R' F R' F' R Uw"]].concat(big?[['Next ring in',"3Uw' R U R' F R' F' R 3Uw"]]:[])},
+   {t:odd?'Last two edges':'Last edges',sub:'If one looks flipped',k:'EDGES',
+    text:`Sometimes the very last edge ends up with ${odd?'its two outer pieces':'its two pieces'} the wrong way round, so it looks flipped. That can't be fixed by joining again. It needs one long alg.`,
+    how:'Put the bad edge at the front of the top layer, like the picture, and do the alg once. Practice it in the Parity set.',
+    pics:[['Bad edge on top',spFront(N,"2R2 B2 U2 2L U2 2R' U2 2R U2 F2 2R F2 2L' B2 2R2",p=>isEdge(p)&&p[1]===m&&p[2]===m)],['Fixed',spFront(N,'',p=>isEdge(p)&&p[1]===m&&p[2]===m),'goal']],
+    algs:[['Fix a flipped edge',"2R2 B2 U2 2L U2 2R' U2 2R U2 F2 2R F2 2L' B2 2R2"]],drill:[N===7||N===9?5:N,'parity']},
+   {t:'Finish like a 3x3',sub:'F2L, OLL, PLL',k:'3x3 STAGE',
+    text:'Every center and edge is done, so the cube now works like a 3x3. Your cross is already solved: go straight into F2L, then OLL and PLL.',
+    how:'Only turn the outer layers from here (R, U, F…), never the wide ones. Practice F2L, OLL and PLL in Drill.',algs:[['F2L example',"U R U' R'"]],drill:[3,'f2l']}];
+  if(!odd)steps.push({t:'Parity',sub:'Only on even cubes',k:'LAST STEP',text:'An even cube can show two last-layer problems a 3x3 never has: one edge flipped at OLL, or two edges swapped at PLL. Spot them and do the fix.',
     how:'<b>OLL parity:</b> one edge flipped. <b>PLL parity:</b> two edges swapped. Both are in the Parity set.',algs:[['OLL parity',N===4?"2R2 B2 U2 2L U2 2R' U2 2R U2 F2 2R F2 2L' B2 2R2":"3R2 B2 U2 3L U2 3R' U2 3R U2 F2 3R F2 3L' B2 3R2"],['PLL parity',N===4?"2R2 U2 2R2 Uw2 2R2 Uw2":"3R2 U2 3R2 3Uw2 3R2 3Uw2"]],drill:[N,'parity']});
-  return {title:(N===4?'Yau method':N===5?'Yau5 method':'Speed reduction')+' · '+N+'x'+N,demo:String(N),legend:LEG_BIG,
-    tip:`The speed method most fast ${N}x${N} solvers use: centers in bars, the cross early, fast edge pairing, then CFOP. ${SP_YAU_TIP}`,steps};};
+  return {title:nm+' method · '+N+'x'+N,demo:String(N),legend:LEG_BIG,
+    tip:`The method most fast ${N}x${N} solvers use. Same idea as the beginner way (centers, edges, then 3x3), but the white cross is built early so you skip it at the end, and centers go in whole rows at a time. ${SP_YAU_TIP}`,steps};};
 const GUIDES_SPEED={
  '2':{title:'CLL method · 2x2',demo:'2',legend:LEG_CUBE,tip:'Solve one face, then finish the whole cube with one CLL algorithm. Two looks and done: most good 2x2 solvers use CLL or something like it.',steps:[
   {t:'First face, planned',sub:'In inspection',k:'FIRST LAYER',text:'During the 15 seconds of inspection, plan the whole first face (4-6 moves) so you can do it without stopping.',how:'Pick the side that is easiest, not always white. The sides of the layer must match each other.',algs:[['Corner trick',"R U R' U'"]]},
@@ -2382,7 +2432,7 @@ function renderGuide(){const G=curGuide(),st=G.steps[learnStep],done=learnDone[d
   $('lnTopProg').innerHTML=`<span><b style="width:${done.length/nS*100}%"></b></span>${done.length} of ${nS} done`;
   $('lnNum').textContent=learnStep+1;$('lnKicker').textContent=`STEP ${learnStep+1} OF ${nS} · ${st.k}`;$('lnStepTitle').textContent=st.t;$('lnText').textContent=st.text;
   $('lnPats').innerHTML=(st.pats||[]).map((p,i)=>(i?`<span class="gd-arrow" aria-hidden="true">${p[2]==='goal'?'→':(learnSel==='2'?'or':'→')}</span>`:'')+`<div class="gd-pat${p[2]==='goal'?' goal':''}"${p[2]===1?' style="border-color:var(--accent);box-shadow:0 0 18px -6px var(--accent)"':''}>${patSvg(p[1])}<span>${p[0]}</span></div>`).join('');
-  if(st.pics)$('lnPats').innerHTML=st.pics.map(([l,svg])=>`<div class="gd-pat">${svg}<span>${l}</span></div>`).join('');
+  if(st.pics)$('lnPats').innerHTML=st.pics.map(([l,svg,g],i)=>(g==='goal'&&i?'<span class="gd-arrow" aria-hidden="true">→</span>':'')+`<div class="gd-pat${g==='goal'?' goal':''}">${svg}<span>${l}</span></div>`).join('');
   $('lnHow').innerHTML=st.how;if(lnAlgIdx>=st.algs.length)lnAlgIdx=0;
   $('lnAlgPick').innerHTML=st.algs.length>1?st.algs.map((a,i)=>`<button data-ln-alg="${i}" aria-pressed="${i===lnAlgIdx}">${a[0]}</button>`).join(''):'';
   $('lnMovesLabel').textContent=!st.algs.length?'How to do it':st.algs.length>1?'The moves':'The moves · '+st.algs[0][0];

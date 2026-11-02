@@ -1847,7 +1847,7 @@ function renderGuide(){const G=curGuide(),st=G.steps[learnStep],done=learnDone[d
   $('lnTopProg').innerHTML=`<span><b style="width:${done.length/nS*100}%"></b></span>${done.length} of ${nS} done`;
   $('lnNum').textContent=learnStep+1;$('lnKicker').textContent=`STEP ${learnStep+1} OF ${nS} · ${st.k}`;$('lnStepTitle').textContent=st.t;$('lnText').textContent=st.text;
   $('lnPats').innerHTML=(st.pats||[]).map((p,i)=>(i?`<span class="gd-arrow" aria-hidden="true">${p[2]==='goal'?'→':(learnSel==='2'?'or':'→')}</span>`:'')+`<div class="gd-pat${p[2]==='goal'?' goal':''}"${p[2]===1?' style="border-color:var(--accent);box-shadow:0 0 18px -6px var(--accent)"':''}>${patSvg(p[1])}<span>${p[0]}</span></div>`).join('');
-  if(st.pics)$('lnPats').innerHTML=st.pics.map(([l,svg])=>`<div class="gd-pat">${svg}<span>${l}</span></div>`).join('');
+  if(st.pics)$('lnPats').innerHTML=st.pics.map(([l,svg,g],i)=>(g==='goal'&&i?'<span class="gd-arrow" aria-hidden="true">→</span>':'')+`<div class="gd-pat${g==='goal'?' goal':''}">${svg}<span>${l}</span></div>`).join('');
   $('lnHow').innerHTML=st.how;if(lnAlgIdx>=st.algs.length)lnAlgIdx=0;
   $('lnAlgPick').innerHTML=st.algs.length>1?st.algs.map((a,i)=>`<button data-ln-alg="${i}" aria-pressed="${i===lnAlgIdx}">${a[0]}</button>`).join(''):'';
   $('lnMovesLabel').textContent=!st.algs.length?'How to do it':st.algs.length>1?'The moves':'The moves · '+st.algs[0][0];
