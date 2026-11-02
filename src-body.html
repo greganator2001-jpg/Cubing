@@ -36,6 +36,9 @@ body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15
 .streak b{font:700 1.15rem var(--f-display);color:var(--fg)}
 .streak svg{width:18px;height:18px}
 .brand{display:flex;flex-direction:column;align-items:center}
+.goalbar{display:flex;flex-direction:column;align-items:center;gap:4px;margin-top:8px;font:700 .6rem var(--f-body);letter-spacing:.06em;color:var(--muted)}
+.goalbar b{display:block;width:56px;height:5px;border-radius:3px;background:#262A32;overflow:hidden}.goalbar i{display:block;height:100%;background:var(--warn)}
+.goalbar.done i{background:var(--good)}.goalbar.done span{color:var(--good)}
 @media (max-width:700px){.app{flex-direction:column}.rail{position:sticky;top:0;height:auto;width:auto;flex-direction:row;padding:6px 8px;gap:4px;overflow-x:auto}
   .rail::after{top:auto;left:0;height:3px;width:auto}.logo,.streak,.rail .grow{display:none}.rail nav{flex-direction:row}.rail nav button{width:60px;padding:7px 0}.wrap{padding:14px 16px 40px}}
 header{display:flex;flex-wrap:wrap;align-items:center;gap:12px 24px;justify-content:space-between}
@@ -192,6 +195,13 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 .tm-prev .cube3d{height:230px}
 .tm-prev .label{position:absolute;top:10px;left:12px}
 .tm-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 8px}
+.comp{border-color:rgba(255,176,32,.45);box-shadow:0 10px 30px -18px rgba(255,176,32,.6)}
+.cp-slots{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.cp-slots div{background:#1B1E25;border:1px solid #262A32;border-radius:9px;padding:8px 4px;text-align:center;font:700 1rem var(--f-display);font-variant-numeric:tabular-nums}
+.cp-slots div small{display:block;font:600 .62rem var(--f-body);color:#6E7580;letter-spacing:.1em}
+.cp-slots div.now{border-color:var(--warn)}.cp-slots div.drop{color:#6E7580}
+.cp-msg{font-size:.9rem;color:#C8CDD5;line-height:1.45}.cp-msg b{color:var(--warn);font-family:var(--f-display)}
+.cp-hist{display:flex;flex-direction:column;gap:4px;font-size:.82rem;color:var(--muted)}.cp-hist b{color:var(--fg);font-family:var(--f-display)}
 .sess-sel{font:600 .92rem var(--f-body);background:#15171C;color:var(--fg);border:1px solid #2E323A;border-radius:9px;padding:7px 10px;width:100%}
 .tm-list{list-style:none;margin:0;padding:0;max-height:380px;overflow:auto}
 .tm-list li{display:grid;grid-template-columns:2.4em 1fr auto;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--line);font-size:.9rem}
@@ -399,6 +409,7 @@ body.timing .rail,body.timing .secbar,body.timing #view-timer .side,body.timing 
   </nav>
   <span class="grow"></span>
   <div class="streak" id="streak" title="Days in a row you've practiced"><svg viewBox="0 0 24 24" fill="none" stroke="#FFB020" stroke-width="2.2" aria-hidden="true"><path d="M12 2c1 4 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-5 1-9z"/></svg><b id="streakN">0</b>DAY STREAK</div>
+  <div class="goalbar" id="goalBar" hidden title="Daily goal"><b><i></i></b><span>0/20 today</span></div>
   <div class="brand"><h1>Last Layer Lab</h1></div>
 </aside>
 <div class="wrap">
@@ -529,7 +540,7 @@ body.timing .rail,body.timing .secbar,body.timing #view-timer .side,body.timing 
   <!-- TIMER -->
   <section id="view-timer" class="split" hidden>
     <div class="stage">
-      <div class="top-row" id="tmTop"><span class="label"><span id="tmTitle">3x3 scramble</span> <span class="review" id="tmKind"></span></span><button class="btn" id="tmNew">New scramble</button></div>
+      <div class="top-row" id="tmTop"><span class="label"><span id="tmTitle">3x3 scramble</span> <span class="review" id="tmKind"></span></span><span style="display:flex;gap:8px"><button class="btn" id="tmComp" aria-pressed="false" title="Average of 5 with WCA rules">🏆 Competition Ao5</button><button class="btn" id="tmNew">New scramble</button></span></div>
       <div class="tm-scr" id="tmScr">—</div>
       <div class="tm-grid">
         <div class="tm-prev"><div class="cube3d" id="tm3d"></div><span class="label">Scrambled</span></div>
@@ -539,6 +550,7 @@ body.timing .rail,body.timing .secbar,body.timing #view-timer .side,body.timing 
         <label class="toggle"><input type="checkbox" id="tmInsp"> 15-second inspection</label>
         <label class="toggle">Calls at 8s/12s <select id="tmCalls"><option value="off">Off</option><option value="beep">Beep</option><option value="voice">Voice</option></select></label>
         <label class="toggle">Splits <select id="tmSplits"><option value="off">Off</option><option value="cfop">Cross · F2L · OLL · PLL</option><option value="red">Centers · Edges · 3x3</option><option value="roux">Roux: FB · SB · CMLL · LSE</option></select></label>
+        <label class="toggle"><input type="checkbox" id="tmHardDel"> ✕ also deletes from Stats</label>
         <span class="note">Scramble with yellow on top and green in front.</span>
       </div>
     </div>
@@ -554,6 +566,16 @@ body.timing .rail,body.timing .secbar,body.timing #view-timer .side,body.timing 
           <div class="stat"><div class="label">Ao12</div><div class="v" id="tmAo12">—</div></div>
           <div class="stat"><div class="label">Ao50</div><div class="v" id="tmAo50">—</div></div>
         </div>
+      </div>
+      <div class="panel comp" id="tmCompPanel" hidden>
+        <div class="top-row"><span class="label">Competition round · <span id="cpRound">1</span></span><button class="linkbtn" id="cpQuit">End round</button></div>
+        <div class="cp-slots" id="cpSlots"></div>
+        <div class="cp-msg" id="cpMsg"></div>
+        <div class="cp-hist" id="cpHist"></div>
+      </div>
+      <div class="panel" id="tmSessChartPanel" hidden>
+        <div class="top-row"><span class="label">This session</span><span class="legend"><i class="lg-dot"></i>Singles <i class="lg-a5"></i>Ao5</span></div>
+        <div class="chart" id="tmSessChart"></div>
       </div>
       <div class="panel" id="tmSplitPanel" hidden>
         <span class="label">Split averages (last 12)</span>
@@ -580,6 +602,10 @@ body.timing .rail,body.timing .secbar,body.timing #view-timer .side,body.timing 
         <div class="chart" id="pgTimerChart"></div>
         <div class="pbs" id="pgPBs"></div>
       </div>
+      <div class="pcard wide">
+        <div class="top-row"><h2 class="ph" id="pgSessTitle">Sessions</h2><span class="note">Every session, including deleted ones · best of each column is green</span></div>
+        <div class="sb-wrap"><table class="sb" id="pgSess"></table></div>
+      </div>
       <div class="pcard">
         <h2 class="ph">Drill practice by day</h2>
         <div class="chart" id="pgDays"></div>
@@ -592,6 +618,13 @@ body.timing .rail,body.timing .secbar,body.timing #view-timer .side,body.timing 
       <div class="pcard wide">
         <div class="top-row"><h2 class="ph">Case times</h2><span class="note">Slowest first · average of your last 5 · click a case to drill it</span></div>
         <div class="cases-t" id="pgCases"></div>
+      </div>
+      <div class="pcard wide">
+        <h2 class="ph">Daily goal</h2>
+        <div class="data-row"><label class="toggle"><input type="checkbox" id="goalOn"> Set a daily goal</label>
+          <input type="number" id="goalN" min="1" max="500" value="20" aria-label="Goal amount" style="width:80px;font:600 .95rem var(--f-body);background:#15171C;color:var(--fg);border:1px solid #2E323A;border-radius:8px;padding:6px 8px">
+          <select id="goalType" class="sess-sel" style="width:auto" aria-label="What counts"><option value="any">drill reps or timed solves</option><option value="drill">drill reps</option><option value="timer">timed solves</option></select></div>
+        <p class="note" style="margin:0">Your day streak then only counts days you hit the goal. Progress shows under the streak in the sidebar.</p>
       </div>
       <div class="pcard wide">
         <h2 class="ph">Back up and import</h2>
@@ -1363,7 +1396,7 @@ const tmList=()=>solves[tmKey()]||(solves[tmKey()]=[]);   // every solve ever (S
 let tmSessions=store.get('tmSessions',{});
 function sessInfo(k=tmKey()){let o=tmSessions[k];if(!o||!o.list||!o.list.length){o=tmSessions[k]={list:[{id:1,name:'Session 1',at:Date.now()}],cur:1,next:2};}
   if(!o.list.some(x=>x.id===o.cur))o.cur=o.list[o.list.length-1].id;return o;}
-const tmSess=()=>{const c=sessInfo().cur;return tmList().filter(x=>(x.ses||1)===c);};
+const tmSess=()=>{const c=sessInfo().cur;return tmList().filter(x=>(x.ses||1)===c&&!x.hid);};
 // random-move scrambles for the other WCA puzzles
 function genPuzzle(id){const out=[];
   if(id==='pyra'||id==='skewb'){const F=id==='pyra'?['U','L','R','B']:['R','L','U','B'];let last='';
@@ -1392,23 +1425,25 @@ const SPLITS={off:[],cfop:['Cross','F2L','OLL','PLL'],red:['Centers','Edges','3x
 function bestAo(L,n){let b=null;for(let k=n;k<=L.length;k++){const v=aoN(L.slice(0,k),n);if(v!==null&&v!==Infinity&&(b===null||v<b))b=v;}return b;}
 function bestSingle(L){const f=L.map(tval).filter(v=>v!==Infinity);return f.length?Math.min(...f):null;}
 function tmRender(){const L=tmSess(),fin=L.map(tval).filter(v=>v!==Infinity);const si=sessInfo();
-  $('tmSessSel').innerHTML=si.list.map(x=>{const n=tmList().filter(v=>(v.ses||1)===x.id).length;return `<option value="${x.id}"${x.id===si.cur?' selected':''}>${x.name} · ${n} solve${n===1?'':'s'}</option>`;}).join('');
-  $('tmSessLabel').textContent=keyLabel(tmKey())+' sessions';$('tmTitle').textContent=keyLabel(tmKey())+' scramble';
+  $('tmSessSel').innerHTML=si.list.map(x=>{const n=tmList().filter(v=>(v.ses||1)===x.id&&!v.hid).length;return `<option value="${x.id}"${x.id===si.cur?' selected':''}>${x.name} · ${n} solve${n===1?'':'s'}</option>`;}).join('');
+  $('tmSessLabel').textContent=keyLabel(tmKey())+' sessions';if(comp&&comp.key!==tmKey())comp=null;renderComp();$('tmTitle').textContent=keyLabel(tmKey())+' scramble';
   $('tmN').textContent=L.length;$('tmBest').textContent=fin.length?fmtT(Math.min(...fin)):'—';
   $('tmMean').textContent=fin.length?fmtT(fin.reduce((a,b)=>a+b,0)/fin.length):'—';
   $('tmAo5').textContent=fmtT(aoN(L,5));$('tmAo12').textContent=fmtT(aoN(L,12));$('tmAo50').textContent=fmtT(aoN(L,50));
   const spLine=s=>s.splits?'<span class="sp">'+s.splits.map((t,k)=>SPLITS[s.sp][k]+' '+fmtT(t-(k?s.splits[k-1]:0))).join(' · ')+'</span>':'';
   $('tmList').innerHTML=L.length?L.map((s,i)=>`<li title="${s.scr}"><span class="i">${i+1}</span><span class="t">${s.pen==='DNF'?'DNF <span class="i">('+fmtT(s.t)+')</span>':fmtT(tval(s))+(s.pen==='+2'?'+':'')}</span><span class="acts"><button data-pen="+2" data-i="${i}" aria-pressed="${s.pen==='+2'}">+2</button><button data-pen="DNF" data-i="${i}" aria-pressed="${s.pen==='DNF'}">DNF</button><button data-del="${i}" aria-label="Delete solve">✕</button></span>${spLine(s)}</li>`).reverse().join('')
     :'<li class="empty" style="display:block">No solves yet for this cube.</li>';
+  $('tmSessChartPanel').hidden=L.length<3;if(L.length>=3)$('tmSessChart').innerHTML=timerChart(L,{w:360,h:150,a12:false});
   // split averages over the last 12 solves that used the current split mode
   const mode=$('tmSplits').value,ph=SPLITS[mode],withS=L.filter(s=>s.sp===mode&&s.splits&&s.pen!=='DNF').slice(-12);
   $('tmSplitPanel').hidden=!ph.length||!withS.length;
   if(ph.length&&withS.length){const avgs=ph.map((_,k)=>withS.reduce((a,s)=>a+(s.splits[k]-(k?s.splits[k-1]:0)),0)/withS.length);const mx=Math.max(...avgs);
     $('tmSplitAvg').innerHTML=avgs.map((v,k)=>`<div class="sbar"><span>${ph[k]}</span><span class="trk"><i style="width:${(v/mx*100).toFixed(1)}%"></i></span><span class="v">${fmtT(v)}</span></div>`).join('');}}
 $('tmList').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const S=tmSess(),A=tmList();
-  if(b.dataset.del!==undefined){const j=A.indexOf(S[+b.dataset.del]);if(j>=0)A.splice(j,1);}else{const s=S[+b.dataset.i];s.pen=s.pen===b.dataset.pen?'':b.dataset.pen;}
+  if(b.dataset.del!==undefined){const o=S[+b.dataset.del];if($('tmHardDel').checked){const j=A.indexOf(o);if(j>=0)A.splice(j,1);}else o.hid=true;}else{const s=S[+b.dataset.i];s.pen=s.pen===b.dataset.pen?'':b.dataset.pen;}
   store.set('solves',solves);tmRender();});
 $('tmClear').onclick=()=>{$('tmClear').hidden=true;$('tmClearYes').hidden=false;$('tmClearNote').hidden=false;setTimeout(()=>{$('tmClear').hidden=false;$('tmClearYes').hidden=true;$('tmClearNote').hidden=true;},5000);};
+$('tmHardDel').checked=store.get('hardDel',false);$('tmHardDel').onchange=e=>{e.target.blur();store.set('hardDel',e.target.checked);};
 $('tmClearYes').onclick=()=>{const si=sessInfo();si.list=si.list.filter(x=>x.id!==si.cur);sessInfo();store.set('tmSessions',tmSessions);
   $('tmClear').hidden=false;$('tmClearYes').hidden=true;$('tmClearNote').hidden=true;tmRender();toast('Session deleted. Its times are still in Stats.');};
 $('tmSessNew').onclick=e=>{e.currentTarget.blur();const si=sessInfo();const id=si.next||(Math.max(...si.list.map(x=>x.id))+1);si.next=id+1;
@@ -1467,7 +1502,7 @@ function tmPress(){
     cancelAnimationFrame(tm.raf);const t=now-tm.t0;tmSet('stopped');$('tmPhase').textContent='';
     const L=tmList(),pS=bestSingle(L),p5=bestAo(L,5),p12=bestAo(L,12);
     const s={t,pen:tm.pen,scr:tmScr,at:Date.now(),ses:sessInfo().cur};if(ph.length){s.splits=[...tm.splits,t];s.sp=$('tmSplits').value;}
-    L.push(s);store.set('solves',solves);renderStreak();tmTimeEl.textContent=s.pen==='DNF'?'DNF':fmtT(tval(s))+(s.pen==='+2'?'+':'');
+    L.push(s);compAdd(s);store.set('solves',solves);renderStreak();tmTimeEl.textContent=s.pen==='DNF'?'DNF':fmtT(tval(s))+(s.pen==='+2'?'+':'');
     $('tmHint').textContent='Saved. New scramble below.';tmRender();newScramble();
     const nS=bestSingle(L),n5=bestAo(L,5),n12=bestAo(L,12);const pb=[];
     if(pS!==null&&nS!==null&&nS<pS)pb.push('single '+fmtT(nS));if(p5!==null&&n5!==null&&n5<p5)pb.push('Ao5 '+fmtT(n5));if(p12!==null&&n12!==null&&n12<p12)pb.push('Ao12 '+fmtT(n12));
@@ -1491,10 +1526,38 @@ document.addEventListener('keyup',e=>{if(view()!=='timer'||typing())return;if(e.
 tmEl.addEventListener('pointerdown',e=>{e.preventDefault();tmPress();});
 tmEl.addEventListener('pointerup',e=>{e.preventDefault();tmRelease();});
 
+
+// ---- competition mode: one WCA average of 5 ----
+let comp=null;   // {times:[{t,pen}], key}
+let comps=store.get('comps',{});
+const cval=x=>x.pen==='DNF'?Infinity:x.t+(x.pen==='+2'?2000:0);
+function wcaAvg(v){if(v.length<5)return null;const s=v.slice().sort((a,b)=>a-b).slice(1,4);return s.includes(Infinity)?Infinity:s.reduce((a,b)=>a+b,0)/3;}
+function renderComp(){const on=!!comp;$('tmCompPanel').hidden=!on;$('tmComp').setAttribute('aria-pressed',on);
+  const H=(comps[tmKey()]||[]).slice(-5).reverse();
+  $('cpHist').innerHTML=H.length?'<span class="label">Past rounds</span>'+H.map(r=>`<span>${new Date(r.at).toLocaleDateString()} · <b>${fmtT(r.avg)}</b> (${r.times.map(x=>x===Infinity?'DNF':fmtT(x)).join(', ')})</span>`).join(''):'';
+  if(!on)return;const v=comp.times.map(cval);$('cpRound').textContent=(comps[tmKey()]||[]).length+1;
+  const srt=v.map((x,i)=>[x,i]).sort((a,b)=>a[0]-b[0]),drop=v.length===5?[srt[0][1],srt[4][1]]:[];
+  $('cpSlots').innerHTML=[0,1,2,3,4].map(i=>`<div class="${i===v.length?'now':''}${drop.includes(i)?' drop':''}"><small>${i+1}</small>${i<v.length?(v[i]===Infinity?'DNF':(drop.includes(i)?'(':'')+fmtT(v[i])+(drop.includes(i)?')':'')):'—'}</div>`).join('');
+  let msg='';const R=comps[tmKey()]||[];const prev=(v.length===5?R.slice(0,-1):R).map(x=>x.avg).filter(x=>x!==Infinity);const pb=prev.length?Math.min(...prev):null;
+  if(v.length===5){const a=wcaAvg(v);msg=`Average: <b>${fmtT(a)}</b>`+(pb!==null&&a<pb?' · your best competition average':'')+'. Press 🏆 again for a new round.';}
+  else if(v.length===4){const s=v.slice().sort((a,b)=>a-b);const bpa=(s[0]+s[1]+s[2])/3,wpa=(s[1]+s[2]+s[3])/3;
+    let need='';if(pb!==null){const t=3*pb-s[1]-s[2];need=t<=s[0]?` To beat your best (${fmtT(pb)}) you need under <b>${fmtT(Math.max(t,0))}</b>.`:t>=s[3]?` Your best (${fmtT(pb)}) is already beaten unless you DNF.`:` To beat your best (${fmtT(pb)}) you need under <b>${fmtT(t)}</b>.`;}
+    msg=`Best possible: <b>${fmtT(bpa)}</b> · worst possible: <b>${fmtT(wpa)}</b>.${need}`;}
+  else msg=`Solve ${v.length+1} of 5. Inspection is on and WCA penalties apply (over 15 s = +2, over 17 s = DNF).`;
+  $('cpMsg').innerHTML=msg;}
+function bestComp(){const r=(comps[tmKey()]||[]).map(x=>x.avg).filter(x=>x!==Infinity);return r.length?Math.min(...r):null;}
+function compAdd(s){if(!comp||comp.key!==tmKey()||comp.times.length>=5)return;comp.times.push({t:s.t,pen:s.pen});s.comp=true;
+  if(comp.times.length===5){const v=comp.times.map(cval);(comps[tmKey()]=comps[tmKey()]||[]).push({at:Date.now(),times:v,avg:wcaAvg(v)});store.set('comps',comps);const best=bestComp();
+    if(wcaAvg(v)!==Infinity&&wcaAvg(v)===best&&comps[tmKey()].length>1)celebrate('New best competition average: '+fmtT(best));}
+  renderComp();}
+$('tmComp').onclick=e=>{e.currentTarget.blur();if(tm.state!=='idle'&&tm.state!=='stopped')return;
+  if(comp&&comp.times.length<5){comp=null;}else{comp={times:[],key:tmKey()};$('tmInsp').checked=true;store.set('insp',true);newScramble();}renderComp();};
+$('cpQuit').onclick=()=>{comp=null;renderComp();};
+
 // ---- progress ----
 function niceTicks(lo,hi,n=4){const span=hi-lo||1,raw=span/n,mag=Math.pow(10,Math.floor(Math.log10(raw))),st=[1,2,2.5,5,10].map(m=>m*mag).find(x=>x>=raw);
   const out=[];for(let v=Math.ceil(lo/st)*st;v<=hi+1e-9;v+=st)out.push(+v.toFixed(6));return out;}
-function timerChart(L){const W=760,H=240,pl=46,pr=12,pt=12,pb=26;if(L.length<2)return'<p class="note">Do a few timed solves to see your chart.</p>';
+function timerChart(L,o={}){const W=o.w||760,H=o.h||240,pl=46,pr=12,pt=12,pb=26;if(L.length<2)return'<p class="note">Do a few timed solves to see your chart.</p>';
   const vals=L.map(tval),fin=vals.filter(v=>v!==Infinity);if(fin.length<2)return'<p class="note">Not enough finished solves yet.</p>';
   const sorted=fin.slice().sort((a,b)=>a-b),cap=sorted[Math.floor(sorted.length*.97)]*1.15;           // ignore wild outliers when scaling
   const lo=Math.max(0,sorted[0]*.85),hi=Math.max(cap,sorted[0]*1.2);
@@ -1502,7 +1565,7 @@ function timerChart(L){const W=760,H=240,pl=46,pr=12,pt=12,pb=26;if(L.length<2)r
   let g='';for(const t of niceTicks(lo/1000,hi/1000)){const y=Y(t*1000);g+=`<line class="ax" x1="${pl}" x2="${W-pr}" y1="${y}" y2="${y}"/><text class="tk" x="${pl-6}" y="${y+4}" text-anchor="end">${t}s</text>`;}
   const xt=niceTicks(1,L.length,5).filter(v=>Number.isInteger(v));for(const t of xt)g+=`<text class="tk" x="${X(t-1)}" y="${H-6}" text-anchor="middle">${t}</text>`;
   let best=Infinity;for(let i=0;i<L.length;i++){const v=vals[i];if(v===Infinity)continue;const pbv=v<best;if(pbv)best=v;g+=`<circle class="${pbv?'pbdot':'dot'}" cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="${pbv?3.6:2.6}"/>`;}
-  for(const [n,cls] of [[5,'a5'],[12,'a12']]){let d='';for(let i=n-1;i<L.length;i++){const a=aoN(L.slice(0,i+1),n);if(a===null||a===Infinity)continue;d+=(d?'L':'M')+X(i).toFixed(1)+' '+Y(a).toFixed(1);}if(d)g+=`<path class="${cls}" d="${d}"/>`;}
+  for(const [n,cls] of (o.a12===false?[[5,'a5']]:[[5,'a5'],[12,'a12']])){let d='';for(let i=n-1;i<L.length;i++){const a=aoN(L.slice(0,i+1),n);if(a===null||a===Infinity)continue;d+=(d?'L':'M')+X(i).toFixed(1)+' '+Y(a).toFixed(1);}if(d)g+=`<path class="${cls}" d="${d}"/>`;}
   return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Solve times over the session">${g}</svg>`;}
 function pbHistory(L){const out=[];const add=(label,fn)=>{let b=null,at=null;for(let k=1;k<=L.length;k++){const v=fn(L.slice(0,k));if(v!==null&&v!==Infinity&&(b===null||v<b)){b=v;at=L[k-1].at;}}out.push([label,b,at]);};
   add('Single',bestSingle);for(const n of [5,12,50,100])add('Ao'+n,x=>aoN(x,n));return out;}
@@ -1535,7 +1598,16 @@ function renderScoreboard(){const all=[];const week=Date.now()-7*86400e3;
   const recent=all.sort((a,b)=>(b.at||0)-(a.at||0)).slice(0,8);
   $('pbFeed').innerHTML=recent.length?'<span class="label">Recent PBs</span>'+recent.map(e=>`<div class="it"><span><b>${keyLabel(e.N)} ${e.kind}</b> ${fmtT(e.v)}</span><span class="gain">${e.prev-e.v<10?'<0.01':fmtT(e.prev-e.v)}s faster</span><span class="when">${ago(e.at)}</span></div>`).join('')
     :'<p class="note">Set a few times in the Timer and your PBs show up here. Results from the last 7 days are starred.</p>';}
-function renderProgress(){renderScoreboard();const L=tmList();$('pgTimerTitle').textContent='Timer · '+keyLabel(tmKey());$('pgTimerChart').innerHTML=timerChart(L);
+function renderSessions(){const k=tmKey(),A=tmList(),si=sessInfo(k);$('pgSessTitle').textContent='Sessions · '+keyLabel(k);
+  const ids=[...new Set(A.map(x=>x.ses||1))].sort((a,b)=>a-b);if(!ids.length){$('pgSess').innerHTML='<tr><td class="none">No timed solves on this puzzle yet.</td></tr>';return;}
+  const rows=ids.map(id=>{const L=A.filter(x=>(x.ses||1)===id),f=L.map(tval).filter(v=>v!==Infinity),ent=si.list.find(x=>x.id===id);
+    return{id,name:ent?ent.name:'Session '+id+' (deleted)',cur:id===si.cur,n:L.length,best:f.length?Math.min(...f):null,mean:f.length?f.reduce((a,b)=>a+b,0)/f.length:null,a5:bestAo(L,5),a12:bestAo(L,12),from:L[0]&&L[0].at,to:L[L.length-1]&&L[L.length-1].at};});
+  const mins={};for(const c of['best','mean','a5','a12'])mins[c]=Math.min(...rows.map(r=>r[c]).filter(v=>v!=null&&v!==Infinity));
+  const cell=(r,c)=>r[c]==null||r[c]===Infinity?'<td class="none">—</td>':`<td class="${r[c]===mins[c]?'fresh':''}"><span class="v">${fmtT(r[c])}</span></td>`;
+  const day=t=>t?new Date(t).toLocaleDateString():'';
+  $('pgSess').innerHTML='<thead><tr><th>Session</th><th>Solves</th><th>Best</th><th>Mean</th><th>Best Ao5</th><th>Best Ao12</th><th>Dates</th></tr></thead><tbody>'+
+    rows.map(r=>`<tr class="${r.cur?'cur':''}"><td class="cube">${r.name}</td><td>${r.n}</td>${cell(r,'best')}${cell(r,'mean')}${cell(r,'a5')}${cell(r,'a12')}<td><span class="d">${day(r.from)}${r.to&&day(r.to)!==day(r.from)?' – '+day(r.to):''}</span></td></tr>`).join('')+'</tbody>';}
+function renderProgress(){renderScoreboard();renderSessions();const L=tmList();$('pgTimerTitle').textContent='Timer · '+keyLabel(tmKey());$('pgTimerChart').innerHTML=timerChart(L);
   $('pgPBs').innerHTML=pbHistory(L).map(([l,v,at])=>`<div class="pb"><div class="label">${l}</div><div class="v">${fmtT(v)}</div><div class="d">${at?new Date(at).toLocaleDateString():'—'}</div></div>`).join('');
   $('pgDays').innerHTML=daysChart();
   const cs=allCases(),secs=sectionsFor(cubeN).filter(k=>cs.some(c=>secOf(c)===k)),now=Date.now();
@@ -1711,9 +1783,19 @@ $('view-learn').addEventListener('click',e=>{const t=e.target;
   if(t.closest('#lnNext')){markDone();const G=curGuide(),n=G.steps.length;if(learnStep<n-1){learnStep++;lnAlgIdx=0;renderGuide();}else{toast(learnMode==='speed'?'Nice! Now drill it until it\'s automatic.':'Nice! '+G.title.replace('Solve','You can solve')+' now.');learnSel=null;renderLearn();}return;}});
 $('lnSearch').addEventListener('input',renderLib);
 
-function renderStreak(){const days=new Set();const k=t=>{const d=new Date(t);return d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate();};
-  for(const r of dlog)if(r.at)days.add(k(r.at));for(const n in solves)for(const r of solves[n]||[])if(r.at)days.add(k(r.at));
-  let n=0,d=new Date();if(!days.has(k(d)))d.setDate(d.getDate()-1);while(days.has(k(d))){n++;d.setDate(d.getDate()-1);}$('streakN').textContent=n;}
+let goal=store.get('goal',null),goalHitDay=store.get('goalHit','');
+function dayKey(t){const d=new Date(t);return d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate();}
+function countsByDay(){const m={};const add=(t,kind)=>{const k=dayKey(t);(m[k]=m[k]||{drill:0,timer:0})[kind]++;};
+  for(const r of dlog)if(r.at)add(r.at,'drill');for(const n in solves)for(const r of solves[n]||[])if(r.at)add(r.at,'timer');return m;}
+const goalCount=c=>!c?0:goal.type==='drill'?c.drill:goal.type==='timer'?c.timer:c.drill+c.timer;
+function renderStreak(){const m=countsByDay();const met=k=>goal?goalCount(m[k])>=goal.n:!!m[k];
+  let n=0,d=new Date();if(!met(dayKey(d)))d.setDate(d.getDate()-1);while(met(dayKey(d))){n++;d.setDate(d.getDate()-1);}$('streakN').textContent=n;
+  $('streak').title=goal?'Days in a row you hit your daily goal':"Days in a row you've practiced";
+  const g=$('goalBar');g.hidden=!goal;if(goal){const c=goalCount(m[dayKey(Date.now())]);g.querySelector('i').style.width=Math.min(100,c/goal.n*100)+'%';g.querySelector('span').textContent=Math.min(c,goal.n)+'/'+goal.n+' today';
+    g.classList.toggle('done',c>=goal.n);const today=dayKey(Date.now());if(c>=goal.n&&goalHitDay!==today){goalHitDay=today;store.set('goalHit',today);if(c===goal.n)celebrate('Daily goal done! '+n+' day streak');}}}
+function renderGoalForm(){$('goalType').value=goal?goal.type:'any';$('goalN').value=goal?goal.n:20;$('goalOn').checked=!!goal;}
+function saveGoal(){goal=$('goalOn').checked?{type:$('goalType').value,n:Math.max(1,Math.min(500,parseInt($('goalN').value)||20))}:null;store.set('goal',goal);renderStreak();}
+['goalType','goalN','goalOn'].forEach(id=>$(id).addEventListener('change',saveGoal));renderGoalForm();
 renderSecs();loadCase();renderSession();renderTScore();renderStreak();
 (function resumeRun(){const r=store.get('tmRun',null);if(!r||!r.w)return;const age=Date.now()-r.w;if(age<0||age>12*3600e3){store.set('tmRun',null);return;}
   if(r.pz)tmPz=r.pz;else if(r.N&&r.N!==cubeN)setCube(r.N);$('tab-timer').click();tmScr=r.scr||tmScr;$('tmScr').textContent=tmScr;
