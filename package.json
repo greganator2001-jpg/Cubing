@@ -1,7 +1,7 @@
 {
   "name": "last-layer-lab",
   "productName": "Last Layer Lab",
-  "version": "2.4.1",
+  "version": "2.4.2",
   "description": "3x3 speedcubing algorithm trainer",
   "main": "bundle/main.js",
   "author": "greganator2001",

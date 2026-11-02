@@ -19,6 +19,8 @@
 [hidden]{display:none!important}
 body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45;margin:0}
 .app{display:flex;min-height:100vh}
+/* scale the main area up on big windows (the side rail stays the same) */
+@media (min-width:1500px){.wrap{zoom:1.12}}@media (min-width:1750px){.wrap{zoom:1.22}}@media (min-width:2100px){.wrap{zoom:1.38}}@media (min-width:2600px){.wrap{zoom:1.6}}
 .wrap{flex:1;min-width:0;max-width:1320px;margin:0 auto;display:flex;flex-direction:column;gap:16px;padding:20px max(26px,env(safe-area-inset-right,0px)) 40px 26px}
 .rail{position:sticky;top:0;height:100vh;flex:none;width:92px;background:var(--rail);display:flex;flex-direction:column;align-items:center;gap:6px;padding:18px 0 14px;z-index:6}
 .rail::after{content:"";position:absolute;top:0;right:0;bottom:0;width:3px;background:linear-gradient(#FFD500 0 16.6%,#FF7A1A 0 33.3%,#D0213B 0 50%,#2F6BFF 0 66.6%,#11A35A 0 83.3%,#F2F2F2 0)}
