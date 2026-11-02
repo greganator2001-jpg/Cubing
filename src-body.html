@@ -1269,6 +1269,9 @@ function release(){
   else if(tState==='stopped')setT('idle');}
 const view=()=>document.querySelector('nav [aria-selected="true"]').dataset.view;
 const typing=()=>/INPUT|TEXTAREA|SELECT/.test(document.activeElement&&document.activeElement.tagName)&&document.activeElement.type!=='checkbox'&&document.activeElement.type!=='range';
+// Space is the timer key everywhere: never let it scroll the page (or click a focused button) unless you're typing in a box
+const spaceKey=e=>{if((e.code==='Space'||e.key===' ')&&!typing()&&!(document.activeElement&&document.activeElement.isContentEditable))e.preventDefault();};
+window.addEventListener('keydown',spaceKey,{capture:true});window.addEventListener('keyup',spaceKey,{capture:true});
 document.addEventListener('keydown',e=>{if(view()!=='drill'||typing()||e.repeat)return;
   if(tState==='running'){e.preventDefault();press();return;}
   if(e.code==='Space'){e.preventDefault();press();}});
