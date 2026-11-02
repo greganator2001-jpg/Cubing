@@ -207,6 +207,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 .tm-prev .cube3d{height:230px}
 .tm-prev .label{position:absolute;top:10px;left:12px}
 .tm-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 8px}
+.sess-sel{font:600 .92rem var(--f-body);background:#15171C;color:var(--fg);border:1px solid #2E323A;border-radius:9px;padding:7px 10px;width:100%}
 .tm-list{list-style:none;margin:0;padding:0;max-height:380px;overflow:auto}
 .tm-list li{display:grid;grid-template-columns:2.4em 1fr auto;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--line);font-size:.9rem}
 .tm-list li:last-child{border-bottom:0}
@@ -566,7 +567,8 @@ html,body{margin:0}
     </div>
     <aside class="side">
       <div class="panel">
-        <span class="label" id="tmSessLabel">3x3 session</span>
+        <div class="top-row"><span class="label" id="tmSessLabel">3x3 session</span><button class="linkbtn" id="tmSessNew">+ New session</button></div>
+        <select id="tmSessSel" class="sess-sel" aria-label="Session"></select>
         <div class="tm-stats">
           <div class="stat"><div class="label">Solves</div><div class="v" id="tmN">0</div></div>
           <div class="stat"><div class="label">Best</div><div class="v" id="tmBest">—</div></div>
@@ -581,7 +583,8 @@ html,body{margin:0}
         <div class="splitbars" id="tmSplitAvg"></div>
       </div>
       <div class="panel">
-        <div class="top-row"><span class="label">Times</span><span><button class="linkbtn" id="tmClear">Clear session</button><button class="linkbtn" id="tmClearYes" hidden>Yes, clear all</button></span></div>
+        <div class="top-row"><span class="label">Times</span><span><button class="linkbtn" id="tmClear">Delete session</button><button class="linkbtn" id="tmClearYes" hidden>Yes, delete it</button></span></div>
+        <p class="note" id="tmClearNote" hidden style="margin:0">Removes this session from the list. Its times stay in your Stats and PBs.</p>
         <ul class="tm-list" id="tmList"></ul>
       </div>
     </aside>
@@ -1502,7 +1505,12 @@ let solves=store.get('solves',{}),tmScr='',tmCube=null,tmPz=null;
 const TPZ={pyra:'Pyraminx',skewb:'Skewb',mega:'Megaminx',sq1:'Square-1',clock:'Clock'};
 const tmKey=()=>tmPz||cubeN;
 const keyLabel=k=>TPZ[k]||(k+'x'+k);
-const tmList=()=>solves[tmKey()]||(solves[tmKey()]=[]);
+const tmList=()=>solves[tmKey()]||(solves[tmKey()]=[]);   // every solve ever (Stats + PBs use this)
+// sessions only filter what the Timer shows; deleting a session never deletes times
+let tmSessions=store.get('tmSessions',{});
+function sessInfo(k=tmKey()){let o=tmSessions[k];if(!o||!o.list||!o.list.length){o=tmSessions[k]={list:[{id:1,name:'Session 1',at:Date.now()}],cur:1,next:2};}
+  if(!o.list.some(x=>x.id===o.cur))o.cur=o.list[o.list.length-1].id;return o;}
+const tmSess=()=>{const c=sessInfo().cur;return tmList().filter(x=>(x.ses||1)===c);};
 // random-move scrambles for the other WCA puzzles
 function genPuzzle(id){const out=[];
   if(id==='pyra'||id==='skewb'){const F=id==='pyra'?['U','L','R','B']:['R','L','U','B'];let last='';
@@ -1530,8 +1538,9 @@ function aoN(list,n){if(list.length<n)return null;const v=list.slice(-n).map(tva
 const SPLITS={off:[],cfop:['Cross','F2L','OLL','PLL'],red:['Centers','Edges','3x3'],roux:['First block','Second block','CMLL','LSE']};
 function bestAo(L,n){let b=null;for(let k=n;k<=L.length;k++){const v=aoN(L.slice(0,k),n);if(v!==null&&v!==Infinity&&(b===null||v<b))b=v;}return b;}
 function bestSingle(L){const f=L.map(tval).filter(v=>v!==Infinity);return f.length?Math.min(...f):null;}
-function tmRender(){const L=tmList(),fin=L.map(tval).filter(v=>v!==Infinity);
-  $('tmSessLabel').textContent=keyLabel(tmKey())+' session';$('tmTitle').textContent=keyLabel(tmKey())+' scramble';
+function tmRender(){const L=tmSess(),fin=L.map(tval).filter(v=>v!==Infinity);const si=sessInfo();
+  $('tmSessSel').innerHTML=si.list.map(x=>{const n=tmList().filter(v=>(v.ses||1)===x.id).length;return `<option value="${x.id}"${x.id===si.cur?' selected':''}>${x.name} · ${n} solve${n===1?'':'s'}</option>`;}).join('');
+  $('tmSessLabel').textContent=keyLabel(tmKey())+' sessions';$('tmTitle').textContent=keyLabel(tmKey())+' scramble';
   $('tmN').textContent=L.length;$('tmBest').textContent=fin.length?fmtT(Math.min(...fin)):'—';
   $('tmMean').textContent=fin.length?fmtT(fin.reduce((a,b)=>a+b,0)/fin.length):'—';
   $('tmAo5').textContent=fmtT(aoN(L,5));$('tmAo12').textContent=fmtT(aoN(L,12));$('tmAo50').textContent=fmtT(aoN(L,50));
@@ -1543,11 +1552,15 @@ function tmRender(){const L=tmList(),fin=L.map(tval).filter(v=>v!==Infinity);
   $('tmSplitPanel').hidden=!ph.length||!withS.length;
   if(ph.length&&withS.length){const avgs=ph.map((_,k)=>withS.reduce((a,s)=>a+(s.splits[k]-(k?s.splits[k-1]:0)),0)/withS.length);const mx=Math.max(...avgs);
     $('tmSplitAvg').innerHTML=avgs.map((v,k)=>`<div class="sbar"><span>${ph[k]}</span><span class="trk"><i style="width:${(v/mx*100).toFixed(1)}%"></i></span><span class="v">${fmtT(v)}</span></div>`).join('');}}
-$('tmList').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const L=tmList();
-  if(b.dataset.del!==undefined)L.splice(+b.dataset.del,1);else{const s=L[+b.dataset.i];s.pen=s.pen===b.dataset.pen?'':b.dataset.pen;}
+$('tmList').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const S=tmSess(),A=tmList();
+  if(b.dataset.del!==undefined){const j=A.indexOf(S[+b.dataset.del]);if(j>=0)A.splice(j,1);}else{const s=S[+b.dataset.i];s.pen=s.pen===b.dataset.pen?'':b.dataset.pen;}
   store.set('solves',solves);tmRender();});
-$('tmClear').onclick=()=>{$('tmClear').hidden=true;$('tmClearYes').hidden=false;setTimeout(()=>{$('tmClear').hidden=false;$('tmClearYes').hidden=true;},4000);};
-$('tmClearYes').onclick=()=>{solves[tmKey()]=[];store.set('solves',solves);$('tmClear').hidden=false;$('tmClearYes').hidden=true;tmRender();};
+$('tmClear').onclick=()=>{$('tmClear').hidden=true;$('tmClearYes').hidden=false;$('tmClearNote').hidden=false;setTimeout(()=>{$('tmClear').hidden=false;$('tmClearYes').hidden=true;$('tmClearNote').hidden=true;},5000);};
+$('tmClearYes').onclick=()=>{const si=sessInfo();si.list=si.list.filter(x=>x.id!==si.cur);sessInfo();store.set('tmSessions',tmSessions);
+  $('tmClear').hidden=false;$('tmClearYes').hidden=true;$('tmClearNote').hidden=true;tmRender();toast('Session deleted. Its times are still in Stats.');};
+$('tmSessNew').onclick=e=>{e.currentTarget.blur();const si=sessInfo();const id=si.next||(Math.max(...si.list.map(x=>x.id))+1);si.next=id+1;
+  si.list.push({id,name:'Session '+id,at:Date.now()});si.cur=id;store.set('tmSessions',tmSessions);tmRender();};
+$('tmSessSel').onchange=e=>{sessInfo().cur=+e.target.value;store.set('tmSessions',tmSessions);e.target.blur();tmRender();};
 // random-state 3x3 scrambles come from a two-phase solver running in a worker; random-move is the fallback while it warms up
 let scrW=null,rsQ=[],tmFallback=false;
 function initRS(){if(scrW)return;try{const src=$('scrWorkerSrc').textContent;if(src.length<1000)return;
@@ -1600,7 +1613,7 @@ function tmPress(){
     if(ph.length&&tm.splits.length<ph.length-1){tm.splits.push(now-tm.t0);const r=store.get('tmRun',null);if(r){r.splits=tm.splits;store.set('tmRun',r);}$('tmPhase').textContent=ph[tm.splits.length]+'…';return;} // record a split, keep going
     cancelAnimationFrame(tm.raf);const t=now-tm.t0;tmSet('stopped');$('tmPhase').textContent='';
     const L=tmList(),pS=bestSingle(L),p5=bestAo(L,5),p12=bestAo(L,12);
-    const s={t,pen:tm.pen,scr:tmScr,at:Date.now()};if(ph.length){s.splits=[...tm.splits,t];s.sp=$('tmSplits').value;}
+    const s={t,pen:tm.pen,scr:tmScr,at:Date.now(),ses:sessInfo().cur};if(ph.length){s.splits=[...tm.splits,t];s.sp=$('tmSplits').value;}
     L.push(s);store.set('solves',solves);renderStreak();tmTimeEl.textContent=s.pen==='DNF'?'DNF':fmtT(tval(s))+(s.pen==='+2'?'+':'');
     $('tmHint').textContent='Saved. New scramble below.';tmRender();newScramble();
     const nS=bestSingle(L),n5=bestAo(L,5),n12=bestAo(L,12);const pb=[];
@@ -1706,7 +1719,7 @@ $('csLoad').onchange=e=>readFile(e.target,txt=>{let o;try{o=JSON.parse(txt);}cat
   $('csNo').onclick=()=>{$('csPick').hidden=true;};
   $('csYes').onclick=()=>{const L=tmList(),have=new Set(L.map(s=>(s.at||0)+'|'+Math.round(s.t)));let added=0;
     document.querySelectorAll('[data-sess]:checked').forEach(cb=>{for(const r of o[cb.dataset.sess]){if(!Array.isArray(r)||!Array.isArray(r[0]))continue;const pen=r[0][0],t=r[0][1],at=(r[3]||0)*1000;
-      const key=at+'|'+Math.round(t);if(have.has(key)||!(t>0))continue;have.add(key);L.push({t,pen:pen===-1?'DNF':pen===2000?'+2':'',scr:r[1]||'',at});added++;}});
+      const key=at+'|'+Math.round(t);if(have.has(key)||!(t>0))continue;have.add(key);L.push({t,pen:pen===-1?'DNF':pen===2000?'+2':'',scr:r[1]||'',at,ses:sessInfo().cur});added++;}});
     L.sort((a,b)=>(a.at||0)-(b.at||0));store.set('solves',solves);$('csPick').hidden=true;$('dataMsg').textContent=`Imported ${added} solve${added===1?'':'s'} into your ${cubeN}x${cubeN} times.`;tmRender();renderProgress();};});
 
 // ---- tabs ----
