@@ -202,6 +202,9 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 .cp-slots div.now{border-color:var(--warn)}.cp-slots div.drop{color:#6E7580}
 .cp-msg{font-size:.9rem;color:#C8CDD5;line-height:1.45}.cp-msg b{color:var(--warn);font-family:var(--f-display)}
 .cp-hist{display:flex;flex-direction:column;gap:4px;font-size:.82rem;color:var(--muted)}.cp-hist b{color:var(--fg);font-family:var(--f-display)}
+.plate-box{display:flex;flex-direction:column;gap:10px;margin-top:6px;padding-top:14px;border-top:1px solid #23262E}
+.pl-in{font:600 .9rem var(--f-body);background:#15171C;color:var(--fg);border:1px solid #2E323A;border-radius:8px;padding:6px 8px;width:70px}
+#plPrev{width:100%;max-width:640px;height:auto;border-radius:10px;background:#0F1116}
 .sess-sel{font:600 .92rem var(--f-body);background:#15171C;color:var(--fg);border:1px solid #2E323A;border-radius:9px;padding:7px 10px;width:100%}
 .tm-list{list-style:none;margin:0;padding:0;max-height:380px;overflow:auto}
 .tm-list li{display:grid;grid-template-columns:2.4em 1fr auto;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--line);font-size:.9rem}
@@ -380,7 +383,7 @@ body.timing .rail,body.timing .secbar,body.timing #view-timer .side,body.timing 
 .gd-row{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:16px}
 @media (max-width:980px){.gd-row{grid-template-columns:minmax(0,1fr)}}
 .gd-row .viewer .cube3d{height:270px}
-.gd-row.nodemo{grid-template-columns:minmax(0,1fr)}.gd-row.nodemo .viewer{display:none}
+.gd-row.nodemo{grid-template-columns:minmax(0,1fr)}.gd-row.nodemo .viewer{display:none!important}
 .gd-moves{display:flex;flex-direction:column;gap:12px}
 .gd-algpick{display:flex;flex-wrap:wrap;gap:6px}
 .gd-algpick button{font:700 .78rem var(--f-body);border:1px solid #2E323A;background:none;color:#9AA1AD;padding:5px 10px;border-radius:7px;cursor:pointer}
@@ -452,7 +455,9 @@ body.timing .rail,body.timing .secbar,body.timing #view-timer .side,body.timing 
               <button class="btn go" id="lnDrill" hidden style="align-self:flex-start"></button>
               <div class="gd-legend" id="lnLegend"><b>R</b><span>Turn the right side away from you</span><b>U</b><span>Turn the top to the left</span><b>F</b><span>Turn the front clockwise</span><b>'</b><span>Same face, the other way · 2 means twice</span></div>
             </div>
-            <div class="viewer"><div class="cube3d" id="ln3d"></div><span class="drag-hint" id="lnDemoNote">Watch it</span>
+            <div class="viewer" id="lnPolyBox" hidden><div class="cube3d" id="lnPoly"></div><span class="drag-hint">Watch it</span>
+              <div class="viewer-bar"><button class="btn" id="lpReset">Reset</button><button class="btn" id="lpStep">Step</button><button class="btn primary" id="lpPlay">▶ Show me</button></div></div>
+            <div class="viewer" id="lnCubeBox"><div class="cube3d" id="ln3d"></div><span class="drag-hint" id="lnDemoNote">Watch it</span>
               <div class="viewer-bar"><button class="btn" id="lnReset">Reset</button><button class="btn" id="lnStep">Step</button><button class="btn primary" id="lnPlay">▶ Show me</button>
                 <label class="speed" for="lnSpeed" hidden>Speed <input type="range" id="lnSpeed" min="120" max="900" value="520" style="direction:rtl"></label></div></div>
           </div>
@@ -543,7 +548,7 @@ body.timing .rail,body.timing .secbar,body.timing #view-timer .side,body.timing 
       <div class="top-row" id="tmTop"><span class="label"><span id="tmTitle">3x3 scramble</span> <span class="review" id="tmKind"></span></span><span style="display:flex;gap:8px"><button class="btn" id="tmComp" aria-pressed="false" title="Average of 5 with WCA rules">🏆 Competition Ao5</button><button class="btn" id="tmNew">New scramble</button></span></div>
       <div class="tm-scr" id="tmScr">—</div>
       <div class="tm-grid">
-        <div class="tm-prev"><div class="cube3d" id="tm3d"></div><span class="label">Scrambled</span></div>
+        <div class="tm-prev"><div class="cube3d" id="tm3d"></div><div class="cube3d" id="tmPoly" hidden></div><span class="label">Scrambled</span></div>
         <div class="mat tm-timer" id="tmTimer"><span class="pad" aria-hidden="true"><i></i>LEFT</span><div class="lcdcol"><div class="lcd"><div class="tm-time" id="tmTime">0.00</div></div><div class="tm-phase" id="tmPhase"></div><div class="hint" id="tmHint">Hold space (or press here), release to start. Any key stops.</div></div><span class="pad" aria-hidden="true"><i></i>RIGHT</span></div>
       </div>
       <div class="controls" id="tmOpts">
@@ -596,6 +601,22 @@ body.timing .rail,body.timing .secbar,body.timing #view-timer .side,body.timing 
         <div class="top-row"><h2 class="ph">PB scoreboard</h2><span class="note">Best results from the timer, every cube</span></div>
         <div class="sb-wrap"><table class="sb" id="pbBoard"></table></div>
         <div class="feed" id="pbFeed"></div>
+        <div class="plate-box">
+          <div class="top-row"><span class="label">🏅 Print a PB plate for your stand</span><span class="note">Sizes in inches · the STL comes out in millimeters for your slicer</span></div>
+          <div class="data-row">
+            <select id="plPz" class="sess-sel" style="width:auto" aria-label="Puzzle"></select>
+            <select id="plKind" class="sess-sel" style="width:auto" aria-label="Which PB"></select>
+            <input id="plName" placeholder="Name (optional)" aria-label="Name on the plate" class="pl-in" style="width:160px">
+          </div>
+          <div class="data-row">
+            <label class="toggle">W <input id="plW" type="number" step="0.05" value="3" class="pl-in"></label>
+            <label class="toggle">H <input id="plH" type="number" step="0.05" value="0.75" class="pl-in"></label>
+            <label class="toggle">Thick <input id="plT" type="number" step="0.01" value="0.08" class="pl-in"></label>
+            <label class="toggle">Text height <input id="plR" type="number" step="0.01" value="0.03" class="pl-in"></label>
+            <button class="btn primary" id="plSave">Save STL</button>
+          </div>
+          <canvas id="plPrev" width="900" height="225" aria-label="Plate preview"></canvas>
+        </div>
       </div>
       <div class="pcard wide">
         <div class="top-row"><h2 class="ph" id="pgTimerTitle">Timer · 3x3</h2><span class="legend"><i class="lg-dot"></i>Singles <i class="lg-a5"></i>Ao5 <i class="lg-a12"></i>Ao12</span></div>
@@ -728,6 +749,7 @@ body.timing .rail,body.timing .secbar,body.timing #view-timer .side,body.timing 
 </div>
 <div class="toast" id="toast" hidden></div>
 <script type="text/plain" id="scrWorkerSrc">/*SCRW*/</script>
+<script type="text/plain" id="plFontSrc">/*PLFONT*/</script>
 
 <script>
 /*CUBE*/
@@ -1387,7 +1409,7 @@ function genScramble(N){
     if(axis[f]===ax){if(used.has(k))continue;}else{ax=axis[f];used=new Set();}
     used.add(k);out.push((d===1?f:(d===2?'':d)+f+'w')+rnd(['',"'",'2']));}
   return out.join(' ');}
-let solves=store.get('solves',{}),tmScr='',tmCube=null,tmPz=null;
+let solves=store.get('solves',{}),tmScr='',tmCube=null,tmPz=null,tmPolyView=null;
 const TPZ={pyra:'Pyraminx',skewb:'Skewb',mega:'Megaminx',sq1:'Square-1',clock:'Clock'};
 const tmKey=()=>tmPz||cubeN;
 const keyLabel=k=>TPZ[k]||(k+'x'+k);
@@ -1457,7 +1479,11 @@ function initRS(){if(scrW)return;try{const src=$('scrWorkerSrc').textContent;if(
     else if(d.type==='scramble'){rsQ.push(d.scramble);if(tmFallback&&cubeN===3&&view()==='timer'&&(tm.state==='idle'||tm.state==='stopped')&&!tm.inspecting)newScramble();}};}catch(err){scrW=null;}}
 function newScramble(){
   document.querySelector('.tm-prev').hidden=!!tmPz;$('tmScr').classList.toggle('mega',tmPz==='mega');
-  if(tmPz){tmScr=genPuzzle(tmPz);tmFallback=false;$('tmKind').textContent='Random-move';$('tmScr').textContent=tmScr;$('tmScr').classList.remove('long');return;}
+  if(tmPz){tmScr=genPuzzle(tmPz);tmFallback=false;$('tmKind').textContent='Random-move';$('tmScr').textContent=tmScr;$('tmScr').classList.remove('long');
+    const pv=tmPz==='pyra'||tmPz==='skewb';document.querySelector('.tm-prev').hidden=!pv;$('tm3d').hidden=pv;$('tmPoly').hidden=!pv;
+    if(pv&&HAS3D){try{if(!tmPolyView||tmPolyView.kind!==tmPz){if(tmPolyView){tmPolyView.dead=true;$('tmPoly').innerHTML='';}tmPolyView=new PolyView($('tmPoly'),tmPz);}tmPolyView.reset();tmPolyView.applyNow(tmPolyView.parse(tmScr));}catch(e){}}
+    return;}
+  $('tm3d').hidden=false;$('tmPoly').hidden=true;
   if(cubeN===3){initRS();if(rsQ.length){tmScr=rsQ.shift();tmFallback=false;if(scrW)scrW.postMessage({type:'scramble'});$('tmKind').textContent='Random-state';}
     else{tmScr=genScramble(3);tmFallback=!!scrW;$('tmKind').textContent=scrW?'Random-move · random-state warming up':'Random-move';}}
   else{tmScr=genScramble(cubeN);tmFallback=false;$('tmKind').textContent='Random-move';}
@@ -1554,6 +1580,37 @@ $('tmComp').onclick=e=>{e.currentTarget.blur();if(tm.state!=='idle'&&tm.state!==
   if(comp&&comp.times.length<5){comp=null;}else{comp={times:[],key:tmKey()};$('tmInsp').checked=true;store.set('insp',true);newScramble();}renderComp();};
 $('cpQuit').onclick=()=>{comp=null;renderComp();};
 
+
+// ---- PB plate STL (raised text on a plain rectangle; slides into the stand's front rail) ----
+let plFont=null;
+function plData(){const k=$('plPz').value,L=solves[k]||[],r=pbEvents(isNaN(+k)?k:+k);const kind=$('plKind').value,v=r.best[kind];
+  return{k,kind,v,at:r.best[kind+'@'],name:$('plName').value.trim()};}
+function plLines(d){const ev=keyLabel(isNaN(+d.k)?d.k:+d.k);return{big:d.v!=null?fmtT(d.v):'--.--',top:(ev+' '+(d.kind==='Single'?'single':d.kind)).toUpperCase(),bot:[d.name,d.at?new Date(d.at).toLocaleDateString():''].filter(Boolean).join('  ·  ').toUpperCase()};}
+function plFill(){const keys=CUBES.concat(Object.keys(TPZ)).filter(k=>(solves[k]||[]).length);const cur=$('plPz').value;
+  $('plPz').innerHTML=keys.length?keys.map(k=>`<option value="${k}">${keyLabel(k)}</option>`).join(''):'<option value="">No timer solves yet</option>';if(keys.includes(isNaN(+cur)?cur:+cur))$('plPz').value=cur;
+  const k=$('plPz').value;const r=k?pbEvents(isNaN(+k)?k:+k):{best:{}};const kinds=PB_KINDS.map(x=>x[0]).filter(x=>r.best[x]!==undefined);const ck=$('plKind').value;
+  $('plKind').innerHTML=kinds.length?kinds.map(x=>`<option>${x}</option>`).join(''):'<option value="">—</option>';if(kinds.includes(ck))$('plKind').value=ck;plPreview();}
+function plDims(){const n=(id,d)=>{const v=parseFloat($(id).value);return v>0?v:d;};return{W:n('plW',3),H:n('plH',.75),T:n('plT',.08),R:n('plR',.03)};}
+function plPreview(){const c=$('plPrev'),x=c.getContext('2d'),D=plDims(),d=plData(),t=plLines(d);const sc=Math.min(860/D.W,200/D.H),w=D.W*sc,h=D.H*sc,ox=(c.width-w)/2,oy=(c.height-h)/2;
+  x.clearRect(0,0,c.width,c.height);const g=x.createLinearGradient(0,oy,0,oy+h);g.addColorStop(0,'#E9C46A');g.addColorStop(1,'#B8892E');x.fillStyle=g;x.beginPath();x.roundRect(ox,oy,w,h,Math.min(14,h*.12));x.fill();
+  x.fillStyle='#FFF6D8';x.textBaseline='middle';x.font=`700 ${h*.56}px Barlow, sans-serif`;x.fillText(t.big,ox+w*.05,oy+h*.52);
+  x.textAlign='right';x.font=`700 ${h*.2}px Barlow, sans-serif`;x.fillText(t.top,ox+w*.95,oy+h*(t.bot?.36:.52));if(t.bot){x.font=`600 ${h*.15}px Barlow, sans-serif`;x.fillText(t.bot,ox+w*.95,oy+h*.66);}x.textAlign='left';}
+function plSTL(){if(!plFont)plFont=new THREE.Font(JSON.parse($('plFontSrc').textContent));const D=plDims(),d=plData(),t=plLines(d),MM=25.4;
+  const W=D.W*MM,H=D.H*MM,T=D.T*MM,R=D.R*MM,tris=[];
+  const addGeo=(geo,dx,dy,dz)=>{geo=geo.index?geo.toNonIndexed():geo;const p=geo.attributes.position.array;for(let i=0;i<p.length;i+=9)tris.push([[p[i]+dx,p[i+1]+dy,p[i+2]+dz],[p[i+3]+dx,p[i+4]+dy,p[i+5]+dz],[p[i+6]+dx,p[i+7]+dy,p[i+8]+dz]]);};
+  const box=new THREE.BoxGeometry(W,H,T);addGeo(box,W/2,H/2,T/2);
+  const text=(str,size,align,yc)=>{if(!str)return;const g=new THREE.TextGeometry(str,{font:plFont,size,height:R,curveSegments:6,bevelEnabled:false});g.computeBoundingBox();const bb=g.boundingBox,tw=bb.max.x-bb.min.x,th=bb.max.y-bb.min.y;
+    const x0=align==='left'?W*.05-bb.min.x:W*.95-tw-bb.min.x;addGeo(g,x0,yc-th/2-bb.min.y,T);return tw;};
+  const bigW=text(t.big,H*.5,'left',H*.5);
+  text(t.top,H*.17,'right',t.bot?H*.64:H*.5);text(t.bot,H*.12,'right',H*.36);
+  const f=n=>n.toFixed(4);let out='solid pbplate\n';
+  for(const [a,b,c] of tris){const u=[b[0]-a[0],b[1]-a[1],b[2]-a[2]],v=[c[0]-a[0],c[1]-a[1],c[2]-a[2]];let n=[u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0]];const l=Math.hypot(...n)||1;n=n.map(q=>q/l);
+    out+=`facet normal ${f(n[0])} ${f(n[1])} ${f(n[2])}\n outer loop\n  vertex ${f(a[0])} ${f(a[1])} ${f(a[2])}\n  vertex ${f(b[0])} ${f(b[1])} ${f(b[2])}\n  vertex ${f(c[0])} ${f(c[1])} ${f(c[2])}\n endloop\nendfacet\n`;}
+  return out+'endsolid pbplate\n';}
+['plPz','plKind'].forEach(id=>$(id).addEventListener('change',plFill));['plName','plW','plH','plT','plR'].forEach(id=>$(id).addEventListener('input',plPreview));
+$('plSave').onclick=e=>{e.currentTarget.blur();const d=plData();if(d.v==null){$('dataMsg').textContent='Set a PB in the Timer first.';return;}
+  const name=`PB plate ${keyLabel(isNaN(+d.k)?d.k:+d.k)} ${d.kind} ${fmtT(d.v)}.stl`.replace(/[:]/g,'-');saveText(name,plSTL());};
+
 // ---- progress ----
 function niceTicks(lo,hi,n=4){const span=hi-lo||1,raw=span/n,mag=Math.pow(10,Math.floor(Math.log10(raw))),st=[1,2,2.5,5,10].map(m=>m*mag).find(x=>x>=raw);
   const out=[];for(let v=Math.ceil(lo/st)*st;v<=hi+1e-9;v+=st)out.push(+v.toFixed(6));return out;}
@@ -1607,7 +1664,7 @@ function renderSessions(){const k=tmKey(),A=tmList(),si=sessInfo(k);$('pgSessTit
   const day=t=>t?new Date(t).toLocaleDateString():'';
   $('pgSess').innerHTML='<thead><tr><th>Session</th><th>Solves</th><th>Best</th><th>Mean</th><th>Best Ao5</th><th>Best Ao12</th><th>Dates</th></tr></thead><tbody>'+
     rows.map(r=>`<tr class="${r.cur?'cur':''}"><td class="cube">${r.name}</td><td>${r.n}</td>${cell(r,'best')}${cell(r,'mean')}${cell(r,'a5')}${cell(r,'a12')}<td><span class="d">${day(r.from)}${r.to&&day(r.to)!==day(r.from)?' – '+day(r.to):''}</span></td></tr>`).join('')+'</tbody>';}
-function renderProgress(){renderScoreboard();renderSessions();const L=tmList();$('pgTimerTitle').textContent='Timer · '+keyLabel(tmKey());$('pgTimerChart').innerHTML=timerChart(L);
+function renderProgress(){renderScoreboard();renderSessions();plFill();const L=tmList();$('pgTimerTitle').textContent='Timer · '+keyLabel(tmKey());$('pgTimerChart').innerHTML=timerChart(L);
   $('pgPBs').innerHTML=pbHistory(L).map(([l,v,at])=>`<div class="pb"><div class="label">${l}</div><div class="v">${fmtT(v)}</div><div class="d">${at?new Date(at).toLocaleDateString():'—'}</div></div>`).join('');
   $('pgDays').innerHTML=daysChart();
   const cs=allCases(),secs=sectionsFor(cubeN).filter(k=>cs.some(c=>secOf(c)===k)),now=Date.now();
@@ -1620,7 +1677,7 @@ function renderProgress(){renderScoreboard();renderSessions();const L=tmList();$
 $('pgCases').addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(!b)return;pinned=b.dataset.go;store.set(pinKey(),pinned);$('tab-drill').click();loadCase();});
 // ---- back up and import ----
 function saveText(name,text){$('dataOut').hidden=true;
-  if(window.desktop&&window.desktop.saveFile){window.desktop.saveFile(name,text).then(r=>{$('dataMsg').textContent=r&&r.ok?'Saved to '+r.path:r&&r.canceled?'':'Could not save the file.';});return;}
+  if(window.desktop&&window.desktop.saveFile){window.desktop.saveFile(name,text).then(r=>{const m=r&&r.ok?'Saved to '+r.path:r&&r.canceled?'':'Could not save the file.';$('dataMsg').textContent=m;if(m)toast(m);});return;}
   $('dataText').value=text;$('dataOut').hidden=false;$('dataMsg').textContent='Copy this text and save it as '+name+'.';}
 $('dataCopy').onclick=()=>{const t=$('dataText');navigator.clipboard&&navigator.clipboard.writeText(t.value).then(()=>$('dataMsg').textContent='Copied.',()=>{t.select();});};
 $('bkSave').onclick=()=>{const data={};try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k.startsWith('lll:'))data[k.slice(4)]=JSON.parse(localStorage.getItem(k));}}catch(e){}
@@ -1766,10 +1823,24 @@ function loadLnAlg(){const G=curGuide(),st=G.steps[learnStep];
   $('lnAlg').parentElement.hidden=!st.algs.length;
   if(!st.algs.length){$('lnAlg').className='alg-line';$('lnAlg').innerHTML='';return;}
   const alg=st.algs[lnAlgIdx][1];
+  const isPoly=G.demo&&PolyDefs[G.demo];$('lnPolyBox').hidden=!isPoly;$('lnCubeBox').hidden=!!isPoly;
+  if(isPoly){polyLoad(G.demo,alg);return;}
   if(!G.demo){$('lnAlg').className='alg-line';$('lnAlg').innerHTML=alg.split(/\s+|(?<=\/)(?=\()|(?<=\))(?=\/)/).filter(Boolean).map(t=>`<span>${t}</span>`).join('');return;}
   const e=engFor(G.demo);
   if(!lp)lp=makePlayer('ln3d','lnAlg',{reset:'lnReset',step:'lnStep',play:'lnPlay',speed:'lnSpeed'});
   const toks=e.parse(alg);const start=e.apply(e.solved(),e.inv(toks));lp.load(start,'full',toks,'',e);lp.reveal();}
+
+// ---- non-cube demo player (Pyraminx, Skewb, Megaminx, Kilominx, Dino) ----
+const polyViews={};let pp={kind:null,toks:[],idx:0,playing:false};
+function polyView(kind){const el=$('lnPoly');if(pp.kind!==kind){if(pp.view){pp.view.dead=true;el.innerHTML='';}pp.view=new PolyView(el,kind);pp.kind=kind;}return pp.view;}
+function polyPaint(){$('lnAlg').className='alg-line';$('lnAlg').innerHTML=pp.toks.map((t,i)=>`<span class="${i<pp.idx?'done':i===pp.idx&&pp.playing?'now':''}">${t[0]}${Math.abs(t[1])===2?'2':''}${t[1]<0?"'":''}</span>`).join('');}
+function polyLoad(kind,alg){const v=polyView(kind);if(!HAS3D)return;pp.toks=v.parse(alg);pp.idx=0;pp.playing=false;v.reset();v.applyNow(pp.toks.slice().reverse().map(([n,k])=>[n,-k]));polyPaint();}
+function polyRun(n){const v=pp.view;if(!v)return;if(pp.idx>=pp.toks.length){v.reset();v.applyNow(pp.toks.slice().reverse().map(([a,k])=>[a,-k]));pp.idx=0;}
+  pp.playing=true;const todo=pp.toks.slice(pp.idx,n?pp.idx+n:undefined);polyPaint();v.play(todo,()=>{pp.idx++;polyPaint();},()=>{pp.playing=false;polyPaint();});}
+$('lpPlay').onclick=e=>{e.currentTarget.blur();if(pp.view&&!pp.view.anim)polyRun(0);};
+$('lpStep').onclick=e=>{e.currentTarget.blur();if(pp.view&&!pp.view.anim)polyRun(1);};
+$('lpReset').onclick=e=>{e.currentTarget.blur();if(!pp.view)return;pp.view.reset();pp.view.applyNow(pp.toks.slice().reverse().map(([a,k])=>[a,-k]));pp.idx=0;pp.playing=false;polyPaint();};
+
 function markDone(){const k=doneKey();const d=learnDone[k]=learnDone[k]||[];if(!d.includes(learnStep))d.push(learnStep);store.set('learn',learnDone);}
 $('view-learn').addEventListener('click',e=>{const t=e.target;
   const o=t.closest('[data-ln-open]');if(o){learnSel=o.dataset.lnOpen;learnMode=o.dataset.lnSpeed?'speed':'beg';const G=curGuide();learnStep=Math.min((learnDone[doneKey()]||[]).length,G?G.steps.length-1:0);lnAlgIdx=0;renderLearn();window.scrollTo(0,0);return;}
