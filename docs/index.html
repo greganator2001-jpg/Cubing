@@ -2008,7 +2008,7 @@ if(window.desktop&&window.desktop.syncPick){
 $('syncOpen').addEventListener('change',e=>{const f=e.target.files&&e.target.files[0];if(!f)return;const r=new FileReader();
   r.onload=()=>{let o=null;try{o=JSON.parse(r.result);}catch(err){toast('That is not a Last Layer Lab sync file.');return;}
     if(syncApply(o)){try{sessionStorage.setItem('lll-synced','1');}catch(err){}location.reload();}else toast('Already up to date.');};r.readAsText(f);e.target.value='';});
-$('syncSave').onclick=()=>{const blob=new Blob([JSON.stringify(syncDump())],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=SYNC_FILE;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);};
+$('syncSave').onclick=async()=>{const r=await webSave(SYNC_FILE,JSON.stringify(syncDump()));toast(r==='saved'?'Saved. Put it in your sync folder (replace the old one).':r==='declined'?'Not saved.':'Could not save the file.');};
 syncRender();try{if(sessionStorage.getItem('lll-synced')){sessionStorage.removeItem('lll-synced');setTimeout(()=>toast('Synced with your other device'),800);}}catch(e){}
 
 $('smConnect').onclick=e=>{e.currentTarget.blur();smartConnect();};
@@ -2082,9 +2082,14 @@ function renderProgress(){renderScoreboard();renderSessions();plFill();const L=t
     :'<p class="note">Time some drills and your case averages show up here.</p>';}
 $('pgCases').addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(!b)return;pinned=b.dataset.go;store.set(pinKey(),pinned);$('tab-drill').click();loadCase();});
 // ---- back up and import ----
+// save a file from the web/phone version: the claude.ai page asks the viewer, a plain browser downloads it
+async function webSave(name,text){try{if(window.claude&&window.claude.use){const d=await window.claude.use('downloads');
+    if(d){try{await d.save({filename:name,data:text});return 'saved';}catch(e){return e&&e.code==='declined'?'declined':'failed';}}}}catch(e){}
+  try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'application/octet-stream'}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},800);return 'saved';}catch(e){return 'failed';}}
 function saveText(name,text){$('dataOut').hidden=true;
   if(window.desktop&&window.desktop.saveFile){window.desktop.saveFile(name,text).then(r=>{const m=r&&r.ok?'Saved to '+r.path:r&&r.canceled?'':'Could not save the file.';$('dataMsg').textContent=m;if(m)toast(m);});return;}
-  $('dataText').value=text;$('dataOut').hidden=false;$('dataMsg').textContent='Copy this text and save it as '+name+'.';}
+  $('dataText').value=text;$('dataOut').hidden=false;$('dataMsg').textContent='Saving '+name+'… (you can also copy the text below)';
+  webSave(name,text).then(r=>{if(r==='saved')$('dataMsg').textContent='Saved '+name+'. You can also copy the text below.';});}
 $('dataCopy').onclick=()=>{const t=$('dataText');navigator.clipboard&&navigator.clipboard.writeText(t.value).then(()=>$('dataMsg').textContent='Copied.',()=>{t.select();});};
 $('bkSave').onclick=()=>{const data={};try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k.startsWith('lll:'))data[k.slice(4)]=JSON.parse(localStorage.getItem(k));}}catch(e){}
   saveText('last-layer-lab-backup-'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify({app:'last-layer-lab',version:2,saved:new Date().toISOString(),data},null,1));};

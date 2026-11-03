@@ -1725,9 +1725,14 @@ function renderProgress(){renderScoreboard();renderSessions();plFill();const L=t
     :'<p class="note">Time some drills and your case averages show up here.</p>';}
 $('pgCases').addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(!b)return;pinned=b.dataset.go;store.set(pinKey(),pinned);$('tab-drill').click();loadCase();});
 // ---- back up and import ----
+// save a file from the web/phone version: the claude.ai page asks the viewer, a plain browser downloads it
+async function webSave(name,text){try{if(window.claude&&window.claude.use){const d=await window.claude.use('downloads');
+    if(d){try{await d.save({filename:name,data:text});return 'saved';}catch(e){return e&&e.code==='declined'?'declined':'failed';}}}}catch(e){}
+  try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'application/octet-stream'}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},800);return 'saved';}catch(e){return 'failed';}}
 function saveText(name,text){$('dataOut').hidden=true;
   if(window.desktop&&window.desktop.saveFile){window.desktop.saveFile(name,text).then(r=>{const m=r&&r.ok?'Saved to '+r.path:r&&r.canceled?'':'Could not save the file.';$('dataMsg').textContent=m;if(m)toast(m);});return;}
-  $('dataText').value=text;$('dataOut').hidden=false;$('dataMsg').textContent='Copy this text and save it as '+name+'.';}
+  $('dataText').value=text;$('dataOut').hidden=false;$('dataMsg').textContent='Saving '+name+'… (you can also copy the text below)';
+  webSave(name,text).then(r=>{if(r==='saved')$('dataMsg').textContent='Saved '+name+'. You can also copy the text below.';});}
 $('dataCopy').onclick=()=>{const t=$('dataText');navigator.clipboard&&navigator.clipboard.writeText(t.value).then(()=>$('dataMsg').textContent='Copied.',()=>{t.select();});};
 $('bkSave').onclick=()=>{const data={};try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k.startsWith('lll:'))data[k.slice(4)]=JSON.parse(localStorage.getItem(k));}}catch(e){}
   saveText('last-layer-lab-backup-'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify({app:'last-layer-lab',version:2,saved:new Date().toISOString(),data},null,1));};

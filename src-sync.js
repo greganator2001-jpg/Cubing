@@ -52,5 +52,5 @@ if(window.desktop&&window.desktop.syncPick){
 $('syncOpen').addEventListener('change',e=>{const f=e.target.files&&e.target.files[0];if(!f)return;const r=new FileReader();
   r.onload=()=>{let o=null;try{o=JSON.parse(r.result);}catch(err){toast('That is not a Last Layer Lab sync file.');return;}
     if(syncApply(o)){try{sessionStorage.setItem('lll-synced','1');}catch(err){}location.reload();}else toast('Already up to date.');};r.readAsText(f);e.target.value='';});
-$('syncSave').onclick=()=>{const blob=new Blob([JSON.stringify(syncDump())],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=SYNC_FILE;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);};
+$('syncSave').onclick=async()=>{const r=await webSave(SYNC_FILE,JSON.stringify(syncDump()));toast(r==='saved'?'Saved. Put it in your sync folder (replace the old one).':r==='declined'?'Not saved.':'Could not save the file.');};
 syncRender();try{if(sessionStorage.getItem('lll-synced')){sessionStorage.removeItem('lll-synced');setTimeout(()=>toast('Synced with your other device'),800);}}catch(e){}
