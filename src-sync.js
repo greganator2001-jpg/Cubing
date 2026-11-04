@@ -22,6 +22,7 @@ function syncMerge(L,R){const out=Object.assign({},R,L);   // settings: this dev
   const comps={};for(const k of new Set([...Object.keys(L.comps||{}),...Object.keys(R.comps||{})]))comps[k]=uni((L.comps||{})[k],(R.comps||{})[k],x=>x.at).sort((a,b)=>a.at-b.at);out.comps=comps;
   out.notes=Object.assign({},R.notes||{},L.notes||{});out.alts=Object.assign({},R.alts||{},L.alts||{});
   out.custom=uni(L.custom,R.custom,x=>x.name);
+  out.cross=uni(L.cross,R.cross,x=>x.at+'|'+Math.round(x.t)).sort((a,b)=>a.at-b.at).slice(-2000);
   return out;}
 const canon=v=>Array.isArray(v)?'['+v.map(canon).join(',')+']':v&&typeof v==='object'?'{'+Object.keys(v).sort().map(k=>JSON.stringify(k)+':'+canon(v[k])).join(',')+'}':JSON.stringify(v);
 function syncApply(remote){if(!remote||remote.app!=='last-layer-lab'||!remote.data)return false;const local=syncDump().data;const merged=syncMerge(local,remote.data);

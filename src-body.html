@@ -97,6 +97,10 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 .alt{font-size:.9rem;color:var(--muted)}
 .notes{font:400 .88rem/1.4 var(--f-body);width:100%;resize:vertical;border:1px solid var(--line);border-radius:8px;background:var(--sunk);color:var(--fg);padding:7px 9px}
 .case-meta{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1}
+#view-drill.cross .case-only{display:none!important}#view-drill:not(.cross) .cross-only{display:none!important}
+.dmodes{display:flex;gap:4px;margin-right:auto}.dmodes .btn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+#cxScr{font-size:1.05rem;line-height:1.5}#cxSols{margin-top:6px}#cxSols .linkbtn{text-align:left}
+.mat.timer.insp .time{color:var(--accent-soft)}.mat.timer.warn .time{color:var(--warn)}
 .case-name{position:relative;font-family:var(--f-display);font-style:italic;font-weight:700;font-size:clamp(2rem,4.2vw,3.3rem);letter-spacing:0;margin:0;line-height:1}
 .case-meta{position:relative}
 .case-num{position:absolute;right:0;top:-24px;font:italic 700 8.5rem/1 var(--f-display);color:transparent;-webkit-text-stroke:1.5px #2A2F3A;pointer-events:none;user-select:none}
@@ -479,7 +483,8 @@ body.timing .rail,body.timing .secbar,body.timing #view-timer .side,body.timing 
   <section id="view-drill" class="split">
     <div class="stage">
       <div class="top-row">
-        <div class="picker">
+        <div class="seg dmodes" id="dModes" role="group" aria-label="What to drill"><button class="btn" data-dmode="cases" aria-pressed="true">Cases</button><button class="btn" data-dmode="cross" aria-pressed="false">✚ Cross</button></div>
+        <div class="picker case-only">
           <button class="btn picker-btn" id="pickBtn" aria-expanded="false" aria-haspopup="listbox"><span id="pickLabel">Random case</span><span class="caret">▼</span></button>
           <button class="linkbtn" id="pickClear" hidden>Back to random</button>
           <div class="picker-panel" id="pickPanel" hidden>
@@ -492,7 +497,7 @@ body.timing .rail,body.timing .secbar,body.timing #view-timer .side,body.timing 
       <div class="drill-grid">
         <div class="viewer">
           <div class="cube3d" id="drill3d"></div>
-          <span class="drag-hint">Drag to turn</span>
+          <span class="drag-hint" id="dHint3d">Drag to turn</span>
           <div class="viewer-bar">
             <button class="btn" id="dReset">Reset</button>
             <button class="btn" id="dStep">Step</button>
@@ -501,7 +506,14 @@ body.timing .rail,body.timing .secbar,body.timing #view-timer .side,body.timing 
           </div>
         </div>
         <div class="info">
-          <div class="case-head">
+          <div class="cross-only info" id="crossBox">
+            <div class="case-meta"><span class="label">Cross trainer · white cross on the bottom</span><h2 class="case-name" style="font-size:1.5rem">Solve only the white cross</h2></div>
+            <div class="block"><span class="label" id="cxScrLabel">Scramble · yellow top, green front</span><div class="setup" id="cxScr">—</div><span class="note" id="cxLenNow"></span></div>
+            <div class="controls"><label class="toggle">Cross length <select id="cxLen"><option value="0">Any</option><option value="4">4 moves</option><option value="5">5 moves</option><option value="6">6 moves</option><option value="7">7 moves</option><option value="8">8 moves</option></select></label>
+              <label class="toggle"><input type="checkbox" id="cxInsp"> 15-second planning</label><button class="btn" id="cxPeek">Show best cross</button></div>
+            <div class="block card2" id="cxResult" hidden><span class="label">Last cross</span><div id="cxResTxt"></div><div class="alts" id="cxSols"></div></div>
+          </div>
+          <div class="case-head case-only">
             <div class="mini" id="drillMini"></div>
             <div class="case-meta">
               <span class="case-num" id="drillNum" aria-hidden="true"></span>
@@ -509,25 +521,25 @@ body.timing .rail,body.timing .secbar,body.timing #view-timer .side,body.timing 
               <h2 class="case-name" id="drillName">—</h2>
             </div>
           </div>
-          <div class="block"><span class="label">Setup · yellow top, green front</span>
+          <div class="block case-only"><span class="label">Setup · yellow top, green front</span>
             <div class="setup" id="drillSetup">—</div>
             <div class="note" id="bigNote" hidden>2R = only the 2nd layer from the right · Rw = outer two layers</div></div>
           <div class="block card2">
-            <div class="solve-head"><span class="label">Solution</span><label class="toggle"><input type="checkbox" id="optHideSolve"> Hide</label></div>
+            <div class="solve-head"><span class="label" id="dSolLabel">Solution</span><label class="toggle case-only"><input type="checkbox" id="optHideSolve"> Hide</label></div>
             <div class="alg-line concealed" id="drillAlg">Solution hidden.</div>
-            <button class="btn" id="btnReveal" hidden style="align-self:flex-start">Show solution</button>
+            <button class="btn case-only" id="btnReveal" hidden style="align-self:flex-start">Show solution</button>
             <div class="alts" id="drillAlts" hidden></div>
           </div>
-          <div class="block card2" id="spark"><div class="top-row"><span class="label">This case · last 20</span><span class="sp-trend" id="spTrend"></span></div>
+          <div class="block card2 case-only" id="spark"><div class="top-row"><span class="label">This case · last 20</span><span class="sp-trend" id="spTrend"></span></div>
             <svg id="spLine" viewBox="0 0 320 44" preserveAspectRatio="none" role="img" aria-label="Your recent times on this case"></svg>
             <div class="stats"><div class="stat"><div class="label">Ao5</div><div class="v" id="spAo5">—</div></div><div class="stat"><div class="label">Best</div><div class="v sp-best" id="spBest">—</div></div><div class="stat"><div class="label">Reps</div><div class="v" id="spReps">0</div></div></div></div>
-          <div class="block"><label class="label" for="drillNote">Notes</label>
+          <div class="block case-only"><label class="label" for="drillNote">Notes</label>
             <textarea class="notes" id="drillNote" rows="2" placeholder="Fingertricks, recognition tips…"></textarea></div>
         </div>
       </div>
       <div class="mat timer" id="timer"><span class="pad" aria-hidden="true"><i></i>LEFT</span><div class="lcdcol"><div class="lcd"><div class="time" id="time">0.00</div></div>
         <div class="hint" id="timerHint">Hold space (or press here), release to start. Any key stops.</div></div><span class="pad" aria-hidden="true"><i></i>RIGHT</span></div>
-      <div class="controls">
+      <div class="controls case-only">
         <label class="toggle"><input type="checkbox" id="optHide"> Hide case name</label>
         <label class="toggle"><input type="checkbox" id="optSmart" checked> Smart review</label>
         <label class="toggle"><input type="checkbox" id="optLefty"> Left-hand (mirror)</label>
@@ -535,15 +547,16 @@ body.timing .rail,body.timing .secbar,body.timing #view-timer .side,body.timing 
     </div>
     <aside class="side">
       <div class="panel">
-        <span class="label">This session</span>
+        <span class="label" id="sessLabel">This session</span>
         <div class="stats">
           <div class="stat"><div class="label">Solves</div><div class="v" id="sCount">0</div></div>
           <div class="stat"><div class="label">Ao5</div><div class="v" id="sAo5">—</div></div>
           <div class="stat"><div class="label">Ao12</div><div class="v" id="sAo12">—</div></div>
         </div>
+        <div class="stats cross-only"><div class="stat"><div class="label">Best</div><div class="v" id="cxBest">—</div></div><div class="stat"><div class="label">Avg moves</div><div class="v" id="cxAvgMv">—</div></div></div>
       </div>
       <div class="panel">
-        <span class="label">Recent solves</span>
+        <span class="label" id="logLabel">Recent solves</span>
         <ul class="log" id="log"></ul>
       </div>
     </aside>
@@ -1158,7 +1171,7 @@ function pickCase(){
   let x=Math.random()*w.reduce((a,b)=>a+b,0);for(let i=0;i<cands.length;i++){x-=w[i];if(x<=0)return cands[i];}
   return cands[cands.length-1];}
 function nameLabel(c){return c.group==='PLL'?c.name+' perm':c.name;}
-function loadCase(){
+function loadCase(){if(typeof crossMode==='function'&&crossMode()){crossLayout();crossCur();return;}
   current=pinned?(allCases().find(c=>c.id===pinned)||null):null;if(!current){pinned=null;current=pickCase();}updatePickLabel();
   if(!current){$('drillName').textContent='Nothing to practice';$('drillMini').innerHTML='';$('drillSetup').textContent='Turn a practice set on, or set some cases back to Learning in the Cases tab.';return;}
   currentAuf=aufFor(current);dRevealed=false;
@@ -1213,7 +1226,7 @@ $('pickList').addEventListener('click',e=>{const r=e.target.closest('[data-pick]
   choose(r.dataset.pick);});
 document.addEventListener('click',e=>{if(!$('pickPanel').hidden&&!e.target.closest('.picker'))openPicker(false);});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('pickPanel').hidden){openPicker(false);$('pickBtn').focus();}});
-function renderSession(){
+function renderSession(){if(typeof crossMode==='function'&&crossMode()){crossRender();return;}
   const times=session.map(s=>s.t);
   $('sCount').textContent=times.length;$('sAo5').textContent=fmt(avg(times,5));$('sAo12').textContent=fmt(avg(times,12));
   const log=$('log');
@@ -1226,7 +1239,7 @@ function renderSecs(){const cs=allCases();const secs=sectionsFor(cubeN);
   let html='';
   if(cubeN>3)html+=secs.filter(k=>!STAGE.includes(k)).map(chip).join('')+`<span class="secdiv">3x3 stage</span>`+STAGE.map(chip).join('');
   else html+=secs.map(chip).join('');
-  $('secChips').innerHTML=html;
+  $('secChips').innerHTML=html;if(typeof crossLayout==='function')crossLayout();
   document.querySelectorAll('[data-test="ll"],[data-test="f2l"]').forEach(b=>b.hidden=cubeN!==3);$('scrHelp').hidden=cubeN!==3;}
 $('secChips').addEventListener('click',e=>{const b=e.target.closest('[data-sec]');if(!b)return;
   (secOn[cubeN]=secOn[cubeN]||{})[b.dataset.sec]=!isOn(cubeN,b.dataset.sec);store.set('secs',secOn);renderSecs();loadCase();refreshView();});
@@ -1250,6 +1263,7 @@ $('log').addEventListener('click',e=>{const b=e.target.closest('[data-del]');if(
   const h=stats[s.id];if(h){const j=h.lastIndexOf(s.t);if(j>=0)h.splice(j,1);}
   store.set('session',session);store.set('stats',stats);renderSession();});
 function record(ms){
+  if(crossMode()){crossRecord(ms);return;}
   if(!current)return;
   const sk=statKey(current);session.push({id:sk,name:(current.size!==3?current.size+'x'+current.size+' · ':'')+nameLabel(current)+(current.lefty?' (L)':''),t:ms});
   (stats[sk]=stats[sk]||[]).push(ms);if(stats[sk].length>50)stats[sk].shift();
@@ -1269,8 +1283,9 @@ function setT(s){tState=s;timerEl.classList.toggle('hold',s==='hold');timerEl.cl
 function press(){
   if(tState==='running'){cancelAnimationFrame(raf);const ms=performance.now()-startT;timeEl.textContent=fmt(ms);setT('stopped');record(ms);dCoolUntil=coolStart(timerEl);return;}
   if(performance.now()<dCoolUntil)return;
+  if(crossMode()&&(tState==='idle'||tState==='stopped')&&crossPress())return;
   if(tState==='idle'||tState==='stopped'){setT('hold');timeEl.textContent='0.00';holdTimer=setTimeout(()=>setT('ready'),300);}}
-function release(){
+function release(){if(crossMode()&&crossRelease())return;
   if(tState==='hold'){clearTimeout(holdTimer);setT('idle');}
   else if(tState==='ready'){setT('running');startT=performance.now();const tick=()=>{timeEl.textContent=fmt(performance.now()-startT);raf=requestAnimationFrame(tick)};tick();}
   else if(tState==='stopped')setT('idle');}
@@ -1279,6 +1294,7 @@ const typing=()=>/INPUT|TEXTAREA|SELECT/.test(document.activeElement&&document.a
 // Space is the timer key everywhere: never let it scroll the page (or click a focused button) unless you're typing in a box
 const spaceKey=e=>{if((e.code==='Space'||e.key===' ')&&!typing()&&!(document.activeElement&&document.activeElement.isContentEditable))e.preventDefault();};
 window.addEventListener('keydown',spaceKey,{capture:true});window.addEventListener('keyup',spaceKey,{capture:true});
+/*CROSS*/
 document.addEventListener('keydown',e=>{if(view()!=='drill'||typing()||e.repeat)return;
   if(tState==='running'){e.preventDefault();press();return;}
   if(e.code==='Space'){e.preventDefault();press();}});
