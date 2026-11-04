@@ -37,7 +37,7 @@ function crossMode(){return !!(cx&&cx.on)&&cubeN===3;}
 function crossLayout(){const on=crossMode();$('view-drill').classList.toggle('cross',on);
   document.querySelectorAll('[data-dmode]').forEach(b=>b.setAttribute('aria-pressed',(b.dataset.dmode==='cross')===on));$('dModes').hidden=cubeN!==3;
   $('btnSkip').textContent=on?'New scramble':'Next case';$('sessLabel').textContent=on?'Cross times':'This session';$('logLabel').textContent=on?'Recent crosses':'Recent solves';
-  $('dSolLabel').textContent=on?'Best cross':'Solution';$('secChips').hidden=on;}
+  $('dSolLabel').textContent=on?'Best cross':'Solution';$('secChips').hidden=on||view()==='timer'||view()==='learn';if(typeof dnfSync==='function')dnfSync();}
 function crossNew(){if(!crossMode())return;cx.scr=cxScramble(+$('cxLen').value)||cxScramble(0);cx.st=applyAlg(solvedCube(),cx.scr);
   cx.d=cxDist(cxOf(cx.st));cx.best=cxSolve(cxOf(cx.st));cx.peek=false;
   $('cxScr').textContent=cx.scr;$('cxLenNow').textContent='';$('cxPeek').hidden=false;
@@ -57,7 +57,7 @@ function crossRecord(ms){cx.insp=false;cancelAnimationFrame(cx.raf);
   cx.scr=cxScramble(+$('cxLen').value)||cxScramble(0);cx.st=applyAlg(solvedCube(),cx.scr);cx.d=cxDist(cxOf(cx.st));cx.best=cxSolve(cxOf(cx.st));cx.peek=false;
   $('cxScr').textContent=cx.scr;$('cxScrLabel').textContent='Next scramble · yellow top, green front';
   $('timerHint').textContent=`Cross in ${fmt(ms)}. Next scramble is up.`;crossRender();}
-function crossRender(){const L=cx.times,val=x=>x.pen==='DNF'?Infinity:x.t+(x.pen==='+2'?2000:0),ts=L.map(val);
+function crossRender(){setTimeout(dnfSync,0);const L=cx.times,val=x=>x.pen==='DNF'?Infinity:x.t+(x.pen==='+2'?2000:0),ts=L.map(val);
   const ao=n=>{if(ts.length<n)return null;const a=ts.slice(-n).sort((x,y)=>x-y).slice(1,-1);return a.some(v=>v===Infinity)?Infinity:a.reduce((x,y)=>x+y,0)/a.length;};
   const f=v=>v==null?'—':v===Infinity?'DNF':fmt(v);
   $('sCount').textContent=L.length;$('sAo5').textContent=f(ao(5));$('sAo12').textContent=f(ao(12));
