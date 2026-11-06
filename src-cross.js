@@ -48,10 +48,10 @@ function crossShowBest(st,best,label){const fs=new Set(st.filter(s=>(s.c==='D'&&
   dp.load(cloneSt(st),'full',parseAlg(best[0]||''),'',E3,fs);dp.reveal();$('dHint3d').textContent=label;
   $('cxSols').innerHTML=best.length>1?'<span class="label">Other ways, same length</span>'+best.slice(1,4).map((m,i)=>`<button class="linkbtn mono" data-cxalt="${i+1}">${m}</button>`).join(''):'';}
 function crossRecord(ms){cx.insp=false;cancelAnimationFrame(cx.raf);
-  const s={t:ms,pen:cx.pen||'',mv:cx.d,at:Date.now(),scr:cx.scr};cx.pen='';cx.times.push(s);if(cx.times.length>2000)cx.times.splice(0,cx.times.length-2000);store.set('cross',cx.times);
+  const s={t:ms,pen:cx.pen||'',mv:cx.d,at:Date.now(),scr:cx.scr};if(s.pen&&cx.penWhy){s.why=cx.penWhy.why;s.secs=cx.penWhy.secs;}cx.pen='';cx.penWhy=null;cx.times.push(s);if(cx.times.length>2000)cx.times.splice(0,cx.times.length-2000);store.set('cross',cx.times);
   dlog.push({k:'cross',t:ms,at:s.at});store.set('dlog',dlog);renderStreak();
   cx.last={st:cx.st,best:cx.best,d:cx.d,scr:cx.scr,t:ms,pen:s.pen};
-  $('cxResult').hidden=false;$('cxResTxt').innerHTML=`<b>${s.pen==='DNF'?'DNF':fmt(ms+(s.pen==='+2'?2000:0))+(s.pen==='+2'?'+':'')}</b> · the best cross was <b>${cx.d} move${cx.d===1?'':'s'}</b>${cx.peek?' (you peeked)':''}. Press Play to watch it.`;
+  $('cxResult').hidden=false;$('cxResTxt').innerHTML=`<b>${s.pen==='DNF'?'DNF':fmt(ms+(s.pen==='+2'?2000:0))+(s.pen==='+2'?'+':'')}</b>${s.pen?' <span class="pw'+(s.pen==='DNF'?' dnf':'')+'" style="display:inline">'+penLong(s)+'</span>':''} · the best cross was <b>${cx.d} move${cx.d===1?'':'s'}</b>${cx.peek?' (you peeked)':''}. Press Play to watch it.`;
   crossShowBest(cx.st,cx.best,'Last scramble · best cross');
   // next scramble is ready in the box; the cube keeps showing the one you just did
   cx.scr=cxScramble(+$('cxLen').value)||cxScramble(0);cx.st=applyAlg(solvedCube(),cx.scr);cx.d=cxDist(cxOf(cx.st));cx.best=cxSolve(cxOf(cx.st));cx.peek=false;
@@ -61,7 +61,7 @@ function crossRender(){setTimeout(dnfSync,0);const L=cx.times,val=x=>x.pen==='DN
   const ao=n=>{if(ts.length<n)return null;const a=ts.slice(-n).sort((x,y)=>x-y).slice(1,-1);return a.some(v=>v===Infinity)?Infinity:a.reduce((x,y)=>x+y,0)/a.length;};
   const f=v=>v==null?'—':v===Infinity?'DNF':fmt(v);
   $('sCount').textContent=L.length;$('sAo5').textContent=f(ao(5));$('sAo12').textContent=f(ao(12));
-  $('log').innerHTML=L.length?L.slice().reverse().slice(0,40).map((s,i)=>`<li><span>${s.mv} move${s.mv===1?'':'s'}</span><span><span class="t">${s.pen==='DNF'?'DNF':fmt(val(s))+(s.pen==='+2'?'+':'')}</span><button data-cxdel="${L.length-1-i}" aria-label="Delete">✕</button></span></li>`).join(''):'<li class="empty">No crosses yet. Scramble your cube, solve just the white cross on the bottom, stop the timer.</li>';
+  $('log').innerHTML=L.length?L.slice().reverse().slice(0,40).map((s,i)=>`<li><span>${s.mv} move${s.mv===1?'':'s'}</span><span><span class="t">${s.pen==='DNF'?'DNF':fmt(val(s))+(s.pen==='+2'?'+':'')}</span>${s.pen?`<span class="pw${s.pen==='DNF'?' dnf':''}">${penLabel(s)}</span>`:''}<button data-cxdel="${L.length-1-i}" aria-label="Delete">✕</button></span></li>`).join(''):'<li class="empty">No crosses yet. Scramble your cube, solve just the white cross on the bottom, stop the timer.</li>';
   const fin=L.filter(x=>x.pen!=='DNF');$('cxBest').textContent=fin.length?fmt(Math.min(...fin.map(val))):'—';
   const r=L.slice(-12);$('cxAvgMv').textContent=r.length?(r.reduce((a,b)=>a+b.mv,0)/r.length).toFixed(1):'—';}
 // planning (inspection): first press starts 15 s, then hold and release to start the timer like normal
@@ -72,7 +72,7 @@ function crossPress(){if(!$('cxInsp').checked)return false;
     setT('idle');loop();return true;}
   return !cx.armed;}
 function crossRelease(){if(cx.insp&&!cx.armed&&tState!=='hold'&&tState!=='ready'){cx.armed=true;return true;}
-  if(cx.insp&&tState==='ready'){const el=performance.now()-cx.insp0;cx.pen=el>17000?'DNF':el>15000?'+2':'';cx.insp=false;cancelAnimationFrame(cx.raf);timerEl.classList.remove('insp','warn');}
+  if(cx.insp&&tState==='ready'){const el=performance.now()-cx.insp0;const pa=penAuto(el);cx.pen=pa.pen;cx.penWhy=pa;cx.insp=false;cancelAnimationFrame(cx.raf);timerEl.classList.remove('insp','warn');}
   return false;}
 function crossSet(on){cx.on=on;store.set('crossMode',on);crossLayout();if(crossMode()){crossNew();crossRender();$('cxResult').hidden=true;$('cxScrLabel').textContent='Scramble · yellow top, green front';}else{renderSession();loadCase();}}
 $('dModes').addEventListener('click',e=>{const b=e.target.closest('[data-dmode]');if(!b)return;b.blur();if(tState!=='idle'&&tState!=='stopped')return;crossSet(b.dataset.dmode==='cross');});

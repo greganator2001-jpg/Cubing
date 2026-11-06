@@ -180,6 +180,9 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 .secbar{display:flex;align-items:center;gap:10px 16px;flex-wrap:wrap}
 .secchips{display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:1}
 .look{display:flex;gap:2px;background:#15171C;border:1px solid #262A32;padding:3px;border-radius:9px;margin-left:auto}
+.pen-menu{position:fixed;z-index:60;display:flex;flex-direction:column;gap:2px;min-width:230px;background:#1A1D23;border:1px solid #2E333C;border-radius:10px;padding:8px;box-shadow:0 14px 34px rgba(0,0,0,.5)}
+.pen-menu .label{padding:2px 8px 6px}.pen-menu button{text-align:left;font:500 .9rem var(--f-body);color:var(--fg);background:none;border:0;border-radius:7px;padding:8px 10px;cursor:pointer}.pen-menu button:hover,.pen-menu button:focus-visible{background:#262A32}
+.pw{display:block;font:600 .7rem var(--f-body);color:var(--warn);letter-spacing:.02em}.pw.dnf{color:#FF8A8A}
 .dnf-t{margin-left:auto;font:700 .78rem var(--f-body);letter-spacing:.06em;border:1px solid #262A32;background:#15171C;color:var(--muted);padding:8px 12px;border-radius:9px;cursor:pointer}.dnf-t:disabled{opacity:.4;cursor:default}
 .dnf-t[aria-pressed="true"]{background:rgba(239,68,68,.16);border-color:var(--hold);color:#FF8A8A}.dnf-t:not([hidden])+.dnf-t,.dnf-t:not([hidden])+.look{margin-left:0}.dnf-t[data-penbtn="+2"][aria-pressed="true"]{background:rgba(255,176,32,.14);border-color:var(--warn);color:#FFC861}
 .look button{font:600 .78rem var(--f-body);border:0;background:none;color:var(--muted);padding:5px 10px;border-radius:6px;cursor:pointer}
@@ -798,6 +801,7 @@ body.timing .rail,body.timing .secbar,body.timing #view-timer .side,body.timing 
 </div>
 </div>
 <div class="toast" id="toast" hidden></div>
+<div class="pen-menu" id="penMenu" role="menu" hidden></div>
 <div class="modal" id="smPick" hidden><div class="modal-card"><h3>Pick your smart cube</h3><ul id="smList" class="sm-list"></ul><p class="note" id="smStatus">Supports GAN cubes (356 i, 12 ui, 13/14 MagLev, i Carry) and the MoYu AI 2023.</p><button class="btn" id="smCancel">Cancel</button></div></div>
 <div class="modal" id="smMac" hidden><div class="modal-card"><h3>One-time setup for <span id="smMacName"></span></h3><p class="note">GAN cubes need their Bluetooth address to unlock the data. Find it in the GAN app (cube settings) or your PC's Bluetooth settings. It looks like AB:12:CD:34:EF:56. You only enter it once.</p>
   <input id="smMacIn" class="pl-in" style="width:100%" placeholder="AB:12:CD:34:EF:56" aria-label="Cube address"><div style="display:flex;gap:8px;margin-top:10px"><button class="btn primary" id="smMacOk">Connect</button><button class="btn" id="smMacNo">Cancel</button></div></div></div>
@@ -1522,6 +1526,22 @@ function release(){if(crossMode()&&crossRelease())return;
   else if(tState==='stopped')setT('idle');}
 const view=()=>document.querySelector('nav [aria-selected="true"]').dataset.view;
 const typing=()=>/INPUT|TEXTAREA|SELECT/.test(document.activeElement&&document.activeElement.tagName)&&document.activeElement.type!=='checkbox'&&document.activeElement.type!=='range';
+// ---- penalty reasons: every +2 / DNF says why ----
+const PEN_WHY={'+2':[['turn','One turn from solved'],['insp','Inspection over 15 seconds'],['hands','Started or stopped the timer wrong'],['other','Other']],
+  'DNF':[['unsolved','Cube wasn\'t solved'],['insp','Inspection over 17 seconds'],['hands','Timer mistake'],['other','Other']]};
+const PEN_SHORT={turn:'one turn off',insp:'inspection',hands:'timer',unsolved:'not solved',other:''};
+function penAuto(el){return el>17000?{pen:'DNF',why:'insp',secs:el/1000}:el>15000?{pen:'+2',why:'insp',secs:el/1000}:{pen:'',why:''};}
+// short label like "+2 · inspection 15.8s"
+function penLabel(s){if(!s||!s.pen)return'';const w=PEN_SHORT[s.why]||'';return s.pen+(w?' · '+w+(s.why==='insp'&&s.secs?' '+s.secs.toFixed(1)+'s':''):'');}
+function penLong(s){if(!s||!s.pen)return'';const r=(PEN_WHY[s.pen].find(x=>x[0]===s.why)||[])[1];return s.pen+(r&&s.why!=='other'?': '+r.toLowerCase()+(s.why==='insp'&&s.secs?' ('+s.secs.toFixed(1)+'s)':''):'');}
+// pick a reason, then set it; clicking the penalty a solve already has removes it
+function askPen(anchor,P,s,done){if(s.pen===P){s.pen='';delete s.why;delete s.secs;done();return;}
+  const m=$('penMenu');m.innerHTML=`<span class="label">${P} for…</span>`+PEN_WHY[P].map(([k,t])=>`<button data-why="${k}">${t}</button>`).join('');
+  m.hidden=false;const r=anchor.getBoundingClientRect(),z=parseFloat(getComputedStyle(document.querySelector('.wrap')||document.body).zoom)||1;
+  m.style.left=Math.max(8,Math.min(innerWidth-m.offsetWidth-8,r.left*z))+'px';m.style.top=Math.min(innerHeight-m.offsetHeight-8,r.bottom*z+6)+'px';
+  const close=()=>{m.hidden=true;document.removeEventListener('pointerdown',out,true);};
+  const out=e=>{if(!m.contains(e.target))close();};setTimeout(()=>document.addEventListener('pointerdown',out,true),0);
+  m.onclick=e=>{const b=e.target.closest('[data-why]');if(!b)return;s.pen=P;s.why=b.dataset.why;if(s.why!=='insp')delete s.secs;close();done();};}
 // Space is the timer key everywhere: never let it scroll the page (or click a focused button) unless you're typing in a box
 const spaceKey=e=>{if((e.code==='Space'||e.key===' ')&&!typing()&&!(document.activeElement&&document.activeElement.isContentEditable))e.preventDefault();};
 window.addEventListener('keydown',spaceKey,{capture:true});window.addEventListener('keyup',spaceKey,{capture:true});
@@ -1575,10 +1595,10 @@ function crossShowBest(st,best,label){const fs=new Set(st.filter(s=>(s.c==='D'&&
   dp.load(cloneSt(st),'full',parseAlg(best[0]||''),'',E3,fs);dp.reveal();$('dHint3d').textContent=label;
   $('cxSols').innerHTML=best.length>1?'<span class="label">Other ways, same length</span>'+best.slice(1,4).map((m,i)=>`<button class="linkbtn mono" data-cxalt="${i+1}">${m}</button>`).join(''):'';}
 function crossRecord(ms){cx.insp=false;cancelAnimationFrame(cx.raf);
-  const s={t:ms,pen:cx.pen||'',mv:cx.d,at:Date.now(),scr:cx.scr};cx.pen='';cx.times.push(s);if(cx.times.length>2000)cx.times.splice(0,cx.times.length-2000);store.set('cross',cx.times);
+  const s={t:ms,pen:cx.pen||'',mv:cx.d,at:Date.now(),scr:cx.scr};if(s.pen&&cx.penWhy){s.why=cx.penWhy.why;s.secs=cx.penWhy.secs;}cx.pen='';cx.penWhy=null;cx.times.push(s);if(cx.times.length>2000)cx.times.splice(0,cx.times.length-2000);store.set('cross',cx.times);
   dlog.push({k:'cross',t:ms,at:s.at});store.set('dlog',dlog);renderStreak();
   cx.last={st:cx.st,best:cx.best,d:cx.d,scr:cx.scr,t:ms,pen:s.pen};
-  $('cxResult').hidden=false;$('cxResTxt').innerHTML=`<b>${s.pen==='DNF'?'DNF':fmt(ms+(s.pen==='+2'?2000:0))+(s.pen==='+2'?'+':'')}</b> · the best cross was <b>${cx.d} move${cx.d===1?'':'s'}</b>${cx.peek?' (you peeked)':''}. Press Play to watch it.`;
+  $('cxResult').hidden=false;$('cxResTxt').innerHTML=`<b>${s.pen==='DNF'?'DNF':fmt(ms+(s.pen==='+2'?2000:0))+(s.pen==='+2'?'+':'')}</b>${s.pen?' <span class="pw'+(s.pen==='DNF'?' dnf':'')+'" style="display:inline">'+penLong(s)+'</span>':''} · the best cross was <b>${cx.d} move${cx.d===1?'':'s'}</b>${cx.peek?' (you peeked)':''}. Press Play to watch it.`;
   crossShowBest(cx.st,cx.best,'Last scramble · best cross');
   // next scramble is ready in the box; the cube keeps showing the one you just did
   cx.scr=cxScramble(+$('cxLen').value)||cxScramble(0);cx.st=applyAlg(solvedCube(),cx.scr);cx.d=cxDist(cxOf(cx.st));cx.best=cxSolve(cxOf(cx.st));cx.peek=false;
@@ -1588,7 +1608,7 @@ function crossRender(){setTimeout(dnfSync,0);const L=cx.times,val=x=>x.pen==='DN
   const ao=n=>{if(ts.length<n)return null;const a=ts.slice(-n).sort((x,y)=>x-y).slice(1,-1);return a.some(v=>v===Infinity)?Infinity:a.reduce((x,y)=>x+y,0)/a.length;};
   const f=v=>v==null?'—':v===Infinity?'DNF':fmt(v);
   $('sCount').textContent=L.length;$('sAo5').textContent=f(ao(5));$('sAo12').textContent=f(ao(12));
-  $('log').innerHTML=L.length?L.slice().reverse().slice(0,40).map((s,i)=>`<li><span>${s.mv} move${s.mv===1?'':'s'}</span><span><span class="t">${s.pen==='DNF'?'DNF':fmt(val(s))+(s.pen==='+2'?'+':'')}</span><button data-cxdel="${L.length-1-i}" aria-label="Delete">✕</button></span></li>`).join(''):'<li class="empty">No crosses yet. Scramble your cube, solve just the white cross on the bottom, stop the timer.</li>';
+  $('log').innerHTML=L.length?L.slice().reverse().slice(0,40).map((s,i)=>`<li><span>${s.mv} move${s.mv===1?'':'s'}</span><span><span class="t">${s.pen==='DNF'?'DNF':fmt(val(s))+(s.pen==='+2'?'+':'')}</span>${s.pen?`<span class="pw${s.pen==='DNF'?' dnf':''}">${penLabel(s)}</span>`:''}<button data-cxdel="${L.length-1-i}" aria-label="Delete">✕</button></span></li>`).join(''):'<li class="empty">No crosses yet. Scramble your cube, solve just the white cross on the bottom, stop the timer.</li>';
   const fin=L.filter(x=>x.pen!=='DNF');$('cxBest').textContent=fin.length?fmt(Math.min(...fin.map(val))):'—';
   const r=L.slice(-12);$('cxAvgMv').textContent=r.length?(r.reduce((a,b)=>a+b.mv,0)/r.length).toFixed(1):'—';}
 // planning (inspection): first press starts 15 s, then hold and release to start the timer like normal
@@ -1599,7 +1619,7 @@ function crossPress(){if(!$('cxInsp').checked)return false;
     setT('idle');loop();return true;}
   return !cx.armed;}
 function crossRelease(){if(cx.insp&&!cx.armed&&tState!=='hold'&&tState!=='ready'){cx.armed=true;return true;}
-  if(cx.insp&&tState==='ready'){const el=performance.now()-cx.insp0;cx.pen=el>17000?'DNF':el>15000?'+2':'';cx.insp=false;cancelAnimationFrame(cx.raf);timerEl.classList.remove('insp','warn');}
+  if(cx.insp&&tState==='ready'){const el=performance.now()-cx.insp0;const pa=penAuto(el);cx.pen=pa.pen;cx.penWhy=pa;cx.insp=false;cancelAnimationFrame(cx.raf);timerEl.classList.remove('insp','warn');}
   return false;}
 function crossSet(on){cx.on=on;store.set('crossMode',on);crossLayout();if(crossMode()){crossNew();crossRender();$('cxResult').hidden=true;$('cxScrLabel').textContent='Scramble · yellow top, green front';}else{renderSession();loadCase();}}
 $('dModes').addEventListener('click',e=>{const b=e.target.closest('[data-dmode]');if(!b)return;b.blur();if(tState!=='idle'&&tState!=='stopped')return;crossSet(b.dataset.dmode==='cross');});
@@ -1824,7 +1844,7 @@ function tmRender(){setTimeout(dnfSync,0);const L=tmSess(),fin=L.map(tval).filte
   $('tmMean').textContent=fin.length?fmtT(fin.reduce((a,b)=>a+b,0)/fin.length):'—';
   $('tmAo5').textContent=fmtT(aoN(L,5));$('tmAo12').textContent=fmtT(aoN(L,12));$('tmAo50').textContent=fmtT(aoN(L,50));
   const spLine=s=>s.splits?'<span class="sp">'+s.splits.map((t,k)=>SPLITS[s.sp][k]+' '+fmtT(t-(k?s.splits[k-1]:0))).join(' · ')+'</span>':'';
-  $('tmList').innerHTML=L.length?L.map((s,i)=>`<li title="${s.scr}"><span class="i">${i+1}</span><span class="t">${s.pen==='DNF'?'DNF <span class="i">('+fmtT(s.t)+')</span>':fmtT(tval(s))+(s.pen==='+2'?'+':'')}</span><span class="acts"><button data-pen="+2" data-i="${i}" aria-pressed="${s.pen==='+2'}">+2</button><button data-pen="DNF" data-i="${i}" aria-pressed="${s.pen==='DNF'}">DNF</button>${s.moves?`<button data-replay="${i}" title="Replay this solve">▶</button>`:''}<button data-del="${i}" aria-label="Delete solve">✕</button></span>${spLine(s)}</li>`).reverse().join('')
+  $('tmList').innerHTML=L.length?L.map((s,i)=>`<li title="${s.scr}"><span class="i">${i+1}</span><span class="t">${s.pen==='DNF'?'DNF <span class="i">('+fmtT(s.t)+')</span>':fmtT(tval(s))+(s.pen==='+2'?'+':'')}</span>${s.pen?`<span class="pw${s.pen==='DNF'?' dnf':''}" style="grid-column:2/3">${penLabel(s)}</span>`:''}<span class="acts"><button data-pen="+2" data-i="${i}" aria-pressed="${s.pen==='+2'}">+2</button><button data-pen="DNF" data-i="${i}" aria-pressed="${s.pen==='DNF'}">DNF</button>${s.moves?`<button data-replay="${i}" title="Replay this solve">▶</button>`:''}<button data-del="${i}" aria-label="Delete solve">✕</button></span>${spLine(s)}</li>`).reverse().join('')
     :'<li class="empty" style="display:block">No solves yet for this cube.</li>';
   $('tmSessChartPanel').hidden=L.length<3;if(L.length>=3)$('tmSessChart').innerHTML=timerChart(L,{w:360,h:150,a12:false});
   // split averages over the last 12 solves that used the current split mode
@@ -1834,14 +1854,15 @@ function tmRender(){setTimeout(dnfSync,0);const L=tmSess(),fin=L.map(tval).filte
     $('tmSplitAvg').innerHTML=avgs.map((v,k)=>`<div class="sbar"><span>${ph[k]}</span><span class="trk"><i style="width:${(v/mx*100).toFixed(1)}%"></i></span><span class="v">${fmtT(v)}</span></div>`).join('');}}
 $('tmList').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const S=tmSess(),A=tmList();
   if(b.dataset.replay!==undefined){replaySolve(S[+b.dataset.replay]);return;}
-  if(b.dataset.del!==undefined){const o=S[+b.dataset.del];if($('tmHardDel').checked){const j=A.indexOf(o);if(j>=0)A.splice(j,1);}else o.hid=true;}else{const s=S[+b.dataset.i];s.pen=s.pen===b.dataset.pen?'':b.dataset.pen;}
+  if(b.dataset.del!==undefined){const o=S[+b.dataset.del];if($('tmHardDel').checked){const j=A.indexOf(o);if(j>=0)A.splice(j,1);}else o.hid=true;}else{const s=S[+b.dataset.i];askPen(b,b.dataset.pen,s,()=>{store.set('solves',solves);tmRender();});return;}
   store.set('solves',solves);tmRender();});
 // DNF toggle in the top bar: marks the last solve of whatever you're timing (Timer tab, or the Drill cross trainer)
 function dnfTarget(){const v=view();if(v==='timer'){const L=tmSess();return L.length?{s:L[L.length-1],save:()=>{store.set('solves',solves);tmRender();const t=L[L.length-1];if(tm.state==='idle'||tm.state==='stopped')tmTimeEl.textContent=t.pen==='DNF'?'DNF':fmtT(tval(t))+(t.pen==='+2'?'+':'');}}:{s:null};}
   if(v==='drill'&&typeof crossMode==='function'&&crossMode()){const L=cx.times;return L.length?{s:L[L.length-1],save:()=>{store.set('cross',cx.times);crossRender();}}:{s:null};}
   return null;}
 function dnfSync(){const t=dnfTarget();document.querySelectorAll('[data-penbtn]').forEach(b=>{b.hidden=!t;if(!t)return;b.disabled=!t.s;b.setAttribute('aria-pressed',!!(t.s&&t.s.pen===b.dataset.penbtn));});}
-document.querySelectorAll('[data-penbtn]').forEach(btn=>btn.onclick=e=>{e.currentTarget.blur();const P=btn.dataset.penbtn;const t=dnfTarget();if(!t||!t.s)return;t.s.pen=t.s.pen===P?'':P;if(view()==='timer'&&comp&&t.s.comp&&comp.times.length&&comp.times.length<5){comp.times[comp.times.length-1].pen=t.s.pen;renderComp();}t.save();dnfSync();toast(t.s.pen===P?(P==='DNF'?'Last solve marked DNF':'+2 added to your last solve'):P+' removed');});
+document.querySelectorAll('[data-penbtn]').forEach(btn=>btn.onclick=e=>{e.currentTarget.blur();const P=btn.dataset.penbtn;const t=dnfTarget();if(!t||!t.s)return;
+  askPen(btn,P,t.s,()=>{if(view()==='timer'&&comp&&t.s.comp&&comp.times.length&&comp.times.length<5){comp.times[comp.times.length-1].pen=t.s.pen;renderComp();}t.save();dnfSync();toast(t.s.pen?penLong(t.s):P+' removed');});});
 $('tmClear').onclick=()=>{$('tmClear').hidden=true;$('tmClearYes').hidden=false;$('tmClearNote').hidden=false;setTimeout(()=>{$('tmClear').hidden=false;$('tmClearYes').hidden=true;$('tmClearNote').hidden=true;},5000);};
 $('tmHardDel').checked=store.get('hardDel',false);$('tmHardDel').onchange=e=>{e.target.blur();store.set('hardDel',e.target.checked);};
 $('tmClearYes').onclick=()=>{const si=sessInfo();si.list=si.list.filter(x=>x.id!==si.cur);sessInfo();store.set('tmSessions',tmSessions);
@@ -1906,9 +1927,9 @@ function tmPress(){
     if(ph.length&&tm.splits.length<ph.length-1){tm.splits.push(now-tm.t0);const r=store.get('tmRun',null);if(r){r.splits=tm.splits;store.set('tmRun',r);}$('tmPhase').textContent=ph[tm.splits.length]+'…';return;} // record a split, keep going
     cancelAnimationFrame(tm.raf);const t=now-tm.t0;tmSet('stopped');$('tmPhase').textContent='';
     const L=tmList(),pS=bestSingle(L),p5=bestAo(L,5),p12=bestAo(L,12);
-    const s={t,pen:tm.pen,scr:tmScr,at:Date.now(),ses:sessInfo().cur};if(ph.length){s.splits=[...tm.splits,t];s.sp=$('tmSplits').value;}
+    const s={t,pen:tm.pen,scr:tmScr,at:Date.now(),ses:sessInfo().cur};if(s.pen&&tm.penWhy&&tm.penWhy.pen===s.pen){s.why=tm.penWhy.why;s.secs=tm.penWhy.secs;}tm.penWhy=null;if(ph.length){s.splits=[...tm.splits,t];s.sp=$('tmSplits').value;}
     L.push(s);compAdd(s);store.set('solves',solves);renderStreak();tmTimeEl.textContent=s.pen==='DNF'?'DNF':fmtT(tval(s))+(s.pen==='+2'?'+':'');
-    $('tmHint').textContent=coolMs()?'Saved. Take a breath…':'Saved. New scramble below.';$('tmHint')._coolMsg='Saved. Hold space for the next solve.';tm.coolUntil=coolStart(tmEl,$('tmHint'));tmRender();newScramble();
+    $('tmHint').textContent=(s.pen?penLong(s)+'. ':'')+(coolMs()?'Saved. Take a breath…':'Saved. New scramble below.');$('tmHint')._coolMsg=(s.pen?penLong(s)+'. ':'')+'Saved. Hold space for the next solve.';tm.coolUntil=coolStart(tmEl,$('tmHint'));tmRender();newScramble();
     const nS=bestSingle(L),n5=bestAo(L,5),n12=bestAo(L,12);const pb=[];
     if(pS!==null&&nS!==null&&nS<pS)pb.push('single '+fmtT(nS));if(p5!==null&&n5!==null&&n5<p5)pb.push('Ao5 '+fmtT(n5));if(p12!==null&&n12!==null&&n12<p12)pb.push('Ao12 '+fmtT(n12));
     if(pb.length)celebrate('New PB! '+pb.join(' · '));return;}
@@ -1920,7 +1941,7 @@ function tmPress(){
 function tmRelease(){
   if(tm.state==='insp'){tm.armed=true;return;}
   if(tm.state==='hold'){clearTimeout(tm.hold);tmSet(tm.inspecting?'insp':'idle');return;}
-  if(tm.state==='ready'){const el=tm.inspecting?performance.now()-tm.insp0:0;tm.pen=el>17000?'DNF':el>15000?'+2':'';tm.inspecting=false;tm.splits=[];
+  if(tm.state==='ready'){const el=tm.inspecting?performance.now()-tm.insp0:0;const pa=penAuto(el);tm.pen=pa.pen;tm.penWhy=pa;tm.inspecting=false;tm.splits=[];
     tm.t0=performance.now();tmSet('running');const ph=phases();$('tmPhase').textContent=ph.length?ph[0]+'…':'';
     $('tmHint').textContent=ph.length?'Press any key at the end of each step.':'Any key stops.';cancelAnimationFrame(tm.raf);tmLoop();return;}
   if(tm.state==='stopped')tmSet('idle');}
@@ -2054,7 +2075,7 @@ function smartCheck(m){if(!smart.conn||!smart.state||tmPz||cubeN!==3)return;cons
       if($('tmInsp').checked&&tm.state!=='insp'){tmPress();tm.armed=true;}
       $('tmHint').textContent='Scrambled! First turn starts the timer.';}return;}
   if(smart.phase==='ready'&&m){smart.phase='solving';smart.moves=[];smart.stage=0;
-    const el=tm.inspecting?performance.now()-tm.insp0:0;tm.pen=el>17000?'DNF':el>15000?'+2':'';tm.inspecting=false;tm.splits=[];
+    const el=tm.inspecting?performance.now()-tm.insp0:0;const pa=penAuto(el);tm.pen=pa.pen;tm.penWhy=pa;tm.inspecting=false;tm.splits=[];
     tm.t0=performance.now();tmSet('running');cancelAnimationFrame(tm.raf);tmLoop();smartRender();}
   if(smart.phase==='solving'&&m){smart.moves.push([m.move,Math.round(m.t-tm.t0)]);
     if($('tmSplits').value==='cfop'){const stg=cfopStage(smart.state);while(tm.splits.length<Math.min(stg,3)&&tm.state==='running'){tm.splits.push(m.t-tm.t0);}}

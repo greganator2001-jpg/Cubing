@@ -60,7 +60,7 @@ function smartCheck(m){if(!smart.conn||!smart.state||tmPz||cubeN!==3)return;cons
       if($('tmInsp').checked&&tm.state!=='insp'){tmPress();tm.armed=true;}
       $('tmHint').textContent='Scrambled! First turn starts the timer.';}return;}
   if(smart.phase==='ready'&&m){smart.phase='solving';smart.moves=[];smart.stage=0;
-    const el=tm.inspecting?performance.now()-tm.insp0:0;tm.pen=el>17000?'DNF':el>15000?'+2':'';tm.inspecting=false;tm.splits=[];
+    const el=tm.inspecting?performance.now()-tm.insp0:0;const pa=penAuto(el);tm.pen=pa.pen;tm.penWhy=pa;tm.inspecting=false;tm.splits=[];
     tm.t0=performance.now();tmSet('running');cancelAnimationFrame(tm.raf);tmLoop();smartRender();}
   if(smart.phase==='solving'&&m){smart.moves.push([m.move,Math.round(m.t-tm.t0)]);
     if($('tmSplits').value==='cfop'){const stg=cfopStage(smart.state);while(tm.splits.length<Math.min(stg,3)&&tm.state==='running'){tm.splits.push(m.t-tm.t0);}}
