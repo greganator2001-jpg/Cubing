@@ -23,11 +23,13 @@ const PolyDefs=(()=>{
     // match the guide's notation: R = top-front-right corner, B = top-back-right corner
     return{stickers:cutAll(cubeFaces(cols),planes),moves:Object.assign(mk(moves,3),mk({R:[corner.UFR,1/Math.sqrt(3)+1e-6],B:[corner.UBR,1/Math.sqrt(3)+1e-6]},3)),scale:1.15};}
   function mk(defs,order){const m={};for(const k in defs){const[a,c]=defs[k];m[k]={axis:a.clone().normalize(),cut:c,ang:-2*Math.PI/order};}return m;}
-  function pyraminx(){ // U on top, one face toward the viewer
+  function pyraminx(layers=3){ // U on top, one face toward the viewer
     const r=Math.sqrt(8)/3,h=-1/3,vs={U:V(0,1,0),B:V(0,h,-r),L:V(-r*Math.sin(Math.PI/3)*1,h,r/2),R:V(r*Math.sin(Math.PI/3),h,r/2)};
     const faces=[['F',['U','L','R'],0x11a35a],['Lf',['U','B','L'],0xd0213b],['Rf',['U','R','B'],0x1e5fd6],['D',['L','B','R'],0xffd500]].map(([k,ids,col])=>{const poly=ids.map(i=>vs[i].clone());const n=poly[0].clone().add(poly[1]).add(poly[2]);return{poly:orient(poly,n),color:col};});
-    const planes=[],moves={};const top=1,bot=-1/3,step=(top-bot)/3;
-    for(const k in vs){const a=vs[k].clone().normalize();planes.push([a,top-step],[a,top-2*step]);moves[k.toLowerCase()]={axis:a,cut:top-step+1e-6,ang:-2*Math.PI/3};moves[k]={axis:a,cut:top-2*step+1e-6,ang:-2*Math.PI/3};}
+    const planes=[],moves={};const top=1,bot=-1/3,step=(top-bot)/layers;
+    // 3 layers: u = tip, U = tip + middle. Master (4 layers): u = tip, U = 2 layers, Uw = 3 layers (all but the bottom row)
+    for(const k in vs){const a=vs[k].clone().normalize();for(let d=1;d<layers;d++)planes.push([a,top-d*step]);
+      moves[k.toLowerCase()]={axis:a,cut:top-step+1e-6,ang:-2*Math.PI/3};moves[k]={axis:a,cut:top-2*step+1e-6,ang:-2*Math.PI/3};if(layers>3)moves[k+'w']={axis:a,cut:top-3*step+1e-6,ang:-2*Math.PI/3};}
     return{stickers:cutAll(faces,planes),moves,scale:2.1};}
   function megaminx(kilo){const phi=(1+Math.sqrt(5))/2;let N=[];for(const a of[-1,1])for(const b of[-1,1])N.push(V(0,a*phi,b),V(a*phi,b,0),V(b,0,a*phi));N=N.map(n=>n.normalize());
     // turn it so one face points straight up and a neighbour faces the viewer
@@ -48,7 +50,7 @@ const PolyDefs=(()=>{
     const DR=low.find(i=>N[i].dot(N[F])>.3&&N[i].dot(N[R])>.3),DL=low.find(i=>N[i].dot(N[F])>.3&&N[i].dot(N[L])>.3);
     const br=adj.filter(i=>![F,R,L].includes(i));const BR=br.reduce((b,i)=>N[i].x>N[b].x?i:b,br[0]),BL=br.reduce((b,i)=>N[i].x<N[b].x?i:b,br[0]);
     return{U,F,R,L,BR,BL,D,DR,DL};}
-  return{pyra:pyraminx,skewb,mega:()=>megaminx(false),kilo:()=>megaminx(true),dino,redi:dino};
+  return{pyra:()=>pyraminx(3),mpyra:()=>pyraminx(4),skewb,mega:()=>megaminx(false),kilo:()=>megaminx(true),dino,redi:dino};
 })();
 
 class PolyView{
@@ -56,7 +58,7 @@ class PolyView{
     this.r=new THREE.WebGLRenderer({antialias:true,alpha:true});this.r.setPixelRatio(Math.min(2,window.devicePixelRatio||1));el.appendChild(this.r.domElement);
     this.scene=new THREE.Scene();this.cam=new THREE.PerspectiveCamera(27,1,.1,100);this.cam.position.set(0,0,9.5);
     this.scene.add(new THREE.AmbientLight(0xffffff,.8));const L=new THREE.DirectionalLight(0xffffff,.35);L.position.set(2,6,9);this.scene.add(L);
-    this.root=new THREE.Group();this.root.scale.setScalar(d.scale);this.scene.add(this.root);const V0={pyra:[-1.0,.32],mega:[-.35,.42],kilo:[-.35,.42]}[kind]||[-.5,.45];this.yaw=V0[0];this.pitch=V0[1];this.view();
+    this.root=new THREE.Group();this.root.scale.setScalar(d.scale);this.scene.add(this.root);const V0={pyra:[-1.0,.32],mpyra:[-1.0,.32],mega:[-.35,.42],kilo:[-.35,.42]}[kind]||[-.5,.45];this.yaw=V0[0];this.pitch=V0[1];this.view();
     // black body = convex hull of the sticker polygons, stickers slightly inset on top
     const body=new THREE.MeshLambertMaterial({color:0x101010});this.stickers=[];
     for(const s of d.stickers){const c=s.poly.reduce((a,p)=>a.add(p),new THREE.Vector3()).multiplyScalar(1/s.poly.length);const n=s.poly[1].clone().sub(s.poly[0]).cross(s.poly[2].clone().sub(s.poly[1])).normalize();

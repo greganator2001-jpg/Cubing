@@ -111,7 +111,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 .case-meta{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1}
 #view-drill.cross .case-only{display:none!important}#view-drill:not(.cross) .cross-only{display:none!important}
 .dmodes{display:flex;gap:4px;margin-right:auto}.dmodes .btn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
-#cxScr{font-size:1.05rem;line-height:1.5}#cxSols{margin-top:6px}#cxSols .linkbtn{text-align:left}
+#cxScr{font-size:1.05rem;line-height:1.5}.cxcmp{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;margin-top:6px;font-size:.85rem}.cxcmp:empty{display:none}.cxc{display:inline-flex;align-items:center;gap:5px}.cxc i{width:11px;height:11px;border-radius:3px;display:inline-block}#cxSols{margin-top:6px}#cxSols .linkbtn{text-align:left}
 .mat.timer.insp .time{color:var(--accent-soft)}.mat.timer.warn .time{color:var(--warn)}
 .case-name{position:relative;font-family:var(--f-display);font-style:italic;font-weight:700;font-size:clamp(2rem,4.2vw,3.3rem);letter-spacing:0;margin:0;line-height:1}
 .case-meta{position:relative}
@@ -180,6 +180,10 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 .secbar{display:flex;align-items:center;gap:10px 16px;flex-wrap:wrap}
 .secchips{display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:1}
 .look{display:flex;gap:2px;background:#15171C;border:1px solid #262A32;padding:3px;border-radius:9px;margin-left:auto}
+.penb{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}@media (max-width:700px){.penb{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.penb .v{font:700 1.5rem var(--f-display);font-variant-numeric:tabular-nums}.penrows{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.penrow{display:grid;grid-template-columns:minmax(9em,15em) 1fr 4.5em;gap:10px;align-items:center;font-size:.88rem}.penrow .trk{height:10px;background:var(--sunk);border-radius:5px;overflow:hidden}.penrow .trk i{display:block;height:100%;border-radius:5px;background:var(--warn)}.penrow .trk i.dnf{background:var(--hold)}.penrow .n{text-align:right;font:600 .85rem var(--f-display);font-variant-numeric:tabular-nums}
+.pen-tip{margin:10px 0 0;padding:10px 12px;border-radius:9px;background:var(--sunk);font-size:.9rem}
 .pen-menu{position:fixed;z-index:60;display:flex;flex-direction:column;gap:2px;min-width:230px;background:#1A1D23;border:1px solid #2E333C;border-radius:10px;padding:8px;box-shadow:0 14px 34px rgba(0,0,0,.5)}
 .pen-menu .label{padding:2px 8px 6px}.pen-menu button{text-align:left;font:500 .9rem var(--f-body);color:var(--fg);background:none;border:0;border-radius:7px;padding:8px 10px;cursor:pointer}.pen-menu button:hover,.pen-menu button:focus-visible{background:#262A32}
 .pw{display:block;font:600 .7rem var(--f-body);color:var(--warn);letter-spacing:.02em}.pw.dnf{color:#FF8A8A}
@@ -525,11 +529,13 @@ body.timing .rail,body.timing .secbar,body.timing #view-timer .side,body.timing 
         </div>
         <div class="info">
           <div class="cross-only info" id="crossBox">
-            <div class="case-meta"><span class="label">Cross trainer · white cross on the bottom</span><h2 class="case-name" style="font-size:1.5rem">Solve only the white cross</h2></div>
+            <div class="case-meta"><span class="label" id="cxSub">Cross trainer · white cross on the bottom</span><h2 class="case-name" style="font-size:1.5rem" id="cxTitle">Solve only the white cross</h2></div>
             <div class="block"><span class="label" id="cxScrLabel">Scramble · yellow top, green front</span><div class="setup" id="cxScr">—</div><span class="note" id="cxLenNow"></span></div>
-            <div class="controls"><label class="toggle">Cross length <select id="cxLen"><option value="0">Any</option><option value="4">4 moves</option><option value="5">5 moves</option><option value="6">6 moves</option><option value="7">7 moves</option><option value="8">8 moves</option></select></label>
+            <div class="controls"><label class="toggle">Practice <select id="cxKind"><option value="cross">Cross</option><option value="xcross">X-cross (cross + 1 pair)</option></select></label>
+              <label class="toggle"><input type="checkbox" id="cxCN"> Color neutral</label>
+              <label class="toggle" id="cxLenWrap">Cross length <select id="cxLen"><option value="0">Any</option><option value="4">4 moves</option><option value="5">5 moves</option><option value="6">6 moves</option><option value="7">7 moves</option><option value="8">8 moves</option></select></label>
               <label class="toggle"><input type="checkbox" id="cxInsp"> 15-second planning</label><button class="btn" id="cxPeek">Show best cross</button></div>
-            <div class="block card2" id="cxResult" hidden><span class="label">Last cross</span><div id="cxResTxt"></div><div class="alts" id="cxSols"></div></div>
+            <div class="block card2" id="cxResult" hidden><span class="label">Last attempt</span><div id="cxResTxt"></div><div class="note" id="cxBestFor"></div><div class="cxcmp" id="cxCmp"></div><div class="alts" id="cxSols"></div></div>
           </div>
           <div class="case-head case-only">
             <div class="mini" id="drillMini"></div>
@@ -593,8 +599,10 @@ body.timing .rail,body.timing .secbar,body.timing #view-timer .side,body.timing 
         <label class="toggle"><input type="checkbox" id="tmInsp"> 15-second inspection</label>
         <label class="toggle">Calls at 8s/12s <select id="tmCalls"><option value="off">Off</option><option value="beep">Beep</option><option value="voice">Voice</option></select></label>
         <label class="toggle">Splits <select id="tmSplits"><option value="off">Off</option><option value="cfop">Cross · F2L · OLL · PLL</option><option value="red">Centers · Edges · 3x3</option><option value="roux">Roux: FB · SB · CMLL · LSE</option></select></label>
+        <label class="toggle">Hold to start <select id="tmHoldMs"><option value="0">Instant</option><option value="150">0.15s</option><option value="300">0.3s</option><option value="550">0.55s (Stackmat)</option><option value="1000">1s</option></select></label>
         <label class="toggle">Pause after a solve <select id="tmCool"><option value="0">Off</option><option value="1000">1s</option><option value="2000">2s</option><option value="3000">3s</option><option value="5000">5s</option></select></label>
         <label class="toggle"><input type="checkbox" id="tmHardDel"> ✕ also deletes from Stats</label>
+        <span class="note">Ctrl+Z deletes your last solve · Ctrl+Y brings it back</span>
         <span class="note">Scramble with yellow on top and green in front.</span>
       </div>
     </div>
@@ -665,6 +673,10 @@ body.timing .rail,body.timing .secbar,body.timing #view-timer .side,body.timing 
       <div class="pcard wide">
         <div class="top-row"><h2 class="ph" id="pgSessTitle">Sessions</h2><span class="note">Every session, including deleted ones · best of each column is green</span></div>
         <div class="sb-wrap"><table class="sb" id="pgSess"></table></div>
+      </div>
+      <div class="pcard wide">
+        <div class="top-row"><h2 class="ph">Penalties</h2><div class="seg" role="group" aria-label="Period"><button class="btn" data-penper="month" aria-pressed="true">This month</button><button class="btn" data-penper="all" aria-pressed="false">All time</button></div></div>
+        <div id="pgPen"></div>
       </div>
       <div class="pcard">
         <h2 class="ph">Drill practice by day</h2>
@@ -958,11 +970,13 @@ const PolyDefs=(()=>{
     // match the guide's notation: R = top-front-right corner, B = top-back-right corner
     return{stickers:cutAll(cubeFaces(cols),planes),moves:Object.assign(mk(moves,3),mk({R:[corner.UFR,1/Math.sqrt(3)+1e-6],B:[corner.UBR,1/Math.sqrt(3)+1e-6]},3)),scale:1.15};}
   function mk(defs,order){const m={};for(const k in defs){const[a,c]=defs[k];m[k]={axis:a.clone().normalize(),cut:c,ang:-2*Math.PI/order};}return m;}
-  function pyraminx(){ // U on top, one face toward the viewer
+  function pyraminx(layers=3){ // U on top, one face toward the viewer
     const r=Math.sqrt(8)/3,h=-1/3,vs={U:V(0,1,0),B:V(0,h,-r),L:V(-r*Math.sin(Math.PI/3)*1,h,r/2),R:V(r*Math.sin(Math.PI/3),h,r/2)};
     const faces=[['F',['U','L','R'],0x11a35a],['Lf',['U','B','L'],0xd0213b],['Rf',['U','R','B'],0x1e5fd6],['D',['L','B','R'],0xffd500]].map(([k,ids,col])=>{const poly=ids.map(i=>vs[i].clone());const n=poly[0].clone().add(poly[1]).add(poly[2]);return{poly:orient(poly,n),color:col};});
-    const planes=[],moves={};const top=1,bot=-1/3,step=(top-bot)/3;
-    for(const k in vs){const a=vs[k].clone().normalize();planes.push([a,top-step],[a,top-2*step]);moves[k.toLowerCase()]={axis:a,cut:top-step+1e-6,ang:-2*Math.PI/3};moves[k]={axis:a,cut:top-2*step+1e-6,ang:-2*Math.PI/3};}
+    const planes=[],moves={};const top=1,bot=-1/3,step=(top-bot)/layers;
+    // 3 layers: u = tip, U = tip + middle. Master (4 layers): u = tip, U = 2 layers, Uw = 3 layers (all but the bottom row)
+    for(const k in vs){const a=vs[k].clone().normalize();for(let d=1;d<layers;d++)planes.push([a,top-d*step]);
+      moves[k.toLowerCase()]={axis:a,cut:top-step+1e-6,ang:-2*Math.PI/3};moves[k]={axis:a,cut:top-2*step+1e-6,ang:-2*Math.PI/3};if(layers>3)moves[k+'w']={axis:a,cut:top-3*step+1e-6,ang:-2*Math.PI/3};}
     return{stickers:cutAll(faces,planes),moves,scale:2.1};}
   function megaminx(kilo){const phi=(1+Math.sqrt(5))/2;let N=[];for(const a of[-1,1])for(const b of[-1,1])N.push(V(0,a*phi,b),V(a*phi,b,0),V(b,0,a*phi));N=N.map(n=>n.normalize());
     // turn it so one face points straight up and a neighbour faces the viewer
@@ -983,7 +997,7 @@ const PolyDefs=(()=>{
     const DR=low.find(i=>N[i].dot(N[F])>.3&&N[i].dot(N[R])>.3),DL=low.find(i=>N[i].dot(N[F])>.3&&N[i].dot(N[L])>.3);
     const br=adj.filter(i=>![F,R,L].includes(i));const BR=br.reduce((b,i)=>N[i].x>N[b].x?i:b,br[0]),BL=br.reduce((b,i)=>N[i].x<N[b].x?i:b,br[0]);
     return{U,F,R,L,BR,BL,D,DR,DL};}
-  return{pyra:pyraminx,skewb,mega:()=>megaminx(false),kilo:()=>megaminx(true),dino,redi:dino};
+  return{pyra:()=>pyraminx(3),mpyra:()=>pyraminx(4),skewb,mega:()=>megaminx(false),kilo:()=>megaminx(true),dino,redi:dino};
 })();
 
 class PolyView{
@@ -991,7 +1005,7 @@ class PolyView{
     this.r=new THREE.WebGLRenderer({antialias:true,alpha:true});this.r.setPixelRatio(Math.min(2,window.devicePixelRatio||1));el.appendChild(this.r.domElement);
     this.scene=new THREE.Scene();this.cam=new THREE.PerspectiveCamera(27,1,.1,100);this.cam.position.set(0,0,9.5);
     this.scene.add(new THREE.AmbientLight(0xffffff,.8));const L=new THREE.DirectionalLight(0xffffff,.35);L.position.set(2,6,9);this.scene.add(L);
-    this.root=new THREE.Group();this.root.scale.setScalar(d.scale);this.scene.add(this.root);const V0={pyra:[-1.0,.32],mega:[-.35,.42],kilo:[-.35,.42]}[kind]||[-.5,.45];this.yaw=V0[0];this.pitch=V0[1];this.view();
+    this.root=new THREE.Group();this.root.scale.setScalar(d.scale);this.scene.add(this.root);const V0={pyra:[-1.0,.32],mpyra:[-1.0,.32],mega:[-.35,.42],kilo:[-.35,.42]}[kind]||[-.5,.45];this.yaw=V0[0];this.pitch=V0[1];this.view();
     // black body = convex hull of the sticker polygons, stickers slightly inset on top
     const body=new THREE.MeshLambertMaterial({color:0x101010});this.stickers=[];
     for(const s of d.stickers){const c=s.poly.reduce((a,p)=>a.add(p),new THREE.Vector3()).multiplyScalar(1/s.poly.length);const n=s.poly[1].clone().sub(s.poly[0]).cross(s.poly[2].clone().sub(s.poly[1])).normalize();
@@ -1510,6 +1524,7 @@ function record(ms){
   loadCase();}
 // after a solve, ignore the start key for a moment so a late press doesn't start the next solve by accident
 const coolMs=()=>+store.get('cool',2000);
+const holdMs=()=>+store.get('holdMs',300);   // how long to hold before the timer turns green
 function coolStart(el,hintEl,msg){const ms=coolMs();if(!ms)return 0;const until=performance.now()+ms;el.classList.add('cool');
   clearTimeout(el._cool);el._cool=setTimeout(()=>{el.classList.remove('cool');if(hintEl&&hintEl._coolMsg)hintEl.textContent=hintEl._coolMsg;},ms);return until;}
 let tState='idle',holdTimer=null,startT=0,raf=null,dCoolUntil=0;
@@ -1519,7 +1534,7 @@ function press(){
   if(tState==='running'){cancelAnimationFrame(raf);const ms=performance.now()-startT;timeEl.textContent=fmt(ms);setT('stopped');record(ms);dCoolUntil=coolStart(timerEl);return;}
   if(performance.now()<dCoolUntil)return;
   if(crossMode()&&(tState==='idle'||tState==='stopped')&&crossPress())return;
-  if(tState==='idle'||tState==='stopped'){setT('hold');timeEl.textContent='0.00';holdTimer=setTimeout(()=>setT('ready'),300);}}
+  if(tState==='idle'||tState==='stopped'){setT('hold');timeEl.textContent='0.00';holdTimer=setTimeout(()=>setT('ready'),holdMs());}}
 function release(){if(crossMode()&&crossRelease())return;
   if(tState==='hold'){clearTimeout(holdTimer);setT('idle');}
   else if(tState==='ready'){setT('running');startT=performance.now();const tick=()=>{timeEl.textContent=fmt(performance.now()-startT);raf=requestAnimationFrame(tick)};tick();}
@@ -1545,72 +1560,157 @@ function askPen(anchor,P,s,done){if(s.pen===P){s.pen='';delete s.why;delete s.se
 // Space is the timer key everywhere: never let it scroll the page (or click a focused button) unless you're typing in a box
 const spaceKey=e=>{if((e.code==='Space'||e.key===' ')&&!typing()&&!(document.activeElement&&document.activeElement.isContentEditable))e.preventDefault();};
 window.addEventListener('keydown',spaceKey,{capture:true});window.addEventListener('keyup',spaceKey,{capture:true});
-// ---- Cross trainer (Drill tab, 3x3): scramble, optional 15 s planning, time only the cross, then see the best cross ----
-// The app holds the cube yellow on top, green in front, so the white cross is solved on the bottom (sticker colour 'D').
+// ---- Cross trainer (Drill tab, 3x3): scramble, optional 15 s planning, time only the cross (or X-cross), then see the best one ----
+// The app holds the cube yellow on top, green in front. A cross colour is "held on the bottom" by a whole-cube rotation first
+// (white needs none), and every solution is written for the cube held that way.
 const CX={tbl:null,slots:null,slotIx:null,mt:null,moves:[]};
 function cxBuild(){if(CX.tbl)return;
-  // the 24 edge-sticker places (position + facing); the white edge state = where its 4 white stickers are
+  // the 24 edge-sticker places (position + facing); a cross = where its 4 bottom-colour stickers are
   const sl=[];for(const s of solvedCube()){if(s.p.filter(v=>v!==0).length===2)sl.push(s.p.join()+'|'+s.n.join());}
   CX.slots=sl;CX.slotIx={};sl.forEach((k,i)=>CX.slotIx[k]=i);
   for(const f of 'UDRLFB')for(const n of [1,2,-1])CX.moves.push([f,n]);
   CX.mt=CX.moves.map(([f,n])=>{const[ax,q,pred]=MOVES[f];return sl.map(k=>{const[p,nn]=k.split('|').map(x=>x.split(',').map(Number));
     return pred(p)?CX.slotIx[rot(p,ax,q*n).join()+'|'+rot(nn,ax,q*n).join()]:CX.slotIx[k];});});
-  const dist=new Uint8Array(24**4).fill(255),home=cxHome();const enc=a=>((a[0]*24+a[1])*24+a[2])*24+a[3];
+  const dist=new Uint8Array(24**4).fill(255),home=cxOf(solvedCube());const enc=a=>((a[0]*24+a[1])*24+a[2])*24+a[3];
   let fr=[home];dist[enc(home)]=0;
   for(let d=0;fr.length;d++){const nx=[];for(const s of fr)for(const t of CX.mt){const a=[t[s[0]],t[s[1]],t[s[2]],t[s[3]]],e=enc(a);if(dist[e]===255){dist[e]=d+1;nx.push(a);}}fr=nx;}
   CX.tbl=dist;CX.enc=enc;}
-// where the white stickers of the 4 white edges sit (fixed order: by home position)
-function cxHome(){return solvedCube().filter(s=>s.c==='D'&&s.p.filter(v=>v!==0).length===2).sort((a,b)=>a.h<b.h?-1:1).map(s=>CX.slotIx[s.p.join()+'|'+s.n.join()]);}
-function cxOf(state){return state.filter(s=>s.c==='D'&&s.h.split(',').filter(v=>v!=='0').length===2).sort((a,b)=>a.h<b.h?-1:1).map(s=>CX.slotIx[s.p.join()+'|'+s.n.join()]);}
+// where the 4 bottom-colour edge stickers are (fixed order: by home position). Works on a "framed" state too.
+function cxOf(state){return state.filter(s=>s.n0==='0,-1,0'&&s.h.split(',').filter(v=>v!=='0').length===2).sort((a,b)=>a.h<b.h?-1:1).map(s=>CX.slotIx[s.p.join()+'|'+s.n.join()]);}
 const cxDist=a=>CX.tbl[CX.enc(a)];
 const cxStep=(a,m)=>{const t=CX.mt[m];return[t[a[0]],t[a[1]],t[a[2]],t[a[3]]];};
 const cxTok=m=>{const[f,n]=CX.moves[m];return f+(n===2?'2':n<0?"'":'');};
+const CX_COST={R:0,U:0,L:.4,F:.6,D:.8,B:1.6};
+const cxScore=mv=>mv.split(' ').filter(Boolean).reduce((s,t)=>s+CX_COST[t[0]]+(t[1]==='2'?.2:0),0);
 // every shortest cross, best-feeling first (fewer B/D turns and regrips)
 function cxSolve(a,limit=60){const out=[],path=[];const d0=cxDist(a);
   (function go(s,d,last){if(out.length>=limit)return;if(d===0){out.push(path.slice());return;}
     for(let m=0;m<18;m++){const f=CX.moves[m][0];if(f===last)continue;const b=cxStep(s,m);if(cxDist(b)===d-1){path.push(m);go(b,d-1,f);path.pop();}}})(a,d0,'');
-  const cost={R:0,U:0,L:.4,F:.6,D:.8,B:1.6};
-  return out.map(p=>({moves:p.map(cxTok).join(' '),score:p.reduce((s,m)=>s+cost[CX.moves[m][0]]+(Math.abs(CX.moves[m][1])===2?.2:0),0)})).sort((x,y)=>x.score-y.score).map(x=>x.moves);}
-// random-move scramble; with a length chosen, keep trying until the cross needs exactly that many moves
+  return out.map(p=>p.map(cxTok).join(' ')).sort((x,y)=>cxScore(x)-cxScore(y));}
+// ---- holding another colour on the bottom: rotate the whole state (positions AND home labels) ----
+const CX_ROT={D:'',U:'x2',F:"x'",B:'x',R:'z',L:"z'"},CX_NAME={D:'white',U:'yellow',F:'green',B:'blue',R:'orange',L:'red'};
+const cxRotFn=alg=>{const toks=alg?parseAlg(alg):[];return v=>{for(const[f,n]of toks){const[ax,q]=MOVES[f];v=rot(v,ax,q*n);}return v;};};
+function cxFrame(st,alg){const R=cxRotFn(alg);return st.map(s=>({p:R(s.p),n:R(s.n),c:s.c,h:R(s.h.split(',').map(Number)).join(),n0:R(s.n0.split(',').map(Number)).join(),oh:s.oh||s.h}));}
+const cxFaceOf=n=>({'0,1,0':'U','0,-1,0':'D','1,0,0':'R','-1,0,0':'L','0,0,1':'F','0,0,-1':'B'})[n.join()];
+// moves found with the cube turned by y^k, written back for the cube held normally
+function cxUnY(mv,k){if(!k)return mv;const map={};for(const f of 'UDRLFB')map[f]=cxFaceOf(rot(FACE_N[f],'y',k));return mv.split(' ').filter(Boolean).map(t=>map[t[0]]+t.slice(1)).join(' ');}
+const cxSlotName=k=>{const p=rot([1,0,1],'y',k);return (p[2]>0?'front':'back')+'-'+(p[0]>0?'right':'left');};
+// ---- X-cross solver (cross + the front-right pair), run in a worker so the 3-second table build doesn't freeze the app ----
+function xcCore(scope){
+  const FN={U:[0,1,0],D:[0,-1,0],R:[1,0,0],L:[-1,0,0],F:[0,0,1],B:[0,0,-1]};
+  const MV={R:['x',-1,p=>p[0]===1],L:['x',1,p=>p[0]===-1],U:['y',-1,p=>p[1]===1],D:['y',1,p=>p[1]===-1],F:['z',-1,p=>p[2]===1],B:['z',1,p=>p[2]===-1]};
+  const r1=(v,ax)=>{const[x,y,z]=v;return ax==='x'?[x,-z,y]:ax==='y'?[z,y,-x]:[-y,x,z];};
+  const rt=(v,ax,q)=>{q=((q%4)+4)%4;for(let i=0;i<q;i++)v=r1(v,ax);return v;};
+  const solved=[];for(let x=-1;x<=1;x++)for(let y=-1;y<=1;y++)for(let z=-1;z<=1;z++){const p=[x,y,z];for(const f in FN){const n=FN[f],i=n.findIndex(c=>c!==0);if(p[i]===n[i])solved.push({p,n,h:p.join(),n0:n.join()});}}
+  const mk=nz=>{const sl=solved.filter(s=>s.p.filter(v=>v).length===nz).map(s=>s.p.join()+'|'+s.n.join());const SI={};sl.forEach((k,i)=>SI[k]=i);return SI;};
+  const ES=mk(2),CS=mk(3);const moves=[];for(const f of 'UDRLFB')for(const n of [1,2,-1])moves.push([f,n]);
+  const tab=SI=>moves.map(([f,n])=>{const[ax,q,pred]=MV[f];const t=new Uint8Array(24);for(const k in SI){const[p,nn]=k.split('|').map(x=>x.split(',').map(Number));t[SI[k]]=pred(p)?SI[rt(p,ax,q*n).join()+'|'+rt(nn,ax,q*n).join()]:SI[k];}return t;});
+  const me=tab(ES),mc=tab(CS);
+  const crossH=solved.filter(s=>s.n0==='0,-1,0'&&s.p.filter(v=>v).length===2).sort((a,b)=>a.h<b.h?-1:1).map(s=>s.h+'#'+s.n0);
+  const keyOf=(st)=>{const at={};for(const s of st){const nz=s.p.filter(v=>v).length;if(nz===2)at[s.h+'#'+s.n0]=ES[s.p.join()+'|'+s.n.join()];else if(nz===3)at[s.h+'#'+s.n0]=CS[s.p.join()+'|'+s.n.join()];}
+    return[...crossH.map(k=>at[k]),at['1,0,1#0,0,1'],at['1,-1,1#0,-1,0']];};
+  let Tce=null,Tcc=null;
+  function bfs(start,tabs){const k=start.length,d=new Uint8Array(24**k).fill(255);const enc=a=>a.reduce((x,v)=>x*24+v,0);let fr=[enc(start)];d[fr[0]]=0;const a=new Array(k);
+    for(let depth=0;fr.length;depth++){const nx=[];for(const e of fr){let x=e;for(let i=k-1;i>=0;i--){a[i]=x%24;x=(x-a[i])/24;}
+      for(let m=0;m<18;m++){let y=0;for(let i=0;i<k;i++)y=y*24+tabs[i][m][a[i]];if(d[y]===255){d[y]=depth+1;nx.push(y);}}}fr=nx;}return d;}
+  function build(){if(Tce)return;const h=keyOf(solved);Tce=bfs(h.slice(0,5),[me,me,me,me,me]);Tcc=bfs([...h.slice(0,4),h[5]],[me,me,me,me,mc]);}
+  const tok=m=>moves[m][0]+(moves[m][1]===2?'2':moves[m][1]<0?"'":'');
+  function solve(st){build();const a0=keyOf(st);const H=a=>{const b=(((a[0]*24+a[1])*24+a[2])*24+a[3])*24;return Math.max(Tce[b+a[4]],Tcc[b+a[5]]);};
+    const path=[];let found=null;
+    function dfs(a,g,bd,last){const h=H(a);if(g+h>bd)return false;if(h===0){found=path.slice();return true;}
+      for(let m=0;m<18;m++){const f=moves[m][0];if(f===last)continue;const te=me[m],tc=mc[m];path.push(m);if(dfs([te[a[0]],te[a[1]],te[a[2]],te[a[3]],te[a[4]],tc[a[5]]],g+1,bd,f))return true;path.pop();}return false;}
+    for(let bd=H(a0);bd<17;bd++){if(dfs(a0,0,bd,''))return{len:bd,moves:found.map(tok).join(' ')};}return null;}
+  if(scope&&typeof scope.postMessage==='function'&&typeof scope.document==='undefined')scope.onmessage=e=>{const{id,jobs}=e.data;scope.postMessage({id,out:jobs.map(solve)});};
+  return{solve,build};}
+let xcW=null,xcLocal=null,xcSeq=0;const xcWait={};
+function xcRun(jobs){return new Promise(res=>{
+  const local=()=>{xcLocal=xcLocal||xcCore(null);res(jobs.map(j=>xcLocal.solve(j)));};
+  if(xcW===false)return setTimeout(local,30);
+  try{if(!xcW){xcW=new Worker(URL.createObjectURL(new Blob(['('+xcCore.toString()+')(self);'],{type:'text/javascript'})));
+      xcW.onmessage=e=>{const f=xcWait[e.data.id];delete xcWait[e.data.id];f&&f(e.data.out);};
+      xcW.onerror=()=>{xcW=false;for(const k in xcWait){const f=xcWait[k];delete xcWait[k];f(null);}};}
+    const id=++xcSeq;xcWait[id]=out=>out?res(out):local();xcW.postMessage({id,jobs:jobs.map(st=>st.map(s=>({p:s.p,n:s.n,h:s.h,n0:s.n0})))});}
+  catch(e){xcW=false;local();}});}
+// ---- options for one scramble: which colour, which slot, best moves ----
+function cxColors(){return $('cxCN').checked?['D','U','F','B','R','L']:['D'];}
+function cxCrossOpts(st){const out=[];for(const c of cxColors()){const fs=cxFrame(st,CX_ROT[c]);const a=cxOf(fs);const sols=cxSolve(a);
+    const focus=new Set(fs.filter(s=>(s.n0==='0,-1,0'&&s.h.split(',').filter(v=>v!=='0').length===2)||s.h.split(',').filter(v=>v!=='0').length===1).map(s=>s.oh));
+    out.push({col:c,rot:CX_ROT[c],len:cxDist(a),moves:sols[0]||'',alts:sols.slice(1,4),focus});}
+  return out.sort((x,y)=>x.len-y.len||(x.col==='D'?-1:y.col==='D'?1:0)||cxScore(x.moves)-cxScore(y.moves));}
+async function cxXOpts(st){const jobs=[],meta=[];
+  for(const c of cxColors()){const fs=cxFrame(st,CX_ROT[c]);for(let k=0;k<4;k++){const f2=cxFrame(fs,'y '.repeat(k).trim());jobs.push(f2);meta.push({c,k,fs,f2});}}
+  const res=await xcRun(jobs);const out=[];
+  res.forEach((r,i)=>{if(!r)return;const{c,k,fs,f2}=meta[i];
+    const pair=new Set(f2.filter(s=>s.h==='1,0,1'||s.h==='1,-1,1').map(s=>s.oh));
+    const focus=new Set(fs.filter(s=>(s.n0==='0,-1,0'&&s.h.split(',').filter(v=>v!=='0').length===2)||s.h.split(',').filter(v=>v!=='0').length===1).map(s=>s.oh));pair.forEach(h=>focus.add(h));
+    out.push({col:c,rot:CX_ROT[c],len:r.len,moves:cxUnY(r.moves,k),slot:cxSlotName(k),alts:[],focus});});
+  out.sort((x,y)=>x.len-y.len||(x.col==='D'?-1:y.col==='D'?1:0)||cxScore(x.moves)-cxScore(y.moves));
+  // other slots / colours of the same best length become the "other ways"
+  if(out.length)out[0].alts=out.slice(1).filter(o=>o.len===out[0].len).slice(0,3).map(o=>o);return out;}
+const cxIsX=()=>$('cxKind').value==='xcross';
+const cxOptLabel=o=>(cxColors().length>1||o.col!=='D'?CX_NAME[o.col]+' cross'+(o.rot?' (turn the cube '+o.rot+' first)':''):'')+(o.slot?(cxColors().length>1||o.col!=='D'?', ':'')+o.slot+' pair':'');
+const cxAlg=o=>(o.rot?o.rot+' ':'')+o.moves;
+// random-move scramble; with a length chosen, keep trying until the (best) cross needs exactly that many moves
 function cxScramble(len){cxBuild();const F='UDRLFB',ax={U:0,D:0,R:1,L:1,F:2,B:2},sfx=['',"'",'2'];
-  for(let tries=0;tries<40000;tries++){const mv=[];let a=cxHome(),p1='',p2='';
+  // per colour: the cross state in that colour's frame, and how each face turn reads in that frame
+  const fr=cxColors().map(c=>{const R=cxRotFn(CX_ROT[c]);const map={};for(const f of F)map[f]=cxFaceOf(R(FACE_N[f]));return{a0:cxOf(cxFrame(solvedCube(),CX_ROT[c])),map};});
+  const mIx=(f,k)=>CX.moves.findIndex(([g,n])=>g===f&&(k===''?n===1:k==='2'?n===2:n===-1));
+  for(let tries=0;tries<40000;tries++){const mv=[];let as=fr.map(x=>x.a0.slice()),p1='',p2='';
     while(mv.length<22){const f=F[Math.floor(Math.random()*6)];if(f===p1||(ax[f]===ax[p1]&&ax[p1]===ax[p2]&&f===p2)||(ax[f]===ax[p1]&&f===p2))continue;
-      const k=sfx[Math.floor(Math.random()*3)];mv.push(f+k);a=cxStep(a,CX.moves.findIndex(([g,n])=>g===f&&(k===''?n===1:k==='2'?n===2:n===-1)));p2=p1;p1=f;}
-    if(!len||cxDist(a)===len)return mv.join(' ');}
+      const k=sfx[Math.floor(Math.random()*3)];mv.push(f+k);if(len&&!cxIsX())as=as.map((a,i)=>cxStep(a,mIx(fr[i].map[f],k)));p2=p1;p1=f;}
+    if(!len||cxIsX()||Math.min(...as.map(cxDist))===len)return mv.join(' ');}
   return null;}
 // ---- the trainer itself ----
-var cx={on:store.get('crossMode',false),scr:'',st:null,best:[],d:0,insp:false,armed:false,insp0:0,raf:0,pen:'',last:null,times:store.get('cross',[])};
+var cx={on:store.get('crossMode',false),scr:'',st:null,cur:null,curP:null,insp:false,armed:false,insp0:0,raf:0,pen:'',last:null,times:store.get('cross',[])};
 function crossMode(){return !!(cx&&cx.on)&&cubeN===3;}
 function crossLayout(){const on=crossMode();$('view-drill').classList.toggle('cross',on);
   document.querySelectorAll('[data-dmode]').forEach(b=>b.setAttribute('aria-pressed',(b.dataset.dmode==='cross')===on));$('dModes').hidden=cubeN!==3;
   $('btnSkip').textContent=on?'New scramble':'Next case';$('sessLabel').textContent=on?'Cross times':'This session';$('logLabel').textContent=on?'Recent crosses':'Recent solves';
-  $('dSolLabel').textContent=on?'Best cross':'Solution';$('secChips').hidden=on||view()==='timer'||view()==='learn';if(typeof dnfSync==='function')dnfSync();}
-function crossNew(){if(!crossMode())return;cx.scr=cxScramble(+$('cxLen').value)||cxScramble(0);cx.st=applyAlg(solvedCube(),cx.scr);
-  cx.d=cxDist(cxOf(cx.st));cx.best=cxSolve(cxOf(cx.st));cx.peek=false;
-  $('cxScr').textContent=cx.scr;$('cxLenNow').textContent='';$('cxPeek').hidden=false;
-  dp.load(cloneSt(cx.st),'full',parseAlg(cx.best[0]||''),'Hidden until you\'ve solved it (or press Show best cross).',E3);
-  $('dHint3d').textContent='Your scramble';$('timerHint').textContent=$('cxInsp').checked?'Press space to start 15 s of planning.':'Hold space (or press here), release to start. Stop when the cross is done.';}
-function crossCur(){if(!cx.scr){crossNew();return;}dp.load(cloneSt(cx.st),'full',parseAlg(cx.best[0]||''),'Hidden until you\'ve solved it (or press Show best cross).',E3);if(cx.peek)dp.reveal();$('dHint3d').textContent='Your scramble';}
-function crossShowBest(st,best,label){const fs=new Set(st.filter(s=>(s.c==='D'&&s.h.split(',').filter(v=>v!=='0').length===2)||s.h.split(',').filter(v=>v!=='0').length===1).map(s=>s.h));
-  dp.load(cloneSt(st),'full',parseAlg(best[0]||''),'',E3,fs);dp.reveal();$('dHint3d').textContent=label;
-  $('cxSols').innerHTML=best.length>1?'<span class="label">Other ways, same length</span>'+best.slice(1,4).map((m,i)=>`<button class="linkbtn mono" data-cxalt="${i+1}">${m}</button>`).join(''):'';}
-function crossRecord(ms){cx.insp=false;cancelAnimationFrame(cx.raf);
-  const s={t:ms,pen:cx.pen||'',mv:cx.d,at:Date.now(),scr:cx.scr};if(s.pen&&cx.penWhy){s.why=cx.penWhy.why;s.secs=cx.penWhy.secs;}cx.pen='';cx.penWhy=null;cx.times.push(s);if(cx.times.length>2000)cx.times.splice(0,cx.times.length-2000);store.set('cross',cx.times);
+  $('dSolLabel').textContent=on?(cxIsX()?'Best X-cross':'Best cross'):'Solution';$('secChips').hidden=on||view()==='timer'||view()==='learn';
+  const X=cxIsX(),CN=$('cxCN').checked;$('cxTitle').textContent=X?(CN?'Solve the cross and one pair, any color':'Solve the white cross and one pair'):(CN?'Solve a cross, any color':'Solve only the white cross');
+  $('cxSub').textContent='Cross trainer · '+(X?'X-cross':'cross')+(CN?' · color neutral':' · white on the bottom');$('cxLenWrap').hidden=X;$('cxPeek').textContent=X?'Show best X-cross':'Show best cross';
+  if(typeof dnfSync==='function')dnfSync();}
+// work out the answers for a scramble (cross: instant; X-cross: in the worker)
+function cxPrepare(scr){const st=applyAlg(solvedCube(),scr);const kind=cxIsX()?'xcross':'cross',cn=$('cxCN').checked;
+  const p=kind==='xcross'?cxXOpts(st):Promise.resolve(cxCrossOpts(st));
+  return p.then(opts=>({scr,st,opts,best:opts[0],kind,cn}));}
+const CX_HIDDEN='Hidden until you\'ve solved it (or press Show best).';
+function crossNew(){if(!crossMode())return;cx.scr=cxScramble(+$('cxLen').value)||cxScramble(0);cx.st=applyAlg(solvedCube(),cx.scr);cx.peek=false;cx.cur=null;
+  $('cxScr').textContent=cx.scr;$('cxPeek').hidden=false;dp.load(cloneSt(cx.st),'full',[],CX_HIDDEN,E3);$('dHint3d').textContent='Your scramble';
+  $('timerHint').textContent=$('cxInsp').checked?'Press space to start 15 s of planning.':'Hold space (or press here), release to start. Stop when the '+(cxIsX()?'cross and pair are':'cross is')+' done.';
+  const scr=cx.scr;$('cxLenNow').textContent=cxIsX()?(xcLocal||xcW?'Working out the best X-cross…':'Getting the X-cross solver ready (first time takes a few seconds)…'):'';
+  cx.curP=cxPrepare(scr).then(inf=>{if(cx.scr!==scr)return inf;cx.cur=inf;$('cxLenNow').textContent='';
+    if(!$('dHint3d').textContent.startsWith('Last')){dp.load(cloneSt(inf.st),'full',parseAlg(cxAlg(inf.best)),CX_HIDDEN,E3);if(cx.peek)crossShowBest(inf,'This scramble · best '+(inf.kind==='xcross'?'X-cross':'cross'));}return inf;});}
+function crossCur(){if(!cx.scr){crossNew();return;}if(cx.cur){dp.load(cloneSt(cx.st),'full',parseAlg(cxAlg(cx.cur.best)),CX_HIDDEN,E3);if(cx.peek)dp.reveal();}else dp.load(cloneSt(cx.st),'full',[],CX_HIDDEN,E3);$('dHint3d').textContent='Your scramble';}
+function crossShowBest(inf,label){const o=inf.best;dp.load(cloneSt(inf.st),'full',parseAlg(cxAlg(o)),'',E3,o.focus);dp.reveal();$('dHint3d').textContent=label;
+  const lab=cxOptLabel(o);$('cxBestFor').textContent=lab?'For: '+lab:'';
+  const alts=o.alts.map(a=>typeof a==='string'?{...o,moves:a,alts:[]}:a);cx.altList={inf,alts};
+  $('cxSols').innerHTML=alts.length?'<span class="label">Other ways, same length</span>'+alts.map((a,i)=>`<button class="linkbtn mono" data-cxalt="${i}">${cxAlg(a)}${a.col!==o.col||a.slot!==o.slot?' <span class="note">· '+cxOptLabel(a)+'</span>':''}</button>`).join(''):'';
+  // colour-neutral: how every colour compares
+  const cmp=inf.opts.length>1?inf.opts.reduce((m,x)=>{const k=x.col;if(!(k in m)||x.len<m[k])m[k]=x.len;return m;},{}):null;
+  $('cxCmp').innerHTML=cmp&&inf.cn?'<span class="label">Every color</span> '+Object.entries(cmp).sort((a,b)=>a[1]-b[1]).map(([c,l])=>`<span class="cxc"><i style="background:${COLORS[c]}"></i>${CX_NAME[c]} ${l}</span>`).join(''):'';}
+function crossRecord(ms){cx.insp=false;cancelAnimationFrame(cx.raf);const scr=cx.scr,peek=cx.peek,X=cxIsX();
+  const s={t:ms,pen:cx.pen||'',mv:0,at:Date.now(),scr,kind:X?'xcross':'cross',cn:$('cxCN').checked||undefined};if(s.pen&&cx.penWhy){s.why=cx.penWhy.why;s.secs=cx.penWhy.secs;}cx.pen='';cx.penWhy=null;
+  cx.times.push(s);if(cx.times.length>2000)cx.times.splice(0,cx.times.length-2000);
   dlog.push({k:'cross',t:ms,at:s.at});store.set('dlog',dlog);renderStreak();
-  cx.last={st:cx.st,best:cx.best,d:cx.d,scr:cx.scr,t:ms,pen:s.pen};
-  $('cxResult').hidden=false;$('cxResTxt').innerHTML=`<b>${s.pen==='DNF'?'DNF':fmt(ms+(s.pen==='+2'?2000:0))+(s.pen==='+2'?'+':'')}</b>${s.pen?' <span class="pw'+(s.pen==='DNF'?' dnf':'')+'" style="display:inline">'+penLong(s)+'</span>':''} · the best cross was <b>${cx.d} move${cx.d===1?'':'s'}</b>${cx.peek?' (you peeked)':''}. Press Play to watch it.`;
-  crossShowBest(cx.st,cx.best,'Last scramble · best cross');
+  const p=cx.curP;$('cxResult').hidden=false;$('cxResTxt').textContent='Working out the best one…';
+  p.then(inf=>{s.mv=inf.best?inf.best.len:0;if(inf.best&&inf.cn)s.col=inf.best.col;store.set('cross',cx.times);crossRender();cx.last=inf;
+    $('cxResTxt').innerHTML=`<b>${s.pen==='DNF'?'DNF':fmt(ms+(s.pen==='+2'?2000:0))+(s.pen==='+2'?'+':'')}</b>${s.pen?' <span class="pw'+(s.pen==='DNF'?' dnf':'')+'" style="display:inline">'+penLong(s)+'</span>':''} · the best ${X?'X-cross':'cross'} was <b>${s.mv} move${s.mv===1?'':'s'}</b>${peek?' (you peeked)':''}. Press Play to watch it.`;
+    crossShowBest(inf,'Last scramble · best '+(X?'X-cross':'cross'));});
+  store.set('cross',cx.times);crossRender();
   // next scramble is ready in the box; the cube keeps showing the one you just did
-  cx.scr=cxScramble(+$('cxLen').value)||cxScramble(0);cx.st=applyAlg(solvedCube(),cx.scr);cx.d=cxDist(cxOf(cx.st));cx.best=cxSolve(cxOf(cx.st));cx.peek=false;
-  $('cxScr').textContent=cx.scr;$('cxScrLabel').textContent='Next scramble · yellow top, green front';
-  $('timerHint').textContent=`Cross in ${fmt(ms)}. Next scramble is up.`;crossRender();}
+  $('dHint3d').textContent='Last scramble';crossNewQuiet();$('cxScrLabel').textContent='Next scramble · yellow top, green front';
+  $('timerHint').textContent=`${X?'X-cross':'Cross'} in ${fmt(ms)}. Next scramble is up.`;}
+function crossNewQuiet(){cx.scr=cxScramble(+$('cxLen').value)||cxScramble(0);cx.st=applyAlg(solvedCube(),cx.scr);cx.peek=false;cx.cur=null;$('cxScr').textContent=cx.scr;$('cxPeek').hidden=false;
+  const scr=cx.scr;cx.curP=cxPrepare(scr).then(inf=>{if(cx.scr===scr)cx.cur=inf;return inf;});}
 function crossRender(){setTimeout(dnfSync,0);const L=cx.times,val=x=>x.pen==='DNF'?Infinity:x.t+(x.pen==='+2'?2000:0),ts=L.map(val);
   const ao=n=>{if(ts.length<n)return null;const a=ts.slice(-n).sort((x,y)=>x-y).slice(1,-1);return a.some(v=>v===Infinity)?Infinity:a.reduce((x,y)=>x+y,0)/a.length;};
   const f=v=>v==null?'—':v===Infinity?'DNF':fmt(v);
   $('sCount').textContent=L.length;$('sAo5').textContent=f(ao(5));$('sAo12').textContent=f(ao(12));
-  $('log').innerHTML=L.length?L.slice().reverse().slice(0,40).map((s,i)=>`<li><span>${s.mv} move${s.mv===1?'':'s'}</span><span><span class="t">${s.pen==='DNF'?'DNF':fmt(val(s))+(s.pen==='+2'?'+':'')}</span>${s.pen?`<span class="pw${s.pen==='DNF'?' dnf':''}">${penLabel(s)}</span>`:''}<button data-cxdel="${L.length-1-i}" aria-label="Delete">✕</button></span></li>`).join(''):'<li class="empty">No crosses yet. Scramble your cube, solve just the white cross on the bottom, stop the timer.</li>';
+  const tag=s=>(s.kind==='xcross'?'X · ':'')+(s.mv?s.mv+' move'+(s.mv===1?'':'s'):'…')+(s.col&&s.col!=='D'?' · '+CX_NAME[s.col]:'');
+  $('log').innerHTML=L.length?L.slice().reverse().slice(0,40).map((s,i)=>`<li><span>${tag(s)}</span><span><span class="t">${s.pen==='DNF'?'DNF':fmt(val(s))+(s.pen==='+2'?'+':'')}</span>${s.pen?`<span class="pw${s.pen==='DNF'?' dnf':''}">${penLabel(s)}</span>`:''}<button data-cxdel="${L.length-1-i}" aria-label="Delete">✕</button></span></li>`).join(''):'<li class="empty">No crosses yet. Scramble your cube, solve just the cross on the bottom, stop the timer.</li>';
   const fin=L.filter(x=>x.pen!=='DNF');$('cxBest').textContent=fin.length?fmt(Math.min(...fin.map(val))):'—';
-  const r=L.slice(-12);$('cxAvgMv').textContent=r.length?(r.reduce((a,b)=>a+b.mv,0)/r.length).toFixed(1):'—';}
+  const r=L.slice(-12).filter(x=>x.mv);$('cxAvgMv').textContent=r.length?(r.reduce((a,b)=>a+b.mv,0)/r.length).toFixed(1):'—';}
 // planning (inspection): first press starts 15 s, then hold and release to start the timer like normal
 function crossPress(){if(!$('cxInsp').checked)return false;
   if(!cx.insp){cx.insp=true;cx.armed=false;cx.insp0=performance.now();$('timerHint').textContent='Planning… hold space when ready, release to start.';
@@ -1622,12 +1722,15 @@ function crossRelease(){if(cx.insp&&!cx.armed&&tState!=='hold'&&tState!=='ready'
   if(cx.insp&&tState==='ready'){const el=performance.now()-cx.insp0;const pa=penAuto(el);cx.pen=pa.pen;cx.penWhy=pa;cx.insp=false;cancelAnimationFrame(cx.raf);timerEl.classList.remove('insp','warn');}
   return false;}
 function crossSet(on){cx.on=on;store.set('crossMode',on);crossLayout();if(crossMode()){crossNew();crossRender();$('cxResult').hidden=true;$('cxScrLabel').textContent='Scramble · yellow top, green front';}else{renderSession();loadCase();}}
+function crossRestart(){crossLayout();$('cxResult').hidden=true;$('cxScrLabel').textContent='Scramble · yellow top, green front';crossNew();}
 $('dModes').addEventListener('click',e=>{const b=e.target.closest('[data-dmode]');if(!b)return;b.blur();if(tState!=='idle'&&tState!=='stopped')return;crossSet(b.dataset.dmode==='cross');});
 $('cxLen').value=String(store.get('crossLen',0));$('cxLen').onchange=e=>{e.target.blur();store.set('crossLen',+e.target.value);crossNew();};
+$('cxKind').value=store.get('crossKind','cross');$('cxKind').onchange=e=>{e.target.blur();store.set('crossKind',e.target.value);crossRestart();};
+$('cxCN').checked=store.get('crossCN',false);$('cxCN').onchange=e=>{e.target.blur();store.set('crossCN',e.target.checked);crossRestart();};
 $('cxInsp').checked=store.get('crossInsp',false);$('cxInsp').onchange=e=>{e.target.blur();store.set('crossInsp',e.target.checked);cx.insp=false;cancelAnimationFrame(cx.raf);crossNew();};
-$('cxPeek').onclick=e=>{e.currentTarget.blur();cx.peek=true;crossShowBest(cx.st,cx.best,'This scramble · best cross');$('cxPeek').hidden=true;};
-$('cxSols').addEventListener('click',e=>{const b=e.target.closest('[data-cxalt]');if(!b)return;b.blur();const L=$('dHint3d').textContent.startsWith('Last')&&cx.last?cx.last:{st:cx.st,best:cx.best};
-  dp.load(cloneSt(L.st),'full',parseAlg(L.best[+b.dataset.cxalt]),'',E3,dp.cube&&dp.cube.focus);dp.reveal();dp.run(0);});
+$('cxPeek').onclick=e=>{e.currentTarget.blur();cx.peek=true;$('cxPeek').hidden=true;cx.curP.then(inf=>{if(cx.scr===inf.scr)crossShowBest(inf,'This scramble · best '+(inf.kind==='xcross'?'X-cross':'cross'));});};
+$('cxSols').addEventListener('click',e=>{const b=e.target.closest('[data-cxalt]');if(!b||!cx.altList)return;b.blur();const a=cx.altList.alts[+b.dataset.cxalt];
+  dp.load(cloneSt(cx.altList.inf.st),'full',parseAlg(cxAlg(a)),'',E3,a.focus);dp.reveal();dp.run(0);});
 $('log').addEventListener('click',e=>{const b=e.target.closest('[data-cxdel]');if(!b)return;const s=cx.times[+b.dataset.cxdel];cx.times.splice(+b.dataset.cxdel,1);store.set('cross',cx.times);
   if(s){const j=dlog.findIndex(x=>x.k==='cross'&&x.at===s.at);if(j>=0){dlog.splice(j,1);store.set('dlog',dlog);}}crossRender();});
 
@@ -1856,6 +1959,22 @@ $('tmList').addEventListener('click',e=>{const b=e.target.closest('button');if(!
   if(b.dataset.replay!==undefined){replaySolve(S[+b.dataset.replay]);return;}
   if(b.dataset.del!==undefined){const o=S[+b.dataset.del];if($('tmHardDel').checked){const j=A.indexOf(o);if(j>=0)A.splice(j,1);}else o.hid=true;}else{const s=S[+b.dataset.i];askPen(b,b.dataset.pen,s,()=>{store.set('solves',solves);tmRender();});return;}
   store.set('solves',solves);tmRender();});
+// Ctrl+Z deletes the last solve (an accidental start/stop); Ctrl+Y or Ctrl+Shift+Z puts it back
+const undoStack=[];
+function undoLast(){const v=view();
+  if(v==='timer'){if(tm.state!=='idle'&&tm.state!=='stopped')return;const S=tmSess(),A=tmList();if(!S.length)return toast('Nothing to undo');const o=S[S.length-1],j=A.indexOf(o);if(j<0)return;
+    A.splice(j,1);if(comp&&o.comp&&comp.times.length&&comp.times.length<5){comp.times.pop();renderComp();}
+    undoStack.push(()=>{A.splice(j,0,o);store.set('solves',solves);tmRender();return o;});store.set('solves',solves);tmRender();
+    toast('Deleted '+(o.pen==='DNF'?'DNF':fmtT(tval(o)))+' · Ctrl+Y to bring it back');return;}
+  if(v==='drill'){if(tState!=='idle'&&tState!=='stopped')return;
+    if(typeof crossMode==='function'&&crossMode()){const L=cx.times;if(!L.length)return toast('Nothing to undo');const o=L.pop();const k=dlog.findIndex(x=>x.k==='cross'&&x.at===o.at),dl=k>=0?dlog.splice(k,1)[0]:null;
+      undoStack.push(()=>{L.push(o);if(dl)dlog.push(dl);store.set('cross',L);store.set('dlog',dlog);crossRender();return o;});store.set('cross',L);store.set('dlog',dlog);crossRender();toast('Deleted '+fmt(o.t)+' · Ctrl+Y to bring it back');return;}
+    if(!session.length)return toast('Nothing to undo');const o=session.pop();const h=stats[o.id];let hj=-1;if(h){hj=h.lastIndexOf(o.t);if(hj>=0)h.splice(hj,1);}
+    undoStack.push(()=>{session.push(o);if(h&&hj>=0)h.splice(hj,0,o.t);store.set('session',session);store.set('stats',stats);renderSession();return o;});
+    store.set('session',session);store.set('stats',stats);renderSession();toast('Deleted '+fmt(o.t)+' · Ctrl+Y to bring it back');}}
+document.addEventListener('keydown',e=>{if(!(e.ctrlKey||e.metaKey)||typing())return;const k=e.key.toLowerCase();
+  if(k==='z'&&!e.shiftKey){e.preventDefault();undoLast();}
+  else if(k==='y'||(k==='z'&&e.shiftKey)){e.preventDefault();const f=undoStack.pop();if(f){f();toast('Solve restored');}}});
 // DNF toggle in the top bar: marks the last solve of whatever you're timing (Timer tab, or the Drill cross trainer)
 function dnfTarget(){const v=view();if(v==='timer'){const L=tmSess();return L.length?{s:L[L.length-1],save:()=>{store.set('solves',solves);tmRender();const t=L[L.length-1];if(tm.state==='idle'||tm.state==='stopped')tmTimeEl.textContent=t.pen==='DNF'?'DNF':fmtT(tval(t))+(t.pen==='+2'?'+':'');}}:{s:null};}
   if(v==='drill'&&typeof crossMode==='function'&&crossMode()){const L=cx.times;return L.length?{s:L[L.length-1],save:()=>{store.set('cross',cx.times);crossRender();}}:{s:null};}
@@ -1889,6 +2008,7 @@ function newScramble(){
   $('tmScr').textContent=tmScr;$('tmScr').classList.toggle('long',cubeN>=7);if(typeof smart!=='undefined'&&smart.conn)setTimeout(()=>{smartArm();smartShow();},0);
   if(HAS3D){try{if(!tmCube)tmCube=new Cube3D($('tm3d'));const e=engN(cubeN);tmCube.stop();tmCube.build(e.apply(e.solved(),e.parse(tmScr)),'full',e);}catch(err){}}}
 $('tmNew').onclick=e=>{e.currentTarget.blur();if(tm.state==='idle'||tm.state==='stopped')newScramble();};
+$('tmHoldMs').value=String(holdMs());$('tmHoldMs').onchange=e=>{e.target.blur();store.set('holdMs',+e.target.value);};
 $('tmCool').value=String(coolMs());$('tmCool').onchange=e=>{e.target.blur();store.set('cool',+e.target.value);};
 $('tmInsp').checked=store.get('insp',false);$('tmInsp').onchange=e=>{e.target.blur();store.set('insp',e.target.checked);};
 $('tmCalls').value=store.get('calls','off');$('tmCalls').onchange=e=>{e.target.blur();store.set('calls',e.target.value);};
@@ -1937,7 +2057,7 @@ function tmPress(){
   if((tm.state==='idle'||tm.state==='stopped')&&$('tmInsp').checked){tm.inspecting=true;tm.insp0=performance.now();tm.armed=false;tm.c8=tm.c12=0;tmSet('insp');
     $('tmHint').textContent='Inspecting. Hold space when ready, release to start.';cancelAnimationFrame(tm.raf);tmLoop();return;}
   if(tm.state==='insp'&&!tm.armed)return; // ignore the key-repeat of the press that started inspection
-  if(tm.state==='idle'||tm.state==='stopped'||tm.state==='insp'){tmSet('hold');if(!tm.inspecting)tmTimeEl.textContent='0.00';tm.hold=setTimeout(()=>{if(tm.state==='hold')tmSet('ready');},300);}}
+  if(tm.state==='idle'||tm.state==='stopped'||tm.state==='insp'){tmSet('hold');if(!tm.inspecting)tmTimeEl.textContent='0.00';tm.hold=setTimeout(()=>{if(tm.state==='hold')tmSet('ready');},holdMs());}}
 function tmRelease(){
   if(tm.state==='insp'){tm.armed=true;return;}
   if(tm.state==='hold'){clearTimeout(tm.hold);tmSet(tm.inspecting?'insp':'idle');return;}
@@ -2204,7 +2324,31 @@ function renderSessions(){const k=tmKey(),A=tmList(),si=sessInfo(k);$('pgSessTit
   const day=t=>t?new Date(t).toLocaleDateString():'';
   $('pgSess').innerHTML='<thead><tr><th>Session</th><th>Solves</th><th>Best</th><th>Mean</th><th>Best Ao5</th><th>Best Ao12</th><th>Dates</th></tr></thead><tbody>'+
     rows.map(r=>`<tr class="${r.cur?'cur':''}"><td class="cube">${r.name}</td><td>${r.n}</td>${cell(r,'best')}${cell(r,'mean')}${cell(r,'a5')}${cell(r,'a12')}<td><span class="d">${day(r.from)}${r.to&&day(r.to)!==day(r.from)?' – '+day(r.to):''}</span></td></tr>`).join('')+'</tbody>';}
-function renderProgress(){renderScoreboard();renderSessions();plFill();const L=tmList();$('pgTimerTitle').textContent='Timer · '+keyLabel(tmKey());$('pgTimerChart').innerHTML=timerChart(L);
+// ---- penalty breakdown (timer solves on every puzzle + the cross trainer) ----
+function renderPenalties(){const per=store.get('penPer','month');document.querySelectorAll('[data-penper]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.penper===per));
+  const d=new Date(),from=per==='month'?new Date(d.getFullYear(),d.getMonth(),1).getTime():0;
+  const all=[];for(const k in solves)for(const x of (solves[k]||[]))if((x.at||0)>=from)all.push({...x,src:keyLabel(k)});
+  for(const x of (store.get('cross',[])||[]))if((x.at||0)>=from)all.push({...x,src:'Cross'});
+  const pen=all.filter(x=>x.pen),p2=pen.filter(x=>x.pen==='+2').length,dn=pen.filter(x=>x.pen==='DNF').length;
+  const when=per==='month'?'this month':'so far';
+  if(!all.length){$('pgPen').innerHTML=`<p class="note">No timed solves ${when} yet.</p>`;return;}
+  const rate=pen.length/all.length*100;
+  let h=`<div class="penb"><div class="pb"><div class="v">${pen.length}</div><div class="d">penalties ${when}</div></div><div class="pb"><div class="v">${p2}</div><div class="d">+2s</div></div><div class="pb"><div class="v">${dn}</div><div class="d">DNFs</div></div><div class="pb"><div class="v">${rate<1&&rate>0?rate.toFixed(1):Math.round(rate)}%</div><div class="d">of ${all.length} solves</div></div></div>`;
+  if(!pen.length){$('pgPen').innerHTML=h+`<p class="pen-tip">Clean sheet: no +2s or DNFs ${when}.</p>`;return;}
+  const groups={};for(const x of pen){const k=x.pen+'|'+(x.why||'none');(groups[k]=groups[k]||[]).push(x);}
+  const name=(P,w)=>{const r=(PEN_WHY[P].find(q=>q[0]===w)||[])[1];return P+' · '+(r||(w==='none'?'no reason given':'other'));};
+  const rows=Object.entries(groups).sort((a,b)=>b[1].length-a[1].length),max=rows[0][1].length;
+  h+='<div class="penrows">'+rows.map(([k,L])=>{const[P,w]=k.split('|');return `<div class="penrow"><span>${name(P,w)}</span><span class="trk"><i class="${P==='DNF'?'dnf':''}" style="width:${L.length/max*100}%"></i></span><span class="n">${L.length}</span></div>`;}).join('')+'</div>';
+  const bySrc={};for(const x of pen)bySrc[x.src]=(bySrc[x.src]||0)+1;const srcs=Object.entries(bySrc).sort((a,b)=>b[1]-a[1]);
+  if(srcs.length>1)h+=`<p class="note" style="margin:10px 0 0">By puzzle: ${srcs.map(([k,n])=>`${k} ${n}`).join(' · ')}</p>`;
+  const top=rows[0][0].split('|')[1],tips={insp:'Most of your penalties come from inspection. Try planning just the cross, and start by 12 seconds. The 8s/12s calls in Timer options help.',
+    turn:'Most of your penalties are one turn off. Take a half-second to check the last layer is lined up before you stop the timer.',
+    hands:'Most of your penalties are timer mistakes. A longer "Hold to start" in Timer options can stop false starts.',
+    unsolved:'Most of your penalties are unsolved cubes. Slow down on the last step; a DNF costs more than a slower finish.'};
+  if(tips[top])h+=`<p class="pen-tip">${tips[top]}</p>`;
+  $('pgPen').innerHTML=h;}
+document.querySelectorAll('[data-penper]').forEach(b=>b.onclick=()=>{b.blur();store.set('penPer',b.dataset.penper);renderPenalties();});
+function renderProgress(){renderPenalties();renderScoreboard();renderSessions();plFill();const L=tmList();$('pgTimerTitle').textContent='Timer · '+keyLabel(tmKey());$('pgTimerChart').innerHTML=timerChart(L);
   $('pgPBs').innerHTML=pbHistory(L).map(([l,v,at])=>`<div class="pb"><div class="label">${l}</div><div class="v">${fmtT(v)}</div><div class="d">${at?new Date(at).toLocaleDateString():'—'}</div></div>`).join('');
   $('pgDays').innerHTML=daysChart();
   const cs=allCases(),secs=sectionsFor(cubeN).filter(k=>cs.some(c=>secOf(c)===k)),now=Date.now();
@@ -2397,11 +2541,18 @@ const GUIDES_MORE={
  'fisher':G_SHAPE('Fisher Cube',{know:'A Fisher Cube is a 3x3 rotated 45° around the vertical axis. Top and bottom work like a normal cube; the side pieces are the ones that look different.',centers:true}),
  'windmill':G_SHAPE('Windmill Cube',{know:'A Windmill Cube is a 3x3 cut at an angle. Top and bottom centers are rectangles, so they can be sideways; the side pieces look like windmill blades.',centers:true}),
  'morphix':G_SHAPE('Mastermorphix',{know:'A Mastermorphix is a 3x3 shaped like a pyramid. Centers are pointed shapes with a direction, and some "faces" are tiny. Solve by color if yours has colors.',centers:true}),
- 'gear':{title:'Solve a Gear Cube',demo:null,legend:[['R2, U2','A half turn of the face (the middle gears turn a quarter)'],['Gears','Edges are gears and turn as you go'],['Twisted gear','If a gear looks off, keep turning that face'],['Hold','Any side on top']],
-  tip:'Turning a face 180° spins the middle layer a quarter and turns the gears. Only half turns make sense, so there are far fewer positions than a 3x3.',steps:[
-  {t:'Corners',sub:'Half turns only',k:'CORNERS',text:'Corners only ever move by half turns. Use R2, L2, U2, D2, F2, B2 to put the four top corners and four bottom corners into place, like a 2x2 with only half turns.',how:'Solve the top four corners first, then the bottom four. Keep the move count small and watch where each corner goes.',algs:[]},
-  {t:'Edges',sub:'Gear pairs',k:'EDGES',text:'With corners done, move the edges (gears) into place. A half turn of a side moves the gears of the middle layer next to it.',how:'Use a half turn, a different half turn, and undo both to move gears around without losing your corners.',algs:[]},
-  {t:'Gear twist',sub:'Turn until aligned',k:'LAST STEP',text:'If everything is in place but a gear is twisted, keep turning a face that moves it: the gears return to normal after the face goes around three full turns.',how:'Turn one face 180° at a time and count. The rest of the puzzle comes back too.',algs:[]}]},
+ 'gear':{title:'Solve a Gear Cube',demo:null,legend:[['R, U, F','Turn that face a half turn (180°) clockwise. The middle layer next to it turns a quarter with it'],['R R R R','Four half turns in a row (two full turns)'],['Hold','Keep one corner at the bottom-back-left; only turn R, U and F']],
+  tip:'Every face only turns 180°, and the middle layer follows at half speed through the gears. That makes the Gear Cube far simpler than a 3x3: there are only about 41,000 positions, and every step here is short.',steps:[
+  {t:'Corners, first group',sub:'One or two turns',k:'CORNERS',text:'Pick any corner and hold it at the bottom-back-left. Never move it: only turn R, U and F (each a half turn). The corners split into two groups of four, and a half turn only swaps corners inside a group.',
+   how:'Your fixed corner\'s group is every second corner: <b>top-back-right, top-front-left and bottom-front-right</b>. Put those three where they belong (matching your fixed corner\'s colors). It never takes more than two turns.',algs:[]},
+  {t:'Corners, second group',sub:'Three cases',k:'CORNERS',text:'The other four corners (top-front-right, top-back-left, bottom-front-left, bottom-back-right) are now either solved, or swapped in two pairs. There are only three ways they can be swapped.',
+   how:'Find which pairs are swapped and do that line. Your first group stays solved. The gears get mixed up, which is fine: they come next.',
+   algs:[['Swap top-front-right ↔ bottom-front-left, and top-back-left ↔ bottom-back-right',"F R U R"],['Swap top-front-right ↔ bottom-back-right, and top-back-left ↔ bottom-front-left',"U F U R"],['Swap top-front-right ↔ top-back-left, and bottom-front-left ↔ bottom-back-right',"U R F R"]]},
+  {t:'Place the gears',sub:'One line per case',k:'GEARS',text:'Look at the gear at the top-front. Its colors tell you where it belongs in its ring of four (the ring that goes up the front, over the top and down the back). Do the line for where it belongs; that fixes its whole ring.',
+   how:'Then turn the whole puzzle so another wrong gear is at the top-front, and repeat. It\'s finished after a few rounds. The corners never move.',
+   algs:[['It belongs at the top-front','(nothing)'],['It belongs at the top-back',"F R R F"],['It belongs at the bottom-back',"R R"],['It belongs at the bottom-front',"U R R U"]]},
+  {t:'Twist the gears',sub:'R R R R',k:'LAST STEP',text:'Every gear is in the right place, but some may be twisted so their colors look rotated.',
+   how:'Hold the puzzle with a twisted gear at the top-front and do R R R R (two full turns of the right face). Everything else comes back exactly where it was; only that ring of gears twists. Repeat until it looks right, then do the same for any other twisted ring.',algs:[['Twist the top-front ring',"R R R R"]]}]},
  'ivy':{title:'Solve an Ivy Cube',demo:null,legend:LEG_IVY,tip:'The easiest twisty puzzle: four corners that only twist, and six leaf-shaped centers.',steps:[
   {t:'Corners',sub:'Twist in place',k:'CORNERS',text:'The four big corners never move, they only twist. Twist each one so the corners agree on which color goes on which side.',how:'Each face has two corner pieces; when both show the same color on that face, those corners agree.',algs:[['Twist',"R"]]},
   {t:'Most centers',sub:'No moves to learn',k:'CENTERS',text:'Each turn moves three leaf centers around one corner. Put leaves into their faces one or two at a time, undoing helper turns.',how:'Look for a leaf that is one turn away from home.',algs:[]},
@@ -2421,11 +2572,19 @@ const GUIDES_MORE={
   {t:'Third ring',sub:'Five more corners',k:'THIRD LAYER',text:'Insert the five corners of the ring below the top face the same way.',how:'Keep using the top face to set pieces up.',algs:[]},
   {t:'Place top corners',sub:"R U2' L' U2 R' U2' L U2",k:'LAST LAYER',text:'Get every top corner into its spot.',how:'Hold two correct corners on the <b>left side</b> and do the moves once or twice.',algs:[['Cycle corners',"R U2' L' U2 R' U2' L U2"]]},
   {t:'Twist top corners',sub:"R' DR' R DR",k:'LAST STEP',text:'Twist the corners like the 3x3 and Megaminx finish.',how:'Unsolved corner at front-right top: repeat until solved, then turn only the top.',algs:[['Twist',"R' DR' R DR"]]}]},
- 'mpyra':{title:'Solve a Master Pyraminx',demo:null,legend:LEG_PYRA,tip:'A Master Pyraminx is a Pyraminx with extra layers. Reduce it to a normal Pyraminx: tips and centers, then pair the edges, then finish like a Pyraminx.',steps:[
-  {t:'Tips and centers',sub:'Like a Pyraminx',k:'FIRST',text:'Line up each tip with the center pieces under it, then line up the centers of each corner so their colors match the faces.',how:'Tip and corner-layer turns spin pieces in place.',algs:[]},
-  {t:'Face centers',sub:'One color per face',k:'CENTERS',text:'Each face also has a small triangle in the middle. Move them so each face\'s middle triangle matches that face.',how:'Use the middle layers and undo helper turns.',algs:[]},
-  {t:'Pair the edges',sub:'Three pieces each',k:'EDGES',text:'Each edge is three pieces. Line up matching pieces and join them with a middle-layer turn, then move the finished edge away.',how:'Like pairing edges on a 4x4.',algs:[]},
-  {t:'Finish the last edges',sub:'Like a Pyraminx',k:'LAST STEP',text:'With the edges paired, the last edges around the top behave like the Pyraminx last step: they need to cycle around or two need flipping.',how:'Use the same idea as the Pyraminx (cycle three, flip two), turning each corner together with all of its layers except the bottom row. Go slowly and check after each try.',algs:[]}]},
+ 'mpyra':{title:'Solve a Master Pyraminx',demo:'mpyra',legend:[['u, l, r, b','Turn just the tip'],['U, L, R, B','Turn the top two layers of that corner (tip and the three-color piece under it)'],['Uw, Lw, Rw, Bw','Turn three layers: everything except the bottom row'],["Lw L'",'Together: turn only the third layer'],["'",'Counterclockwise (looking at that corner)']],
+  tip:'A Master Pyraminx is a Pyraminx with an extra layer. Each edge is three pieces (a middle piece and two side "wings") and each face has a small center triangle. Get those right and the rest is like a Pyraminx.',steps:[
+  {t:'Corner pieces',sub:'U, L, R, B',k:'FIRST',text:'Each corner has a three-color piece right under its tip. Turn each corner\'s top two layers (U, L, R, B) until these four pieces agree on the face colors, like the centers of a normal Pyraminx.',
+   how:'Pick a face color and turn the corners until the four pieces all show it on the same face. Edges and wings move too; that\'s fine for now.',algs:[['Turn a corner',"U"]]},
+  {t:'Tips',sub:'u, l, r, b',k:'FIRST',text:'Turn each tip so its colors match the corner piece under it.',how:'Tips never affect anything else, so you can fix them any time.',algs:[['Turn a tip',"u"]]},
+  {t:'Face centers',sub:"Lw L'",k:'CENTERS',text:'Each face has one small triangle in the middle. Turning just the third layer of a corner (Lw then L\') moves the three centers around that corner, without moving the corner pieces or tips.',
+   how:'Choose a corner whose three faces need their centers moved around, and do it once or twice. Watch the demo: only the third layer turns. Edge pieces move too, which is fine before the next step.',algs:[['Cycle 3 centers around L',"Lw L'"]]},
+  {t:'Pair the edges',sub:"Lw U Lw' U'",k:'EDGES',text:'Each edge is a middle piece with a wing on each side. Move wings next to the middle piece they belong to. This move swaps three wings around and nothing else, so finished pairs and centers are safe.',
+   how:'"Wing cycle" moves the two wings right beside the top tip (on the front-left and front-right edges) and one wing on the bottom edge at the back-left. "Mirror" moves the same two top wings and one on the bottom-front edge. Hold the puzzle so a wrong wing sits in one of those spots (the demo lights them up), do the cycle, and repeat.',
+   algs:[['Wing cycle',"Lw U Lw' U'"],['Mirror',"Rw U' Rw' U"]]},
+  {t:'Place the edges',sub:'Like a Pyraminx',k:'LAST STEP',text:'With every edge paired, the puzzle behaves like a Pyraminx. These moves cycle the three edges around the top tip, or flip two, and leave everything else (corner pieces, tips, centers) alone.',
+   how:'<b>Circle:</b> "Clockwise" moves front-left → front-right → back → front-left; "Counter" goes the other way. <b>Two flipped:</b> hold them at the front-left and front-right and do "Flip two". To fix an edge on the bottom, first turn a side (like Lw) to bring it up, do the move, then undo that turn.',
+   algs:[['Clockwise',"Lw Uw Lw Uw Lw' Uw Lw Uw Lw Uw'"],['Counter',"Lw' Uw' Lw' Uw' Lw Uw' Lw' Uw' Lw' Uw"],['Flip two',"Lw Uw Lw Bw Lw Bw Uw Bw Uw"]]}]},
  'floppy':{title:'Solve a Floppy 3x3x1',demo:null,legend:LEG_CUBOID,tip:'Only half turns, one layer thick. Most people solve it in minutes without any moves to learn.',steps:[
   {t:'Corners',sub:'No moves to learn',k:'CORNERS',text:'Put the four corners in their spots with half turns of the sides.',how:'Each side turn swaps two corners and flips the edge between them.',algs:[]},
   {t:'Edges',sub:'R L F R L B',k:'EDGES',text:'If an edge shows the wrong color on top, it is flipped.',how:'The moves flip the <b>front and back</b> edges and keep everything else. If the left and right edges are flipped instead, turn the puzzle a quarter first.',algs:[['Flip front + back',"R L F R L B"]]},]},
