@@ -1,7 +1,7 @@
 {
   "name": "last-layer-lab",
   "productName": "The Cube Timer",
-  "version": "3.3.1",
+  "version": "3.3.2",
   "description": "3x3 speedcubing algorithm trainer",
   "main": "bundle/main.js",
   "author": "greganator2001",
