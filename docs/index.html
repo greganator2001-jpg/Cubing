@@ -52,7 +52,7 @@ body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15
 .goalbar b{display:block;width:56px;height:5px;border-radius:3px;background:#262A32;overflow:hidden}.goalbar i{display:block;height:100%;background:var(--warn)}
 .goalbar.done i{background:var(--good)}.goalbar.done span{color:var(--good)}
 @media (max-width:700px){.app{flex-direction:column}.rail{position:sticky;top:0;height:auto;width:auto;flex-direction:row;padding:6px 8px;gap:4px;overflow-x:auto}
-  .rail::after{top:auto;left:0;height:3px;width:auto}.logo,.streak,.rail .grow{display:none}.rail nav{flex-direction:row}.rail nav button{width:60px;padding:7px 0}.wrap{padding:14px 16px 40px}}
+  .rail::after{top:auto;left:0;height:3px;width:auto}.logo,.streak,.rail .grow{display:none}.rail nav{flex-direction:row;flex:1;min-width:0}.rail nav button{width:auto;flex:1;min-width:0;padding:7px 0}.rail .brand,.rail .goalbar{display:none!important}.rail{overflow-x:hidden}.wrap{padding:14px 16px 40px}}
 header{display:flex;flex-wrap:wrap;align-items:center;gap:12px 24px;justify-content:space-between}
 .brand{display:flex;align-items:baseline;gap:10px}
 .brand h1{font-family:var(--f-display);font-weight:800;font-size:1.5rem;margin:0;letter-spacing:-.02em}
@@ -256,8 +256,8 @@ body.timing .rail,body.timing .secbar,body.timing #view-timer .side,body.timing 
 .pcard{background:var(--surface);border:1px solid #23262E;border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
 .pcard.wide{grid-column:1/-1}
 .ph{font:700 1.1rem var(--f-display);margin:0}
-.chart{width:100%;overflow-x:auto}
-.chart svg{display:block;width:100%;height:auto;min-width:320px}
+.chart{width:100%;overflow:hidden}
+.chart svg{display:block;width:100%;height:auto;min-width:0}
 .chart .ax{stroke:var(--line);stroke-width:1}
 .chart .tk{fill:var(--muted);font:11px var(--f-body)}
 .chart .dot{fill:var(--muted);opacity:.55}
@@ -289,8 +289,8 @@ body.timing .rail,body.timing .secbar,body.timing #view-timer .side,body.timing 
 #csPick{display:flex;flex-direction:column;gap:6px;background:var(--sunk);border-radius:10px;padding:12px}
 #csPick label{display:flex;gap:8px;align-items:center;font-size:.88rem}
 
-.sb-wrap{overflow-x:auto}
-.sb{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:560px}
+.sb-wrap{overflow:hidden}
+.sb{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:0}
 .sb th{font:600 .68rem var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:right;padding:6px 10px;border-bottom:1px solid var(--line)}
 .sb th:first-child,.sb td:first-child{text-align:left}
 .sb td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:right;vertical-align:top}
