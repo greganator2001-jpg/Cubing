@@ -1,7 +1,7 @@
 name: Release
 
 # Builds the Windows installer and publishes it as a GitHub release.
-# Installed copies of Last Layer Lab update from the latest release.
+# Installed copies of The Cube Timer update from the latest release.
 # Runs by itself whenever package.json changes on main with a version that has no release yet
 # (and can still be started by hand from the Actions tab).
 on:

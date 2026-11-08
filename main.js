@@ -14,7 +14,7 @@ const send = (ch, data) => { if (win && !win.isDestroyed()) win.webContents.send
 function createWindow() {
   win = new BrowserWindow({
     width: 1280, height: 900, minWidth: 420, minHeight: 600,
-    backgroundColor: '#0B0C0F', title: 'Last Layer Lab', icon: path.join(__dirname, '..', 'app', 'icon.png'),
+    backgroundColor: '#0B0C0F', title: 'The Cube Timer', icon: path.join(__dirname, '..', 'app', 'icon.png'),
     autoHideMenuBar: true,
     webPreferences: { preload: path.join(__dirname, '..', 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true }
   });
@@ -99,6 +99,8 @@ ipcMain.handle('file:save', async (_e, { name, text }) => {
 ipcMain.handle('update:check', () => { check(); return true; });
 ipcMain.handle('update:install', () => { setImmediate(() => autoUpdater.quitAndInstall(false, true)); return true; });
 
+// The app used to be called "Last Layer Lab". Keep using that data folder so every solve, session and setting carries over.
+try { app.setPath('userData', path.join(app.getPath('appData'), 'Last Layer Lab')); } catch (e) {}
 if (!app.requestSingleInstanceLock()) app.quit();
 else {
   app.on('second-instance', () => { if (win) { if (win.isMinimized()) win.restore(); win.focus(); } });

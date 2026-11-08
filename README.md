@@ -1,4 +1,6 @@
-# Last Layer Lab
+# The Cube Timer
+
+(formerly Last Layer Lab)
 
 Speedcubing trainer for Windows, 2x2 through 9x9.
 

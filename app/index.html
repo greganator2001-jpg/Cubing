@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'">
-<title>Last Layer Lab</title>
+<title>The Cube Timer</title>
 <script src="vendor/three.min.js"></script>
 <script src="vendor/gan-bt.js"></script>
 <style>
@@ -456,7 +456,7 @@ html,body{margin:0}
   <span class="grow"></span>
   <div class="streak" id="streak" title="Days in a row you've practiced"><svg viewBox="0 0 24 24" fill="none" stroke="#FFB020" stroke-width="2.2" aria-hidden="true"><path d="M12 2c1 4 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-5 1-9z"/></svg><b id="streakN">0</b>DAY STREAK</div>
   <div class="goalbar" id="goalBar" hidden title="Daily goal"><b><i></i></b><span>0/20 today</span></div>
-  <div class="brand"><h1>Last Layer Lab</h1><button class="ver" id="verBtn" title="Check for updates">v—</button></div>
+  <div class="brand"><h1>The Cube Timer</h1><button class="ver" id="verBtn" title="Check for updates">v—</button></div>
 </aside>
 <div class="wrap">
   <div class="updbar" id="updBar" hidden><span class="msg" id="updMsg"></span><button class="btn primary" id="updGo" hidden>Restart and update</button><button class="btn" id="updClose">Dismiss</button><div class="bar" id="updProg" hidden><i id="updFill"></i></div></div>
@@ -2271,7 +2271,7 @@ if(window.desktop&&window.desktop.syncPick){
 }
 // phone / web side: open the file from the cloud folder, save it back
 $('syncOpen').addEventListener('change',e=>{const f=e.target.files&&e.target.files[0];if(!f)return;const r=new FileReader();
-  r.onload=()=>{let o=null;try{o=JSON.parse(r.result);}catch(err){toast('That is not a Last Layer Lab sync file.');return;}
+  r.onload=()=>{let o=null;try{o=JSON.parse(r.result);}catch(err){toast('That is not a The Cube Timer sync file.');return;}
     if(syncApply(o)){try{sessionStorage.setItem('lll-synced','1');}catch(err){}location.reload();}else toast('Already up to date.');};r.readAsText(f);e.target.value='';});
 $('syncSave').onclick=async()=>{const r=await webSave(SYNC_FILE,JSON.stringify(syncDump()));toast(r==='saved'?'Saved. Put it in your sync folder (replace the old one).':r==='declined'?'Not saved.':'Could not save the file.');};
 syncRender();try{if(sessionStorage.getItem('lll-synced')){sessionStorage.removeItem('lll-synced');setTimeout(()=>toast('Synced with your other device'),800);}}catch(e){}
@@ -2383,15 +2383,15 @@ $('dataCopy').onclick=()=>{const t=$('dataText');navigator.clipboard&&navigator.
 $('bkSave').onclick=()=>{const data={};try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k.startsWith('lll:'))data[k.slice(4)]=JSON.parse(localStorage.getItem(k));}}catch(e){}
   saveText('last-layer-lab-backup-'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify({app:'last-layer-lab',version:2,saved:new Date().toISOString(),data},null,1));};
 function readFile(input,cb){const f=input.files&&input.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{input.value='';cb(String(r.result),f.name);};r.readAsText(f);}
-$('bkLoad').onchange=e=>readFile(e.target,txt=>{let o;try{o=JSON.parse(txt);}catch(err){$('dataMsg').textContent='That file isn\'t a Last Layer Lab backup.';return;}
-  if(!o||o.app!=='last-layer-lab'||!o.data){$('dataMsg').textContent='That file isn\'t a Last Layer Lab backup.';return;}
+$('bkLoad').onchange=e=>readFile(e.target,txt=>{let o;try{o=JSON.parse(txt);}catch(err){$('dataMsg').textContent='That file isn\'t a The Cube Timer backup.';return;}
+  if(!o||o.app!=='last-layer-lab'||!o.data){$('dataMsg').textContent='That file isn\'t a The Cube Timer backup.';return;}
   const n=Object.keys(o.data).length;$('csPick').hidden=false;$('csPick').innerHTML=`<span>Restore this backup from ${new Date(o.saved).toLocaleString()}? It replaces everything currently in the app (${n} items).</span><span><button class="btn primary" id="bkYes">Restore</button> <button class="btn" id="bkNo">Cancel</button></span>`;
   $('bkNo').onclick=()=>{$('csPick').hidden=true;};
   $('bkYes').onclick=()=>{try{Object.keys(localStorage).filter(k=>k.startsWith('lll:')).forEach(k=>localStorage.removeItem(k));for(const k in o.data)localStorage.setItem('lll:'+k,JSON.stringify(o.data[k]));}catch(err){}location.reload();};});
 $('csSave').onclick=()=>{const L=tmList();if(!L.length){$('dataMsg').textContent='No timer solves on the '+cubeN+'x'+cubeN+' to export yet.';return;}
   const sess=L.map(s=>[[s.pen==='DNF'?-1:s.pen==='+2'?2000:0,Math.round(s.t)],s.scr||'','',Math.round((s.at||Date.now())/1000)]);
   const fin=L.map(tval).filter(v=>v!==Infinity);
-  const out={session1:sess,properties:{sessionData:JSON.stringify({1:{name:cubeN+'x'+cubeN+' (Last Layer Lab)',opt:{},rank:1,stat:[L.length,L.length-fin.length,fin.length?Math.round(fin.reduce((a,b)=>a+b,0)/fin.length):-1]}})}};
+  const out={session1:sess,properties:{sessionData:JSON.stringify({1:{name:cubeN+'x'+cubeN+' (The Cube Timer)',opt:{},rank:1,stat:[L.length,L.length-fin.length,fin.length?Math.round(fin.reduce((a,b)=>a+b,0)/fin.length):-1]}})}};
   saveText('cstimer-'+cubeN+'x'+cubeN+'-'+new Date().toISOString().slice(0,10)+'.txt',JSON.stringify(out));};
 $('csLoad').onchange=e=>readFile(e.target,txt=>{let o;try{o=JSON.parse(txt);}catch(err){$('dataMsg').textContent='That file isn\'t a csTimer export.';return;}
   const keys=Object.keys(o||{}).filter(k=>/^session\d+$/.test(k)&&Array.isArray(o[k])&&o[k].length);if(!keys.length){$('dataMsg').textContent='No solves found in that csTimer file.';return;}

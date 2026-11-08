@@ -6,7 +6,7 @@ head_old=s[:s.index('<style>')]
 assert 'fonts.googleapis.com' in head_old and 'cdnjs' in head_old
 head_new='<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n'+\
   '<meta http-equiv="Content-Security-Policy" content="default-src \'self\'; script-src \'self\' \'unsafe-inline\'; worker-src \'self\' blob:; style-src \'self\' \'unsafe-inline\'; img-src \'self\' data: blob:; font-src \'self\'">\n'+\
-  '<title>Last Layer Lab</title>\n<script src="vendor/three.min.js"></script>\n<script src="vendor/gan-bt.js"></script>\n'
+  '<title>The Cube Timer</title>\n<script src="vendor/three.min.js"></script>\n<script src="vendor/gan-bt.js"></script>\n'
 s=head_new+s[s.index('<style>'):]
 def rep(a,b):
     global s
@@ -22,8 +22,8 @@ rep('</style>','''html,body{margin:0}
 .updbar .bar{height:4px;border-radius:2px;background:var(--sunk);overflow:hidden;flex-basis:100%}
 .updbar .bar i{display:block;height:100%;background:var(--accent);width:0}
 </style>''')
-rep('<div class="brand"><h1>Last Layer Lab</h1></div>',
- '<div class="brand"><h1>Last Layer Lab</h1><button class="ver" id="verBtn" title="Check for updates">v—</button></div>')
+rep('<div class="brand"><h1>The Cube Timer</h1></div>',
+ '<div class="brand"><h1>The Cube Timer</h1><button class="ver" id="verBtn" title="Check for updates">v—</button></div>')
 rep('  <!--UPDBAR-->','''  <div class="updbar" id="updBar" hidden><span class="msg" id="updMsg"></span><button class="btn primary" id="updGo" hidden>Restart and update</button><button class="btn" id="updClose">Dismiss</button><div class="bar" id="updProg" hidden><i id="updFill"></i></div></div>''')
 s=s.replace('/*SCRW*/',open('tools/scramble-worker.bundle.js').read().strip()).replace('/*CUBE*/',open('src-cube.js').read()+open('src-nxn.js').read()+open('src-poly.js').read()).replace('/*F2L*/',open('src-f2l.json').read()).replace('/*GUIDES*/',open('src-guides.js').read()).replace('/*SPEED*/',open('src-speed.js').read()).replace('/*SMART*/',open('src-smart.js').read()).replace('/*SYNC*/',open('src-sync.js').read()).replace('/*CROSS*/',open('src-cross.js').read()).replace('/*PLFONT*/',open('tools/helvetiker_bold.typeface.json').read())
 upd='''

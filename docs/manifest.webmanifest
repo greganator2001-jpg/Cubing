@@ -1,6 +1,6 @@
 {
- "name": "Last Layer Lab",
- "short_name": "Last Layer Lab",
+ "name": "The Cube Timer",
+ "short_name": "Cube Timer",
  "start_url": ".",
  "display": "standalone",
  "background_color": "#0B0C0F",
