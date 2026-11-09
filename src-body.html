@@ -648,6 +648,7 @@ body.timing .rail,body.timing .secbar,body.timing #view-timer .side,body.timing 
             <input id="plName" placeholder="Name (optional)" aria-label="Name on the plate" class="pl-in" style="width:160px">
             <label class="toggle">Style <select id="plStyle" class="sess-sel" style="width:auto"></select></label>
             <label class="toggle" title="Plate · trim · time · details. Parts with the same color export as one body.">Colors <input type="color" id="plBase" aria-label="Plate color"><input type="color" id="plTrimC" aria-label="Trim color"><input type="color" id="plTextC" aria-label="Time color"><input type="color" id="plText2C" aria-label="Details color"></label>
+<label class="toggle">Text <select id="plTextMode"><option value="raised">Raised</option><option value="flush">Flush (inlaid, flat top)</option><option value="engraved">Engraved</option></select></label>
             <button class="btn" id="plCustomBtn">✎ Create custom</button>
           </div>
           <div class="pl-custom" id="plCustom" hidden>
@@ -656,7 +657,6 @@ body.timing .rail,body.timing .secbar,body.timing #view-timer .side,body.timing 
             <label class="toggle">Extras <select id="plOrn"><option value="none">None</option><option value="laurel">Laurel leaves</option><option value="stars">Stars</option><option value="checker">Checkered flag</option><option value="speed">Speed chevrons</option><option value="pads">Timer hand pads</option><option value="streaks">Speed streaks</option></select></label>
             <label class="toggle">Icon <select id="plIcon"><option value="none">None</option><option value="cube">Puzzle</option><option value="star">Star</option><option value="trophy">Trophy</option><option value="medal">PB medal</option></select></label>
             <label class="toggle">Layout <select id="plLayout"><option value="side">Time left, details right</option><option value="center">Centered</option><option value="left">Left-aligned</option><option value="lcd">Timer display</option><option value="display">Comp display (big digits)</option></select></label>
-            <label class="toggle">Text <select id="plTextMode"><option value="raised">Raised</option><option value="engraved">Engraved</option></select></label>
             <label class="toggle">Line 2 <input id="plL2" class="pl-in" style="width:150px" placeholder="auto: 3X3 SINGLE"></label>
             <label class="toggle">Line 3 <input id="plL3" class="pl-in" style="width:150px" placeholder="auto: name + date"></label>
             <label class="toggle"><input type="checkbox" id="plDate"> Date</label>
