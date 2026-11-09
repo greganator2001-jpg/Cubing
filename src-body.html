@@ -662,11 +662,13 @@ body.timing .rail,body.timing .secbar,body.timing #view-timer .side,body.timing 
             <label class="toggle"><input type="checkbox" id="plDate"> Date</label>
           </div>
           <div class="data-row">
+            <label class="toggle" title="Size the plate and magnets to fit one of your stands">Fits <select id="plFit" class="sess-sel" style="width:auto"><option value="v1">v1 magnet stand (2.5 × 0.85 in)</option><option value="slim">Slim stand (1.9 × 0.85 in)</option><option value="free">Free size</option></select></label>
             <label class="toggle">W <input id="plW" type="number" step="0.05" value="3" class="pl-in"></label>
             <label class="toggle">H <input id="plH" type="number" step="0.05" value="0.75" class="pl-in"></label>
             <label class="toggle">Thick <input id="plT" type="number" step="0.01" value="0.08" class="pl-in"></label>
             <label class="toggle">Raise/cut <input id="plR" type="number" step="0.01" value="0.03" class="pl-in"></label>
             <label class="toggle" title="Round pockets on the back for magnets">🧲 Magnets <select id="plMagN"><option value="0">None</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></label>
+            <label class="toggle" title="Centre to centre">Apart <input id="plMagS" type="number" step="0.01" class="pl-in" style="width:64px"></label>
             <label class="toggle">⌀ <input id="plMagD" type="number" step="0.01" class="pl-in" style="width:64px"></label>
             <label class="toggle">Depth <input id="plMagH" type="number" step="0.01" class="pl-in" style="width:64px"></label>
             <button class="btn primary" id="plSave">Save STL</button>

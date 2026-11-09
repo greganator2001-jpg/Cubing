@@ -685,11 +685,13 @@ html,body{margin:0}
             <label class="toggle"><input type="checkbox" id="plDate"> Date</label>
           </div>
           <div class="data-row">
+            <label class="toggle" title="Size the plate and magnets to fit one of your stands">Fits <select id="plFit" class="sess-sel" style="width:auto"><option value="v1">v1 magnet stand (2.5 × 0.85 in)</option><option value="slim">Slim stand (1.9 × 0.85 in)</option><option value="free">Free size</option></select></label>
             <label class="toggle">W <input id="plW" type="number" step="0.05" value="3" class="pl-in"></label>
             <label class="toggle">H <input id="plH" type="number" step="0.05" value="0.75" class="pl-in"></label>
             <label class="toggle">Thick <input id="plT" type="number" step="0.01" value="0.08" class="pl-in"></label>
             <label class="toggle">Raise/cut <input id="plR" type="number" step="0.01" value="0.03" class="pl-in"></label>
             <label class="toggle" title="Round pockets on the back for magnets">🧲 Magnets <select id="plMagN"><option value="0">None</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></label>
+            <label class="toggle" title="Centre to centre">Apart <input id="plMagS" type="number" step="0.01" class="pl-in" style="width:64px"></label>
             <label class="toggle">⌀ <input id="plMagD" type="number" step="0.01" class="pl-in" style="width:64px"></label>
             <label class="toggle">Depth <input id="plMagH" type="number" step="0.01" class="pl-in" style="width:64px"></label>
             <button class="btn primary" id="plSave">Save STL</button>
@@ -2145,7 +2147,9 @@ $('cpQuit').onclick=()=>{comp=null;renderComp();};
 //   base = the plate · trim = borders, rings, pads, tiles · text = the time · text2 = the small lines and icons
 // Pieces that share a color are exported as one body, so a 3MF opens in the slicer as one object with one part per color.
 // Raised = decorations stick up; engraved = they're cut into the top (and the color parts become flush inlays).
-const PL={font:null};
+const PL={font:null,dropped:0};
+const PL_MIN_TEXT=3.2;   // mm, smallest letter size that prints cleanly (about 2.3 mm capitals, strokes ~0.5 mm)
+const PL_MIN_WALL=.8;    // mm, thinnest ring / frame / bar (two nozzle widths)
 const plFontGet=()=>PL.font||(PL.font=new THREE.Font(JSON.parse($('plFontSrc').textContent)));
 // shapes ---------------------------------------------------------------------------------------------
 const plV=(x,y)=>new THREE.Vector2(x,y);
@@ -2175,17 +2179,25 @@ function plOutline(sp,W,H){const r=sp.shape==='rect'?Math.min(1.2,H*.06):H*.18;
   return plRR(0,0,W,H,r);}
 const plEnd=(sp,H)=>sp.shape==='timer'?H*.07:sp.shape==='pill'?H*.34:sp.shape==='banner'?H*.3:sp.shape==='chevron'?H*.34:sp.shape==='oval'?H*.4:H*.06;
 // text: shapes positioned so the text box is centred on (x,yc) / left / right; shrinks to fit maxW
-function plText(str,size,x,yc,align,maxW){if(!str||!(size>.3)||(maxW!==undefined&&!(maxW>1)))return{shapes:[],w:0};const f=plFontGet();const sh=f.generateShapes(str,size);const g=new THREE.ShapeGeometry(sh);g.computeBoundingBox();const bb=g.boundingBox;
+function plText(str,size,x,yc,align,maxW){if(!str)return{shapes:[],w:0};if(!(size>=PL_MIN_TEXT)||(maxW!==undefined&&!(maxW>1))){PL.dropped++;return{shapes:[],w:0};}const f=plFontGet();const sh=f.generateShapes(str,size);const g=new THREE.ShapeGeometry(sh);g.computeBoundingBox();const bb=g.boundingBox;
   const tw=bb.max.x-bb.min.x;if(maxW&&tw>maxW)return plText(str,size*maxW/tw*.999,x,yc,align);
   const th=bb.max.y-bb.min.y,dx=(align==='left'?x:align==='center'?x-tw/2:x-tw)-bb.min.x,dy=yc-th/2-bb.min.y;
   return{w:tw,shapes:sh.map(s=>{const o=new THREE.Shape(s.getPoints(6).map(p=>plV(p.x+dx,p.y+dy)));o.holes=s.holes.map(h=>new THREE.Path(h.getPoints(6).map(p=>plV(p.x+dx,p.y+dy))));return o;})};}
+// a small line of text that must stay printable: never below the minimum size; if it won't fit, drop the
+// last parts (date, then name) before giving up on the line
+function plLine(parts,size,x,yc,align,maxW){parts=parts.filter(Boolean);const sz=Math.max(size,PL_MIN_TEXT);
+  for(let n=parts.length;n>0;n--){const str=parts.slice(0,n).join('  -  ');const f=plFontGet();const g=new THREE.ShapeGeometry(f.generateShapes(str,sz));g.computeBoundingBox();const tw=g.boundingBox.max.x-g.boundingBox.min.x;
+    const fit=maxW?Math.min(sz,sz*maxW/tw):sz;if(fit>=PL_MIN_TEXT){if(n<parts.length)PL.dropped+=parts.length-n;return plText(str,fit,x,yc,align);}}
+  if(parts.length)PL.dropped+=parts.length;return{shapes:[],w:0};}
+const plW=(str,size)=>{if(!str)return 0;const g=new THREE.ShapeGeometry(plFontGet().generateShapes(str,size));g.computeBoundingBox();return g.boundingBox.max.x-g.boundingBox.min.x;};
+const plSplit=s=>(s||'').split('  -  ').filter(Boolean);
 // 7-segment digits like a timer display (slightly slanted when italic)
 function plSeg(str,x,y,dh,slant=0){const out=[];if(!(dh>.5))return{shapes:out,w:0};const dw=dh*.55,t=dh*.13,gap=dh*.2;let cx=x;
   const S={'0':'abcdef','1':'bc','2':'abged','3':'abgcd','4':'fgbc','5':'afgcd','6':'afgedc','7':'abc','8':'abcdefg','9':'abcdfg','-':'g'};
   const sk=p=>plV(p.x+(p.y-y)*slant,p.y);
   const hex=(a,b,w,h,horiz)=>{const m=Math.min(w,h)/2;const pts=horiz?[plV(a,b+h/2),plV(a+m,b),plV(a+w-m,b),plV(a+w,b+h/2),plV(a+w-m,b+h),plV(a+m,b+h)]:[plV(a+w/2,b),plV(a+w,b+m),plV(a+w,b+h-m),plV(a+w/2,b+h),plV(a,b+h-m),plV(a,b+m)];return plPoly(pts.map(sk));};
   for(const ch of str){if(ch==='.'||ch===':'){out.push(plPoly(plCircle(cx+t*.6,y+t*.6,t*.62,16).map(sk)));if(ch===':')out.push(plPoly(plCircle(cx+t*.6,y+dh*.62,t*.62,16).map(sk)));cx+=t*1.9;continue;}
-    const m=t*.15;const seg={a:[cx+t*.5+m,y+dh-t,dw-t-2*m,t,1],g:[cx+t*.5+m,y+dh/2-t/2,dw-t-2*m,t,1],d:[cx+t*.5+m,y,dw-t-2*m,t,1],
+    const m=Math.max(t*.15,.25);const seg={a:[cx+t*.5+m,y+dh-t,dw-t-2*m,t,1],g:[cx+t*.5+m,y+dh/2-t/2,dw-t-2*m,t,1],d:[cx+t*.5+m,y,dw-t-2*m,t,1],
       f:[cx,y+dh/2+t*.5+m,t,dh/2-t-2*m,0],b:[cx+dw-t,y+dh/2+t*.5+m,t,dh/2-t-2*m,0],e:[cx,y+t*.5+m,t,dh/2-t-2*m,0],c:[cx+dw-t,y+t*.5+m,t,dh/2-t-2*m,0]};
     for(const k of (S[ch]||''))out.push(hex(...seg[k]));cx+=dw+gap;}
   return{shapes:out,w:cx-x-gap};}
@@ -2217,14 +2229,14 @@ const PL_PRESETS={
   speed:{label:'Speed chevrons',shape:'chevron',border:'none',orn:'speed',icon:'none',layout:'left',text:'raised',base:'#E8483C',trim:'#FFFFFF',textC:'#FFFFFF',text2:'#FFFFFF'},
   engraved:{label:'Engraved',shape:'rounded',border:'frame',orn:'stars',icon:'none',layout:'side',text:'engraved',base:'#7A8696',trim:'#F2F4F7',textC:'#F2F4F7',text2:'#F2F4F7'}};
 // the design: outline + decor pieces {s:Shape, role} --------------------------------------------------------
-function plDesign(sp,D,txt){const MM=25.4,W=D.W*MM,H=D.H*MM;const decor=[];const add=(a,role,rb)=>{for(const s of a)decor.push({s,role,rb:!!rb});};
+function plDesign(sp,D,txt){PL.dropped=0;PL.lx=null;const MM=25.4,W=D.W*MM,H=D.H*MM;const decor=[];const add=(a,role,rb)=>{for(const s of a)decor.push({s,role,rb:!!rb});};
   const end=plEnd(sp,H);let x0=end,x1=W-end,y0=H*.08,y1=H*.92;const round=sp.shape==='rect'||sp.shape==='rounded';
   // borders (trim)
-  if(sp.border==='frame'||sp.border==='double'){const ins=H*.07,fw=H*.035;const ring=(i,w)=>{
+  if(sp.border==='frame'||sp.border==='double'){const ins=H*.07,fw=Math.max(H*.035,PL_MIN_WALL);const ring=(i,w)=>{
       if(round){const r0=sp.shape==='rect'?.8:H*.18-i;add([plRing(plRR(i,i,W-2*i,H-2*i,r0),plRR(i+w,i+w,W-2*i-2*w,H-2*i-2*w,Math.max(.4,r0-w)))],'trim');return;}
       if(sp.shape==='oval'){add([plRing(plEll(W/2,H/2,W/2-i,H/2-i,96),plEll(W/2,H/2,W/2-i-w,H/2-i-w,96))],'trim');return;}
       const bx=end*.95+i*.3;add([plRing(plRR(bx,i,W-2*bx,H-2*i,H*.12),plRR(bx+w,i+w,W-2*bx-2*w,H-2*i-2*w,H*.09))],'trim');};
-    ring(ins,fw);if(sp.border==='double')ring(ins+fw*2.2,fw*.6);const pad=sp.border==='double'?ins+fw*3.6:ins+fw*1.8;
+    ring(ins,fw);if(sp.border==='double')ring(ins+fw*2.2,Math.max(fw*.6,PL_MIN_WALL));const pad=sp.border==='double'?ins+fw*3.6:ins+fw*1.8;
     x0=Math.max(x0,pad+H*.05);x1=Math.min(x1,W-pad-H*.05);y0=pad+H*.04;y1=H-pad-H*.04;}
   // a thick colored rim right at the edge (the blue ring around a comp display)
   if(sp.border==='ring'){const w=H*.075;const o=plOutline(sp,W,H);let inner;
@@ -2241,21 +2253,21 @@ function plDesign(sp,D,txt){const MM=25.4,W=D.W*MM,H=D.H*MM;const decor=[];const
   if(sp.orn==='speed'){const n=3,cw=H*.16,ch=H*.5,th=H*.07;for(let i=0;i<n;i++){const x=x1-(n-i)*cw*1.25,yc=H/2;
       add([plPoly(plRound([plV(x,yc+ch/2),plV(x+th,yc+ch/2),plV(x+th+cw*.8,yc),plV(x+th,yc-ch/2),plV(x,yc-ch/2),plV(x+cw*.8,yc)],th*.25,3))],'trim');}x1-=n*cw*1.25+H*.06;}
   if(sp.orn==='stars'){for(const x of[x0+H*.09,x1-H*.09])add([plPoly(plStar(x,H/2,H*.085))],'trim');x0+=H*.3;x1-=H*.3;}
-  if(sp.orn==='laurel'){for(const sd of[-1,1]){const cx=W/2+sd*(x1-x0)*.36,cy=H*.52,R=H*.24;const n=5;
+  if(sp.orn==='laurel'){for(const sd of[-1,1]){const cx=W/2+sd*(x1-x0)*.36,cy=H*.6,R=H*.2;const n=5;
       for(let i=0;i<n;i++){const a=(sd<0?Math.PI:0)+sd*(-.85+i*1.7/(n-1)),px=cx+Math.cos(a)*R,py=cy+Math.sin(a)*R;const tang=a+sd*Math.PI/2;
         for(const [off,len,rot] of [[.3,1,.62],[-.22,.82,-.62]]){const L=H*.17*len,Wd=L*.4,ox=px+Math.cos(a)*off*H*.16,oy=py+Math.sin(a)*off*H*.16;const pts=[];
           for(let k=0;k<14;k++){const t=k/14*Math.PI*2,lx=Math.cos(t)*L/2,ly=Math.sin(t)*Wd/2,ang=tang+sd*rot;pts.push(plV(ox+lx*Math.cos(ang)-ly*Math.sin(ang),oy+lx*Math.sin(ang)+ly*Math.cos(ang)));}add([plPoly(pts)],'trim');}}}
-    x0=W/2-(x1-x0)*.22;x1=W-x0;}
+    PL.lx=[x0,x1];x0=W/2-(x1-x0)*.22;x1=W-x0;}
   // competition timer: a hand pad at each end, like the ones you touch to start and stop
   if(sp.orn==='pads'){const pr=sp.shape==='timer'?H*.42:H*.36,yc=H/2;
     for(const side of[0,1]){const cx=sp.shape==='timer'?(side?W-H/2:H/2):(side?x1-pr:x0+pr);const sg=side?1:-1;
-      add([plRing(plCircle(cx,yc,pr,56),plCircle(cx,yc,pr-H*.04,56))],'trim');
+      add([plRing(plCircle(cx,yc,pr,56),plCircle(cx,yc,pr-Math.max(H*.04,PL_MIN_WALL),56))],'trim');
       // a flat hand, fingers up, thumb toward the middle (each part separate with a small gap)
       const u=pr*.78,inward=side?-1:1,P=(x,y)=>plV(cx+x*inward,yc+y);const fix=a=>(inward>0?a:a.reverse());
       const cap=(bx,by,w,h,ang)=>{const a=[],r=w/2,ca=Math.cos(ang),sa=Math.sin(ang);const pt=(x,y)=>P(bx+x*ca-y*sa,by+x*sa+y*ca);
         for(let k=0;k<=10;k++){const t=Math.PI*k/10;a.push(pt(Math.cos(t)*r,h-r+Math.sin(t)*r));}for(let k=0;k<=10;k++){const t=Math.PI+Math.PI*k/10;a.push(pt(Math.cos(t)*r,r+Math.sin(t)*r));}return fix(a);};
       const palm=[];for(let k=0;k<40;k++){const t=k/40*Math.PI*2;palm.push(P(Math.cos(t)*u*.36,-u*.3+Math.sin(t)*u*.38));}add([plPoly(fix(palm))],'text2');
-      [[-.27,.08,.5,.16],[-.09,.12,.6,.05],[.09,.12,.56,-.05],[.25,.07,.45,-.16]].forEach(([fx,fy,fh,a])=>add([plPoly(cap(fx*u,fy*u,u*.15,fh*u,a))],'text2'));
+      const fwid=Math.max(u*.13,PL_MIN_WALL);[[-.29,.08,.5,.16],[-.097,.12,.6,.05],[.097,.12,.56,-.05],[.28,.07,.45,-.16]].forEach(([fx,fy,fh,a])=>add([plPoly(cap(fx*u,fy*u,fwid,fh*u,a))],'text2'));
       add([plPoly(cap(u*.4,-u*.3,u*.16,u*.4,-.95))],'text2');}
     const used=sp.shape==='timer'?H:pr*2;x0=Math.max(x0,used+H*.06);x1=Math.min(x1,W-used-H*.06);}
   if(x1-x0<H*.8){const c=(x0+x1)/2;x0=c-H*.4;x1=c+H*.4;}
@@ -2265,23 +2277,26 @@ function plDesign(sp,D,txt){const MM=25.4,W=D.W*MM,H=D.H*MM;const decor=[];const
   // text
   const midY=(y0+y1)/2,hh=y1-y0,big=txt.time,l2=txt.label,l3=txt.sub,w=x1-x0,lab=[l2,l3].filter(Boolean).join('  -  ');
   if(sp.layout==='display'){   // like the big display at competitions: large slanted red digits, a name line with speed streaks under them
-    const dh=H*.42;let d=dh;const sw=plSegWidth(big,d);const maxw=(x1-x0)*.92;if(sw>maxw)d*=maxw/sw;const dw=plSegWidth(big,d);
-    add(plSeg(big,W/2-dw/2+H*.04,H*.44,d,.12).shapes,'text');
-    const so=sp.orn==='streaks'?H*.18:0,ly=H*.3,t=plText(l2||lab,H*.1,W/2+so,ly,'center',W*.5);add(t.shapes,'text2');const sx=W/2+so-t.w/2-H*.08;
-    if(sp.orn==='streaks')for(let i=0;i<3;i++){const yy=ly+H*.045-i*H*.045,len=H*(.42-i*.08);add([plPoly(plRound([plV(sx-len,yy),plV(sx,yy),plV(sx-H*.02,yy-H*.025),plV(sx-len-H*.02,yy-H*.025)],H*.008,2))],'text2');}
-    if(l3&&l2)add(plText(l3,H*.06,W/2,H*.17,'center',W*.36).shapes,'text2');}
-  else if(sp.layout==='lcd'&&sp.orn==='pads'){const wx=x0,ww=x1-x0,wy=H*.33,wh=H*.55;add([plRing(plRR(wx,wy,ww,wh,H*.08),plRR(wx+H*.035,wy+H*.035,ww-H*.07,wh-H*.07,H*.055))],'trim');
+    const ls=Math.max(H*.1,PL_MIN_TEXT),ls3=Math.max(H*.065,PL_MIN_TEXT),inner=W/2;let yb=y0+H*.03;const parts3=plSplit(l3);
+    // the ellipse gets narrow near the bottom: width available at height y
+    const wAt=y=>{const dy=Math.abs(y-H/2)/(H/2-H*.09);return dy>=1?0:2*(W/2-H*.12)*Math.sqrt(1-dy*dy);};
+    let y3=null;if(parts3.length&&l2){y3=yb+ls3*.55;const t3=plLine(parts3,ls3,W/2,y3,'center',wAt(y3-ls3*.5)*.9);if(t3.shapes.length){add(t3.shapes,'text2');yb=y3+ls3*.7;}else y3=null;}
+    const so=sp.orn==='streaks'?H*.16:0,ly=yb+ls*.6;const t=plLine([l2||lab],ls,W/2+so,ly,'center',wAt(ly-ls*.5)*.9-so*2);add(t.shapes,'text2');
+    if(sp.orn==='streaks'&&t.w){const sx=W/2+so-t.w/2-H*.05;for(let i=0;i<3;i++){const th=Math.max(H*.025,PL_MIN_WALL),yy=ly+th*1.6-i*th*1.9,len=Math.min(H*(.4-i*.08),so*2.4);add([plPoly(plRound([plV(sx-len,yy),plV(sx,yy),plV(sx-th*.8,yy-th),plV(sx-len-th*.8,yy-th)],th*.2,2))],'text2');}}
+    const dtop=y1-H*.02,dbot=ly+ls*.75;let d=Math.max(2,dtop-dbot);const maxw=wAt((dtop+dbot)/2)*.82;const sw=plSegWidth(big,d);if(sw>maxw)d*=maxw/sw;const dw=plSegWidth(big,d);
+    add(plSeg(big,W/2-dw/2+d*.06,dbot+(dtop-dbot-d)/2,d,.12).shapes,'text');}
+  else if(sp.layout==='lcd'&&sp.orn==='pads'){const wx=x0,ww=x1-x0,wy=H*.33,wh=H*.55;{const k=Math.max(H*.035,PL_MIN_WALL);add([plRing(plRR(wx,wy,ww,wh,H*.08),plRR(wx+k,wy+k,ww-2*k,wh-2*k,H*.055))],'trim');}
     let dh=wh*.6;const sw=plSegWidth(big,dh);if(sw>ww*.86)dh*=ww*.86/sw;add(plSeg(big,wx+(ww-plSegWidth(big,dh))/2,wy+(wh-dh)/2,dh).shapes,'text');
-    const by=H*.19,br=H*.055;for(const bx of[wx+br*1.6,wx+ww-br*1.6])add([plRing(plCircle(bx,by,br,28),plCircle(bx,by,br*.55,28))],'trim');
-    add(plText(lab,H*.1,W/2,by,'center',ww-br*7).shapes,'text2');}
-  else if(sp.layout==='lcd'){const wx=Math.max(x0,H*.12),wy=H*.15,ww=(x1-x0)*.64,wh=H*.7;add([plRing(plRR(wx,wy,ww,wh,H*.1),plRR(wx+H*.035,wy+H*.035,ww-H*.07,wh-H*.07,H*.07))],'trim');
+    const by=H*.19,br=H*.055,ls=Math.max(H*.1,PL_MIN_TEXT),room=ww-br*7>=plW(l2,ls);if(room)for(const bx of[wx+br*1.6,wx+ww-br*1.6])add([plRing(plCircle(bx,by,br,28),plCircle(bx,by,Math.max(br*.3,br-PL_MIN_WALL),28))],'trim');
+    add(plLine([l2,...plSplit(l3)],ls,W/2,by,'center',room?ww-br*7:(sp.shape==='timer'?W-H*1.7:ww)).shapes,'text2');}
+  else if(sp.layout==='lcd'){const wx=Math.max(x0,H*.12),wy=H*.15,ww=(x1-x0)*.64,wh=H*.7;{const k=Math.max(H*.035,PL_MIN_WALL);add([plRing(plRR(wx,wy,ww,wh,H*.1),plRR(wx+k,wy+k,ww-2*k,wh-2*k,H*.07))],'trim');}
     let dh=wh*.58;const sw=plSegWidth(big,dh);if(sw>ww*.86)dh*=ww*.86/sw;add(plSeg(big,wx+(ww-plSegWidth(big,dh))/2,wy+(wh-dh)/2,dh).shapes,'text');
-    const rx=wx+ww+(x1-wx-ww)/2,rw=(x1-wx-ww)*.9;const parts=(l2||'').split(' ');add(plText(parts[0],H*.2,rx,H*.62,'center',rw).shapes,'text2');add(plText(parts.slice(1).join(' '),H*.12,rx,H*.38,'center',rw).shapes,'text2');
-    if(l3)add(plText(l3,H*.09,rx,H*.22,'center',rw).shapes,'text2');}
-  else if(sp.layout==='side'){const tt=plText(big,hh*.62,x0,midY,'left',w*.55);add(tt.shapes,'text');const rx=x1,rw=w-tt.w-H*.15;
-    add(plText(l2,hh*.2,rx,l3?midY+hh*.15:midY,'right',rw).shapes,'text2');if(l3)add(plText(l3,hh*.15,rx,midY-hh*.18,'right',rw).shapes,'text2');}
-  else if(sp.layout==='center'){const cx=(x0+x1)/2;add(plText(big,hh*(lab?.56:.7),cx,lab?midY+hh*.12:midY,'center',w).shapes,'text');if(lab)add(plText(lab,hh*.15,cx,y0+hh*.13,'center',w).shapes,'text2');}
-  else{add(plText(big,hh*(lab?.56:.7),x0,lab?midY+hh*.12:midY,'left',w).shapes,'text');if(lab)add(plText(lab,hh*.15,x0,y0+hh*.13,'left',w).shapes,'text2');}
+    const rx=wx+ww+(x1-wx-ww)/2,rw=(x1-wx-ww)*.9;const parts=(l2||'').split(' ');add(plLine([parts[0]],H*.2,rx,H*.62,'center',rw).shapes,'text2');add(plLine([parts.slice(1).join(' ')],H*.12,rx,H*.4,'center',rw).shapes,'text2');
+    if(l3)add(plLine(plSplit(l3),H*.09,rx,H*.2,'center',rw).shapes,'text2');}
+  else if(sp.layout==='side'){const need=Math.max(plW(l2,PL_MIN_TEXT),plW(plSplit(l3)[0]||'',PL_MIN_TEXT));const tt=plText(big,hh*.62,x0,midY,'left',Math.min(w*.55,w-need-H*.15));add(tt.shapes,'text');const rx=x1,rw=w-tt.w-H*.15;
+    add(plLine([l2],hh*.2,rx,l3?midY+hh*.17:midY,'right',rw).shapes,'text2');if(l3)add(plLine(plSplit(l3),hh*.15,rx,midY-hh*.2,'right',rw).shapes,'text2');}
+  else if(sp.layout==='center'){const cx=(x0+x1)/2,ls=Math.max(hh*.15,PL_MIN_TEXT);add(plText(big,Math.min(hh*(lab?.56:.7),lab?hh-ls*1.6:hh),cx,lab?midY+ls*.55:midY,'center',w).shapes,'text');if(lab)add(plLine([l2,...plSplit(l3)],ls,cx,y0+ls*.5,'center',PL.lx?(PL.lx[1]-PL.lx[0])*.72:w).shapes,'text2');}
+  else{const ls=Math.max(hh*.15,PL_MIN_TEXT);add(plText(big,Math.min(hh*(lab?.56:.7),lab?hh-ls*1.6:hh),x0,lab?midY+ls*.55:midY,'left',w).shapes,'text');if(lab)add(plLine([l2,...plSplit(l3)],ls,x0,y0+ls*.5,'left',w).shapes,'text2');}
   return{outline:plOutline(sp,W,H),decor,W,H};}
 // solid pieces ---------------------------------------------------------------------------------------------
 // fillet: the plate's top and bottom edges get a small rounded bevel so nothing is sharp
@@ -2303,10 +2318,15 @@ function plCross(A,B){const ba=plBox(A),bb=plBox(B);if(ba[2]<bb[0]||bb[2]<ba[0]|
     for(let j=0;j<B.length;j++){const q1=B[j],q2=B[(j+1)%B.length];const d1=ccw(p1,p2,q1),d2=ccw(p1,p2,q2),d3=ccw(q1,q2,p1),d4=ccw(q1,q2,p2);if(((d1>0)!==(d2>0))&&((d3>0)!==(d4>0)))return true;}}
   return false;}
 const plColorOf=(sp,role)=>role==='base'?sp.base:role==='trim'?sp.trim:role==='text'?sp.textC:sp.text2;
+// where the magnets go across the plate (mm): centred, "spacing" apart (centre to centre)
+function plMagXs(mg,W){const S=(mg.spacing||1.2)*25.4,c=W/2;return mg.n===1?[c]:mg.n===2?[c-S/2,c+S/2]:mg.n===3?[c-S/2,c,c+S/2]:[];}
+// your stands (from the Hall of Solves Fusion scripts): plaque size, thickness, and the stand's magnet spots
+const PL_FITS={v1:{label:'v1 magnet stand',W:2.5,H:.85,T:.14,mag:{n:2,spacing:1.2,dia:.244,depth:.085}},
+  slim:{label:'Slim stand',W:1.9,H:.85,T:.14,mag:{n:2,spacing:1.2,dia:.244,depth:.085}}};
 function plSolids(sp,D,txt){const MM=25.4,dz=plDesign(sp,D,txt),T=D.T*MM,R=D.R*MM,out=[];const mg=sp.magnets||{n:0};const fil=Math.min(.6,T*.18);
   const outShape=new THREE.Shape(dz.outline);let zb=0;
   if(mg.n>0){const md=Math.min(mg.depth*MM,T-.6),mr=mg.dia*MM/2;const bot=new THREE.Shape(dz.outline);
-    for(let i=0;i<mg.n;i++){const cx=dz.W*(i+1)/(mg.n+1);bot.holes.push(new THREE.Path(plCircle(cx,dz.H/2,mr,36)));}out.push({geo:plExt(bot,md,0,Math.min(fil,md/2.3)),role:'base'});zb=md;}
+    for(const cx of plMagXs(mg,dz.W))bot.holes.push(new THREE.Path(plCircle(cx,dz.H/2,mr,36)));out.push({geo:plExt(bot,md,0,Math.min(fil,md/2.3)),role:'base'});zb=md;}
   if(sp.text==='engraved'){const D2=Math.min(R,T-zb-.4),ft=Math.min(.25,D2/2.3);out.push({geo:zb?plExt(outShape,T-D2-zb+.3,zb-.3,.3):plExt(outShape,T-D2+fil,0,fil),role:'base'});
     const cont=[dz.outline],cut=[],keep=[];
     for(const d of dz.decor){const cs=plContours(d.s);if(cs.some(c=>plCross(c,dz.outline)||cont.slice(1).some(o=>plCross(c,o))))keep.push(d);else{cont.push(...cs);cut.push(d);}}
@@ -2348,13 +2368,13 @@ function plZip(files){const enc=new TextEncoder(),chunks=[],central=[];let off=0
   const cdSize=central.reduce((s,a)=>s+a.length,0);const endRec=new Uint8Array([...u32(0x06054b50),...u16(0),...u16(0),...u16(files.length),...u16(files.length),...u32(cdSize),...u32(off),...u16(0)]);
   const all=[...chunks,...central,endRec],len=all.reduce((s,a)=>s+a.length,0),out=new Uint8Array(len);let p=0;for(const a of all){out.set(a,p);p+=a.length;}return out;}
 // UI -----------------------------------------------------------------------------------------------------
-const PL_DEFAULTS={preset:'classic',magnets:{n:0,dia:.25,depth:.08},l2:'',l3:'',showDate:true,open:false};
-let plSpec=Object.assign({},PL_PRESETS.classic,PL_DEFAULTS,store.get('plateSpec',{}));if(!plSpec.trim)plSpec.trim=plSpec.accent||'#1D1D1F';if(!plSpec.textC)plSpec.textC=plSpec.accent||plSpec.trim;if(!plSpec.text2)plSpec.text2=plSpec.textC;
+const PL_DEFAULTS={preset:'classic',fit:'v1',magnets:{n:2,spacing:1.2,dia:.244,depth:.085},l2:'',l3:'',showDate:true,open:false};
+let plSpec=Object.assign({},PL_PRESETS.classic,PL_DEFAULTS,store.get('plateSpec',{}));if(!plSpec.fit){plSpec.fit='v1';plSpec.magnets=Object.assign({},PL_FITS.v1.mag);}if(!plSpec.magnets.spacing)plSpec.magnets.spacing=1.2;if(!plSpec.trim)plSpec.trim=plSpec.accent||'#1D1D1F';if(!plSpec.textC)plSpec.textC=plSpec.accent||plSpec.trim;if(!plSpec.text2)plSpec.text2=plSpec.textC;
 function plData(){const k=$('plPz').value,r=k?pbEvents(isNaN(+k)?k:+k):{best:{}};const kind=$('plKind').value,v=r.best[kind];return{k,kind,v,at:r.best[kind+'@'],name:$('plName').value.trim()};}
 function plTxt(d){const ev=d.k?keyLabel(isNaN(+d.k)?d.k:+d.k):'3x3';const auto2=(ev+' '+(d.kind==='Single'||!d.kind?'single':d.kind)).toUpperCase();
   const auto3=[d.name,plSpec.showDate&&d.at?new Date(d.at).toLocaleDateString():''].filter(Boolean).join('  -  ').toUpperCase();
   const clean=s=>s.replace(/[^\x20-\x7E]/g,'');return{time:d.v!=null?fmtT(d.v):'--.--',label:clean(plSpec.l2||auto2),sub:clean(plSpec.l3||auto3),pz:d.k||'3'};}
-function plDims(){const n=(id,d)=>{const v=parseFloat($(id).value);return v>0?v:d;};const D={W:n('plW',3),H:n('plH',.75),T:n('plT',.08),R:n('plR',.03)};
+function plDims(){const n=(id,d)=>{const v=parseFloat($(id).value);return v>0?v:d;};const F=PL_FITS[plSpec.fit];const D=F?{W:F.W,H:F.H,T:F.T,R:n('plR',.03)}:{W:n('plW',3),H:n('plH',.75),T:n('plT',.08),R:n('plR',.03)};
   if(plSpec.magnets&&plSpec.magnets.n>0)D.T=Math.max(D.T,plSpec.magnets.depth+.04);return D;}
 function plFill(){const keys=CUBES.concat(Object.keys(TPZ)).filter(k=>(solves[k]||[]).length);const cur=$('plPz').value;
   $('plPz').innerHTML=keys.length?keys.map(k=>`<option value="${k}">${keyLabel(k)}</option>`).join(''):'<option value="">No timer solves yet</option>';if(keys.map(String).includes(cur))$('plPz').value=cur;
@@ -2377,20 +2397,22 @@ function plPreview(){const box=$('plPrev3d');if(!box||!box.offsetParent)return;c
   const W=D.W*25.4,H=D.H*25.4;grp.children.forEach(m=>m.position.set(-W/2,-H/2,0));plView.grp=new THREE.Group();plView.grp.add(grp);plView.scene.add(plView.grp);
   const dist=Math.max(W/(2*Math.tan(12*Math.PI/180))/Math.max(1,plView.cam.aspect)*1.18,H*3.4);plView.cam.position.set(0,0,dist);plView.cam.lookAt(0,0,0);plDraw();
   const ex=plBodies(plSpec,pieces,{inlays:plSpec.text==='engraved'});
-  $('plInfo').textContent=`${D.W.toFixed(2)} × ${D.H.toFixed(2)} × ${D.T.toFixed(2)} in · ${ex.length} color${ex.length>1?'s':''}: ${ex.map(b=>b.name).join(', ')}`+(plSpec.text==='engraved'?' (engraved; colors print as flush inlays)':'')+(plSpec.magnets.n?` · ${plSpec.magnets.n} magnet pocket${plSpec.magnets.n>1?'s':''} on the back`:'')+' · drag to tilt';}
+  $('plInfo').textContent=`${D.W.toFixed(2)} × ${D.H.toFixed(2)} × ${D.T.toFixed(2)} in · ${ex.length} color${ex.length>1?'s':''}: ${ex.map(b=>b.name).join(', ')}`+(plSpec.text==='engraved'?' (engraved; colors print as flush inlays)':'')+(plSpec.magnets.n?` · ${plSpec.magnets.n} magnet pocket${plSpec.magnets.n>1?'s':''} on the back${plSpec.magnets.n>1?` (${(plSpec.magnets.spacing||1.2).toFixed(2)} in apart)`:''}`:'')+(PL_FITS[plSpec.fit]?` · fits your ${PL_FITS[plSpec.fit].label}`:'')+(PL.dropped?` · ${PL.dropped} line${PL.dropped>1?'s were':' was'} too small to print and left off`:'')+' · drag to tilt';}
 function plDraw(){if(!plView.ren)return;plView.grp.rotation.set(plView.rx,plView.ry,0);plView.ren.render(plView.scene,plView.cam);}
 // controls
 const PL_CTRL=[['shape','plShape'],['border','plBorder'],['orn','plOrn'],['icon','plIcon'],['layout','plLayout'],['text','plTextMode']];
 const PL_COLS=[['base','plBase'],['trim','plTrimC'],['textC','plTextC'],['text2','plText2C']];
 function plSync(){$('plStyle').value=plSpec.preset||'custom';for(const[k,id] of PL_CTRL)$(id).value=plSpec[k];for(const[k,id] of PL_COLS)$(id).value=plSpec[k];
-  $('plL2').value=plSpec.l2||'';$('plL3').value=plSpec.l3||'';$('plDate').checked=!!plSpec.showDate;$('plMagN').value=String(plSpec.magnets.n);$('plMagD').value=plSpec.magnets.dia;$('plMagH').value=plSpec.magnets.depth;
+  $('plL2').value=plSpec.l2||'';$('plL3').value=plSpec.l3||'';$('plDate').checked=!!plSpec.showDate;$('plFit').value=plSpec.fit||'free';const F=PL_FITS[plSpec.fit];['plW','plH','plT','plMagN','plMagS','plMagD','plMagH'].forEach(id=>$(id).disabled=!!F);if(F){$('plW').value=F.W;$('plH').value=F.H;$('plT').value=F.T;}$('plMagS').value=plSpec.magnets.spacing||1.2;$('plMagN').value=String(plSpec.magnets.n);$('plMagD').value=plSpec.magnets.dia;$('plMagH').value=plSpec.magnets.depth;
   $('plCustom').hidden=!plSpec.open;$('plCustomBtn').textContent=plSpec.open?'Hide custom options':'✎ Create custom';}
 function plSaveSpec(){store.set('plateSpec',plSpec);plPreview();}
 $('plStyle').innerHTML=Object.entries(PL_PRESETS).map(([k,p])=>`<option value="${k}">${p.label}</option>`).join('')+'<option value="custom">Custom</option>';
-$('plStyle').onchange=e=>{const k=e.target.value;if(PL_PRESETS[k]){const dm=PL_PRESETS[k].dims||[3,.75];$('plW').value=dm[0];$('plH').value=dm[1];const keep={magnets:plSpec.magnets,l2:plSpec.l2,l3:plSpec.l3,showDate:plSpec.showDate,open:plSpec.open};plSpec=Object.assign({},PL_PRESETS[k],keep,{preset:k});}else plSpec.preset='custom';plSync();plSaveSpec();};
+$('plStyle').onchange=e=>{const k=e.target.value;if(PL_PRESETS[k]){if(!PL_FITS[plSpec.fit]){const dm=PL_PRESETS[k].dims||[3,.75];$('plW').value=dm[0];$('plH').value=dm[1];}const keep={fit:plSpec.fit,magnets:plSpec.magnets,l2:plSpec.l2,l3:plSpec.l3,showDate:plSpec.showDate,open:plSpec.open};plSpec=Object.assign({},PL_PRESETS[k],keep,{preset:k});}else plSpec.preset='custom';plSync();plSaveSpec();};
 for(const[k,id] of PL_CTRL)$(id).onchange=e=>{plSpec[k]=e.target.value;plSpec.preset='custom';plSync();plSaveSpec();};
 for(const[k,id] of PL_COLS)$(id).oninput=e=>{plSpec[k]=e.target.value;if(k==='trim')plSpec.rainbow=false;plSaveSpec();};
 $('plL2').oninput=e=>{plSpec.l2=e.target.value;plSaveSpec();};$('plL3').oninput=e=>{plSpec.l3=e.target.value;plSaveSpec();};$('plDate').onchange=e=>{plSpec.showDate=e.target.checked;plSaveSpec();};
+$('plFit').onchange=e=>{e.target.blur();plSpec.fit=e.target.value;const F=PL_FITS[plSpec.fit];if(F)plSpec.magnets=Object.assign({},F.mag);plSync();plSaveSpec();};
+$('plMagS').oninput=e=>{const v=parseFloat(e.target.value);if(v>0){plSpec.magnets.spacing=v;plSaveSpec();}};
 $('plMagN').onchange=e=>{plSpec.magnets.n=+e.target.value;plSaveSpec();};$('plMagD').oninput=e=>{const v=parseFloat(e.target.value);if(v>0){plSpec.magnets.dia=v;plSaveSpec();}};$('plMagH').oninput=e=>{const v=parseFloat(e.target.value);if(v>0){plSpec.magnets.depth=v;plSaveSpec();}};
 $('plCustomBtn').onclick=e=>{e.currentTarget.blur();plSpec.open=!plSpec.open;plSync();store.set('plateSpec',plSpec);};
 ['plPz','plKind'].forEach(id=>$(id).addEventListener('change',plFill));['plName','plW','plH','plT','plR'].forEach(id=>$(id).addEventListener('input',plPreview));
