@@ -5,6 +5,7 @@ contextBridge.exposeInMainWorld('desktop', {
   installUpdate: () => ipcRenderer.invoke('update:install'),
   setBusy: on => ipcRenderer.invoke('timer:busy', !!on),
   saveFile: (name, text) => ipcRenderer.invoke('file:save', { name, text }),
+  saveBinary: (name, bytes) => ipcRenderer.invoke('file:saveBin', { name, bytes }),
   onBtDevices: cb => ipcRenderer.on('bt:devices', (_e, d) => cb(d)),
   chooseBt: id => ipcRenderer.invoke('bt:choose', id),
   syncPick: () => ipcRenderer.invoke('sync:pick'),

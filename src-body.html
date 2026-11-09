@@ -173,6 +173,9 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 .penrow{display:grid;grid-template-columns:minmax(9em,15em) 1fr 4.5em;gap:10px;align-items:center;font-size:.88rem}.penrow .trk{height:10px;background:var(--sunk);border-radius:5px;overflow:hidden}.penrow .trk i{display:block;height:100%;border-radius:5px;background:var(--warn)}.penrow .trk i.dnf{background:var(--hold)}.penrow .n{text-align:right;font:600 .85rem var(--f-display);font-variant-numeric:tabular-nums}
 .pen-tip{margin:10px 0 0;padding:10px 12px;border-radius:9px;background:var(--sunk);font-size:.9rem}
 .pbdel{margin-left:6px;border:0;background:none;color:var(--muted);font:600 .7rem var(--f-body);cursor:pointer;padding:1px 4px;border-radius:5px;opacity:.55;vertical-align:middle}.pbdel:hover{opacity:1;color:var(--fg);background:#262A32}.pbdel.sure{opacity:1;color:#fff;background:var(--hold)}
+.pl-custom{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;padding:12px;margin:8px 0;border-radius:10px;background:#15171C;border:1px solid #262A32}
+.pl-prev{width:100%;min-height:120px;border-radius:12px;background:radial-gradient(ellipse at 50% 40%,#22262e,#14161a);overflow:hidden;margin-top:8px}.pl-prev canvas{display:block}
+.plate-box input[type=color]{width:34px;height:26px;padding:0;border:1px solid #2E333C;border-radius:6px;background:none;cursor:pointer}
 .pen-menu{position:fixed;z-index:60;display:flex;flex-direction:column;gap:2px;min-width:230px;background:#1A1D23;border:1px solid #2E333C;border-radius:10px;padding:8px;box-shadow:0 14px 34px rgba(0,0,0,.5)}
 .pen-menu .label{padding:2px 8px 6px}.pen-menu button{text-align:left;font:500 .9rem var(--f-body);color:var(--fg);background:none;border:0;border-radius:7px;padding:8px 10px;cursor:pointer}.pen-menu button:hover,.pen-menu button:focus-visible{background:#262A32}
 .pw{display:block;font:600 .7rem var(--f-body);color:var(--warn);letter-spacing:.02em}.pw.dnf{color:#FF8A8A}
@@ -643,15 +646,34 @@ body.timing .rail,body.timing .secbar,body.timing #view-timer .side,body.timing 
             <select id="plPz" class="sess-sel" style="width:auto" aria-label="Puzzle"></select>
             <select id="plKind" class="sess-sel" style="width:auto" aria-label="Which PB"></select>
             <input id="plName" placeholder="Name (optional)" aria-label="Name on the plate" class="pl-in" style="width:160px">
+            <label class="toggle">Style <select id="plStyle" class="sess-sel" style="width:auto"></select></label>
+            <label class="toggle" title="Plate · trim · time · details. Parts with the same color export as one body.">Colors <input type="color" id="plBase" aria-label="Plate color"><input type="color" id="plTrimC" aria-label="Trim color"><input type="color" id="plTextC" aria-label="Time color"><input type="color" id="plText2C" aria-label="Details color"></label>
+            <button class="btn" id="plCustomBtn">✎ Create custom</button>
+          </div>
+          <div class="pl-custom" id="plCustom" hidden>
+            <label class="toggle">Shape <select id="plShape"><option value="rect">Rectangle</option><option value="rounded">Rounded</option><option value="pill">Pill</option><option value="banner">Ribbon banner</option><option value="chevron">Arrow ends</option><option value="oval">Oval display</option><option value="timer">Comp timer body</option></select></label>
+            <label class="toggle">Border <select id="plBorder"><option value="none">None</option><option value="frame">Frame</option><option value="double">Double frame</option><option value="ring">Colored rim</option><option value="tiles">Cube tiles</option></select></label>
+            <label class="toggle">Extras <select id="plOrn"><option value="none">None</option><option value="laurel">Laurel leaves</option><option value="stars">Stars</option><option value="checker">Checkered flag</option><option value="speed">Speed chevrons</option><option value="pads">Timer hand pads</option><option value="streaks">Speed streaks</option></select></label>
+            <label class="toggle">Icon <select id="plIcon"><option value="none">None</option><option value="cube">Puzzle</option><option value="star">Star</option><option value="trophy">Trophy</option><option value="medal">PB medal</option></select></label>
+            <label class="toggle">Layout <select id="plLayout"><option value="side">Time left, details right</option><option value="center">Centered</option><option value="left">Left-aligned</option><option value="lcd">Timer display</option><option value="display">Comp display (big digits)</option></select></label>
+            <label class="toggle">Text <select id="plTextMode"><option value="raised">Raised</option><option value="engraved">Engraved</option></select></label>
+            <label class="toggle">Line 2 <input id="plL2" class="pl-in" style="width:150px" placeholder="auto: 3X3 SINGLE"></label>
+            <label class="toggle">Line 3 <input id="plL3" class="pl-in" style="width:150px" placeholder="auto: name + date"></label>
+            <label class="toggle"><input type="checkbox" id="plDate"> Date</label>
+            <label class="toggle">Magnets <select id="plMagN"><option value="0">None</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></label>
+            <label class="toggle">⌀ <input id="plMagD" type="number" step="0.01" class="pl-in" style="width:64px"></label>
+            <label class="toggle">Depth <input id="plMagH" type="number" step="0.01" class="pl-in" style="width:64px"></label>
           </div>
           <div class="data-row">
             <label class="toggle">W <input id="plW" type="number" step="0.05" value="3" class="pl-in"></label>
             <label class="toggle">H <input id="plH" type="number" step="0.05" value="0.75" class="pl-in"></label>
             <label class="toggle">Thick <input id="plT" type="number" step="0.01" value="0.08" class="pl-in"></label>
-            <label class="toggle">Text height <input id="plR" type="number" step="0.01" value="0.03" class="pl-in"></label>
+            <label class="toggle">Raise/cut <input id="plR" type="number" step="0.01" value="0.03" class="pl-in"></label>
             <button class="btn primary" id="plSave">Save STL</button>
+            <button class="btn" id="plSave3mf" title="One file, one part per color: Bambu Studio asks to load it as a single object with parts">Save 3MF (colors as parts)</button><button class="btn" id="plSaveParts" title="One STL per color">STL per color</button>
           </div>
-          <canvas id="plPrev" width="900" height="225" aria-label="Plate preview"></canvas>
+          <div class="pl-prev" id="plPrev3d" aria-label="Plate preview"></div>
+          <p class="note" id="plInfo" style="margin:4px 0 0"></p>
         </div>
       </div>
       <div class="pcard wide">
@@ -1702,35 +1724,7 @@ $('tmComp').onclick=e=>{e.currentTarget.blur();if(tm.state!=='idle'&&tm.state!==
 $('cpQuit').onclick=()=>{comp=null;renderComp();};
 
 
-// ---- PB plate STL (raised text on a plain rectangle; slides into the stand's front rail) ----
-let plFont=null;
-function plData(){const k=$('plPz').value,L=solves[k]||[],r=pbEvents(isNaN(+k)?k:+k);const kind=$('plKind').value,v=r.best[kind];
-  return{k,kind,v,at:r.best[kind+'@'],name:$('plName').value.trim()};}
-function plLines(d){const ev=keyLabel(isNaN(+d.k)?d.k:+d.k);return{big:d.v!=null?fmtT(d.v):'--.--',top:(ev+' '+(d.kind==='Single'?'single':d.kind)).toUpperCase(),bot:[d.name,d.at?new Date(d.at).toLocaleDateString():''].filter(Boolean).join('  ·  ').toUpperCase()};}
-function plFill(){const keys=CUBES.concat(Object.keys(TPZ)).filter(k=>(solves[k]||[]).length);const cur=$('plPz').value;
-  $('plPz').innerHTML=keys.length?keys.map(k=>`<option value="${k}">${keyLabel(k)}</option>`).join(''):'<option value="">No timer solves yet</option>';if(keys.includes(isNaN(+cur)?cur:+cur))$('plPz').value=cur;
-  const k=$('plPz').value;const r=k?pbEvents(isNaN(+k)?k:+k):{best:{}};const kinds=PB_KINDS.map(x=>x[0]).filter(x=>r.best[x]!==undefined);const ck=$('plKind').value;
-  $('plKind').innerHTML=kinds.length?kinds.map(x=>`<option>${x}</option>`).join(''):'<option value="">—</option>';if(kinds.includes(ck))$('plKind').value=ck;plPreview();}
-function plDims(){const n=(id,d)=>{const v=parseFloat($(id).value);return v>0?v:d;};return{W:n('plW',3),H:n('plH',.75),T:n('plT',.08),R:n('plR',.03)};}
-function plPreview(){const c=$('plPrev'),x=c.getContext('2d'),D=plDims(),d=plData(),t=plLines(d);const sc=Math.min(860/D.W,200/D.H),w=D.W*sc,h=D.H*sc,ox=(c.width-w)/2,oy=(c.height-h)/2;
-  x.clearRect(0,0,c.width,c.height);const g=x.createLinearGradient(0,oy,0,oy+h);g.addColorStop(0,'#E9C46A');g.addColorStop(1,'#B8892E');x.fillStyle=g;x.beginPath();x.roundRect(ox,oy,w,h,Math.min(14,h*.12));x.fill();
-  x.fillStyle='#FFF6D8';x.textBaseline='middle';x.font=`700 ${h*.56}px Barlow, sans-serif`;x.fillText(t.big,ox+w*.05,oy+h*.52);
-  x.textAlign='right';x.font=`700 ${h*.2}px Barlow, sans-serif`;x.fillText(t.top,ox+w*.95,oy+h*(t.bot?.36:.52));if(t.bot){x.font=`600 ${h*.15}px Barlow, sans-serif`;x.fillText(t.bot,ox+w*.95,oy+h*.66);}x.textAlign='left';}
-function plSTL(){if(!plFont)plFont=new THREE.Font(JSON.parse($('plFontSrc').textContent));const D=plDims(),d=plData(),t=plLines(d),MM=25.4;
-  const W=D.W*MM,H=D.H*MM,T=D.T*MM,R=D.R*MM,tris=[];
-  const addGeo=(geo,dx,dy,dz)=>{geo=geo.index?geo.toNonIndexed():geo;const p=geo.attributes.position.array;for(let i=0;i<p.length;i+=9)tris.push([[p[i]+dx,p[i+1]+dy,p[i+2]+dz],[p[i+3]+dx,p[i+4]+dy,p[i+5]+dz],[p[i+6]+dx,p[i+7]+dy,p[i+8]+dz]]);};
-  const box=new THREE.BoxGeometry(W,H,T);addGeo(box,W/2,H/2,T/2);
-  const text=(str,size,align,yc)=>{if(!str)return;const g=new THREE.TextGeometry(str,{font:plFont,size,height:R,curveSegments:6,bevelEnabled:false});g.computeBoundingBox();const bb=g.boundingBox,tw=bb.max.x-bb.min.x,th=bb.max.y-bb.min.y;
-    const x0=align==='left'?W*.05-bb.min.x:W*.95-tw-bb.min.x;addGeo(g,x0,yc-th/2-bb.min.y,T);return tw;};
-  const bigW=text(t.big,H*.5,'left',H*.5);
-  text(t.top,H*.17,'right',t.bot?H*.64:H*.5);text(t.bot,H*.12,'right',H*.36);
-  const f=n=>n.toFixed(4);let out='solid pbplate\n';
-  for(const [a,b,c] of tris){const u=[b[0]-a[0],b[1]-a[1],b[2]-a[2]],v=[c[0]-a[0],c[1]-a[1],c[2]-a[2]];let n=[u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0]];const l=Math.hypot(...n)||1;n=n.map(q=>q/l);
-    out+=`facet normal ${f(n[0])} ${f(n[1])} ${f(n[2])}\n outer loop\n  vertex ${f(a[0])} ${f(a[1])} ${f(a[2])}\n  vertex ${f(b[0])} ${f(b[1])} ${f(b[2])}\n  vertex ${f(c[0])} ${f(c[1])} ${f(c[2])}\n endloop\nendfacet\n`;}
-  return out+'endsolid pbplate\n';}
-['plPz','plKind'].forEach(id=>$(id).addEventListener('change',plFill));['plName','plW','plH','plT','plR'].forEach(id=>$(id).addEventListener('input',plPreview));
-$('plSave').onclick=e=>{e.currentTarget.blur();const d=plData();if(d.v==null){$('dataMsg').textContent='Set a PB in the Timer first.';return;}
-  const name=`PB plate ${keyLabel(isNaN(+d.k)?d.k:+d.k)} ${d.kind} ${fmtT(d.v)}.stl`.replace(/[:]/g,'-');saveText(name,plSTL());};
+/*PLATES*/
 
 
 /*SMART*/

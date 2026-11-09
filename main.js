@@ -96,6 +96,11 @@ ipcMain.handle('file:save', async (_e, { name, text }) => {
   if (r.canceled || !r.filePath) return { canceled: true };
   try { await fs.promises.writeFile(r.filePath, String(text), 'utf8'); return { ok: true, path: r.filePath }; } catch (err) { return { ok: false }; }
 });
+ipcMain.handle('file:saveBin', async (_e, { name, bytes }) => {
+  const r = await dialog.showSaveDialog(win, { defaultPath: path.join(app.getPath('documents'), String(name || 'export.bin').replace(/[\\/:*?"<>|]/g, '_')) });
+  if (r.canceled || !r.filePath) return { canceled: true };
+  try { await fs.promises.writeFile(r.filePath, Buffer.from(bytes)); return { ok: true, path: r.filePath }; } catch (err) { return { ok: false }; }
+});
 ipcMain.handle('update:check', () => { check(); return true; });
 ipcMain.handle('update:install', () => { setImmediate(() => autoUpdater.quitAndInstall(false, true)); return true; });
 
