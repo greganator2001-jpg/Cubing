@@ -2205,7 +2205,7 @@ function plIcon(kind,x,y,s,pz){const out=[];const cx=x+s/2,cy=y+s/2;
 // presets -------------------------------------------------------------------------------------------------
 const PL_PRESETS={
   classic:{label:'Classic',shape:'rect',border:'none',orn:'none',icon:'none',layout:'side',text:'raised',base:'#D4A537',trim:'#1D1D1F',textC:'#1D1D1F',text2:'#1D1D1F'},
-  display:{label:'Comp display',dims:[3,1.3],shape:'oval',border:'ring',orn:'streaks',icon:'none',layout:'display',text:'raised',base:'#15161A',trim:'#2167E8',textC:'#FF3B30',text2:'#E9EDF2'},
+  display:{label:'Comp display',dims:[3,1.3],shape:'oval',border:'ring',orn:'none',icon:'none',layout:'display',text:'raised',base:'#15161A',trim:'#2167E8',textC:'#FF3B30',text2:'#E9EDF2'},
   comp:{label:'Comp timer',shape:'timer',border:'none',orn:'pads',icon:'none',layout:'lcd',text:'raised',base:'#23262C',trim:'#3A7BFF',textC:'#9FF3C8',text2:'#E9EDF2'},
   laurel:{label:'Laurel trophy',shape:'rounded',border:'frame',orn:'laurel',icon:'none',layout:'center',text:'raised',base:'#D4A537',trim:'#1D1D1F',textC:'#1D1D1F',text2:'#1D1D1F'},
   tiles:{label:'Cube-tile border',shape:'rounded',border:'tiles',orn:'none',icon:'none',layout:'center',text:'raised',base:'#D4A537',trim:'#1D1D1F',textC:'#1D1D1F',text2:'#1D1D1F',rainbow:true},
@@ -2360,7 +2360,7 @@ function plZip(files){const enc=new TextEncoder(),chunks=[],central=[];let off=0
   const all=[...chunks,...central,endRec],len=all.reduce((s,a)=>s+a.length,0),out=new Uint8Array(len);let p=0;for(const a of all){out.set(a,p);p+=a.length;}return out;}
 // UI -----------------------------------------------------------------------------------------------------
 const PL_DEFAULTS={preset:'classic',fit:'v1',magnets:{n:2,spacing:1.2,dia:.244,depth:.085},l2:'',l3:'',showDate:true,open:false};
-let plSpec=Object.assign({},PL_PRESETS.classic,PL_DEFAULTS,store.get('plateSpec',{}));if(!plSpec.fit){plSpec.fit='v1';plSpec.magnets=Object.assign({},PL_FITS.v1.mag);}if(!plSpec.magnets.spacing)plSpec.magnets.spacing=1.2;if(!plSpec.trim)plSpec.trim=plSpec.accent||'#1D1D1F';if(!plSpec.textC)plSpec.textC=plSpec.accent||plSpec.trim;if(!plSpec.text2)plSpec.text2=plSpec.textC;
+let plSpec=Object.assign({},PL_PRESETS.classic,PL_DEFAULTS,store.get('plateSpec',{}));if(!plSpec.fit){plSpec.fit='v1';plSpec.magnets=Object.assign({},PL_FITS.v1.mag);}if(!plSpec.magnets.spacing)plSpec.magnets.spacing=1.2;if(plSpec.preset==='display'&&plSpec.orn==='streaks')plSpec.orn='none';if(!plSpec.trim)plSpec.trim=plSpec.accent||'#1D1D1F';if(!plSpec.textC)plSpec.textC=plSpec.accent||plSpec.trim;if(!plSpec.text2)plSpec.text2=plSpec.textC;
 function plData(){const k=$('plPz').value,r=k?pbEvents(isNaN(+k)?k:+k):{best:{}};const kind=$('plKind').value,v=r.best[kind];return{k,kind,v,at:r.best[kind+'@'],name:$('plName').value.trim()};}
 function plTxt(d){const ev=d.k?keyLabel(isNaN(+d.k)?d.k:+d.k):'3x3';const auto2=(ev+' '+(d.kind==='Single'||!d.kind?'single':d.kind)).toUpperCase();
   const auto3=[d.name,plSpec.showDate&&d.at?new Date(d.at).toLocaleDateString():''].filter(Boolean).join('  -  ').toUpperCase();
