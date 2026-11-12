@@ -32,7 +32,7 @@ aes-js/index.js:
 body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45;margin:0}
 .app{display:flex;min-height:100vh}
 /* scale the main area up on big windows (the side rail stays the same) */
-@media (min-width:1500px){.wrap{zoom:1.12}}@media (min-width:1750px){.wrap{zoom:1.22}}@media (min-width:2100px){.wrap{zoom:1.38}}@media (min-width:2600px){.wrap{zoom:1.6}}
+@media (min-width:1500px) and (min-height:900px){.wrap{zoom:1.12}}@media (min-width:1750px) and (min-height:1120px){.wrap{zoom:1.22}}@media (min-width:2100px) and (min-height:1260px){.wrap{zoom:1.38}}@media (min-width:2600px) and (min-height:1460px){.wrap{zoom:1.6}}
 .wrap{flex:1;min-width:0;max-width:1320px;margin:0 auto;display:flex;flex-direction:column;gap:16px;padding:20px max(26px,env(safe-area-inset-right,0px)) 40px 26px}
 .rail{position:sticky;top:0;height:100vh;flex:none;width:92px;background:var(--rail);display:flex;flex-direction:column;align-items:center;gap:6px;padding:18px 0 14px;z-index:6}
 .rail::after{content:"";position:absolute;top:0;right:0;bottom:0;width:3px;background:linear-gradient(#FFD500 0 16.6%,#FF7A1A 0 33.3%,#D0213B 0 50%,#2F6BFF 0 66.6%,#11A35A 0 83.3%,#F2F2F2 0)}
@@ -1489,8 +1489,14 @@ function buildPicker(){const q=$('pickSearch').value.trim().toLowerCase();const 
     html+=`<div class="pick-group">${g}</div><div class="pick-grid">`+rows.map(c=>`<button class="pick-tile${pinned===c.id?' sel':''}" data-pick="${c.id}" role="option" aria-selected="${pinned===c.id}" title="${c.alg}">${thumb(c,'')}<span class="pn">${nameLabel(c)}</span><span class="pa">${c.alg}</span></button>`).join('')+'</div>';}
   if(!html)html='<p class="pick-none">No cases match that search.</p>';
   $('pickList').innerHTML=html;}
+function placePicker(){const pp=$('pickPanel'),z=parseFloat(getComputedStyle(document.querySelector('.wrap')||document.body).zoom)||1;
+  pp.style.left='0px';pp.style.width=Math.min(780,(document.documentElement.clientWidth-32)/z)+'px';
+  const r=pp.getBoundingClientRect(),W=document.documentElement.clientWidth,over=r.right-(W-16);
+  if(over>0)pp.style.left=(-Math.min(over,r.left-16)/z)+'px';
+  $('pickList').style.maxHeight=Math.max(220,(innerHeight-r.top-90)/z)+'px';}
+addEventListener('resize',()=>{if(!$('pickPanel').hidden)placePicker();});
 function openPicker(open){$('pickPanel').hidden=!open;$('pickBtn').setAttribute('aria-expanded',open);
-  if(open){buildPicker();$('pickSearch').value='';$('pickSearch').focus();const sel=$('pickList').querySelector('.sel');if(sel)sel.scrollIntoView({block:'center'});}}
+  if(open){placePicker();buildPicker();$('pickSearch').value='';$('pickSearch').focus();const sel=$('pickList').querySelector('.sel');if(sel)sel.scrollIntoView({block:'center'});}}
 $('pickBtn').onclick=e=>{e.stopPropagation();openPicker($('pickPanel').hidden);};
 $('pickSearch').addEventListener('input',buildPicker);
 const choose=id=>{pinned=id||null;store.set(pinKey(),pinned);openPicker(false);$('pickBtn').blur();loadCase();};
